@@ -14,7 +14,7 @@ function signJWT(header, payload, secret) {
   return msg + '.' + sig;
 }
 
-exports.default = async (req, res) => {
+module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Content-Type', 'application/json');
