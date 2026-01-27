@@ -13,26 +13,36 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const authToken = process.env.TWILIO_AUTH_TOKEN;
     const twimlAppSid = process.env.TWILIO_TWIML_APP_SID;
 
-    console.log('Using Auth Token method');
-    console.log('Account SID:', accountSid?.substring(0, 10) + '...');
-    console.log('Auth Token exists:', !!authToken);
-    console.log('TwiML App SID:', twimlAppSid?.substring(0, 10) + '...');
+    console.log('=== TOKEN GENERATION DEBUG ===');
+    console.log('Using Auth Token method (no API Key)');
+    console.log('Account SID:', accountSid ? `${accountSid.substring(0, 6)}...` : 'MISSING');
+    console.log('Auth Token:', authToken ? `Length: ${authToken.length}` : 'MISSING');
+    console.log('TwiML App SID:', twimlAppSid ? `${twimlAppSid.substring(0, 6)}...` : 'MISSING');
 
     if (!accountSid || !authToken || !twimlAppSid) {
+      console.error('❌ Missing Twilio configuration');
       return res.status(500).json({ error: 'Missing Twilio configuration' });
     }
 
-    const identity = String(req.query?.identity || 'user').replace(/[^a-zA-Z0-9_]/g, '_');
+    // Identity handling
+    let identity = req.query?.identity || req.body?.identity || 'user';
+    identity = String(identity).replace(/[^a-zA-Z0-9_]/g, '_');
+    console.log('Identity:', identity);
 
-    // Use regular import
+    // Explicitly check for imported module
+    if (!twilio || !twilio.jwt || !twilio.jwt.AccessToken) {
+      console.error('❌ Twilio library not loaded correctly', twilio);
+      throw new Error('Twilio library import failed');
+    }
+
     const AccessToken = twilio.jwt.AccessToken;
     const VoiceGrant = AccessToken.VoiceGrant;
 
-    // Use Account SID and Auth Token (not API Key)
+    // Create token using Account SID as the signing key (valid strategy)
     const token = new AccessToken(
       accountSid,
-      accountSid,  // Use Account SID as the signing key SID
-      authToken,   // Use Auth Token as the secret
+      accountSid,  // Signing Key SID (using Account SID)
+      authToken,   // Signing Key Secret (using Auth Token)
       { identity, ttl: 3600 }
     );
 
@@ -44,7 +54,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     token.addGrant(voiceGrant);
 
     const jwt = token.toJwt();
-    console.log('✅ Token generated with Auth Token method');
+    console.log('✅ Token generated successfully');
+    console.log('Token length:', jwt.length);
 
     return res.status(200).json({ 
       token: jwt, 
@@ -53,7 +64,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
 
   } catch (error: any) {
-    console.error('❌ Error:', error.message, error.stack);
-    return res.status(500).json({ error: error.message });
+    console.error('❌ Token Generation Error:', error);
+    return res.status(500).json({ 
+      error: error.message || 'Failed to generate token',
+      details: error.toString()
+    });
   }
 }
