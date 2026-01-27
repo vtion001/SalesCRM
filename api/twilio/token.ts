@@ -1,5 +1,5 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import jwt from 'jsonwebtoken';
+import twilio from 'twilio';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -11,49 +11,44 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const accountSid = process.env.TWILIO_ACCOUNT_SID;
-    const authToken = process.env.TWILIO_AUTH_TOKEN;
+    const apiKey = process.env.TWILIO_API_KEY;
+    const apiSecret = process.env.TWILIO_API_SECRET;
     const twimlAppSid = process.env.TWILIO_TWIML_APP_SID;
 
-    if (!accountSid || !authToken || !twimlAppSid) {
-      return res.status(500).json({ 
-        error: 'Missing Twilio configuration',
-        debug: { accountSid: !!accountSid, authToken: !!authToken, twimlAppSid: !!twimlAppSid }
-      });
+    if (!accountSid || !apiKey || !apiSecret || !twimlAppSid) {
+      console.error('Missing env vars:', { accountSid: !!accountSid, apiKey: !!apiKey, apiSecret: !!apiSecret, twimlAppSid: !!twimlAppSid });
+      return res.status(500).json({ error: 'Missing Twilio configuration' });
     }
 
     const identity = String(req.query?.identity || 'user').replace(/[^a-zA-Z0-9_]/g, '_');
 
-    // Create JWT payload with Twilio Voice grants
-    const payload = {
-      grants: {
-        identity: identity,
-        voice: {
-          outgoing: { application_sid: twimlAppSid },
-          incoming: { allow: true }
-        }
-      }
-    };
+    // Use Twilio SDK AccessToken class - this is the ONLY correct way
+    const AccessToken = twilio.jwt.AccessToken;
+    const VoiceGrant = AccessToken.VoiceGrant;
 
-    // Sign JWT using Auth Token (correct method for Twilio Access Tokens)
-    // issuer and subject should both be the account SID
-    const token = jwt.sign(payload, authToken, {
-      algorithm: 'HS256',
-      issuer: accountSid,
-      subject: accountSid,
-      expiresIn: 3600,
-      header: {
-        cty: 'twilio-fpa;v=1'
-      }
+    // Create token with API Key method (keySid=apiKey, secret=apiSecret)
+    const token = new AccessToken(accountSid, apiKey, apiSecret, { 
+      identity: identity,
+      ttl: 3600
     });
 
+    // Add voice grant for outgoing and incoming calls
+    token.addGrant(new VoiceGrant({
+      outgoingApplicationSid: twimlAppSid,
+      incomingAllow: true
+    }));
+
+    // Convert to JWT string - this handles all Twilio-specific requirements
+    const jwt = token.toJwt();
+
     return res.status(200).json({ 
-      token: token, 
+      token: jwt, 
       identity: identity,
       expiresIn: 3600
     });
 
   } catch (error: any) {
-    console.error('Token error:', error.message);
+    console.error('Token generation error:', error.message, error.stack);
     return res.status(500).json({ 
       error: error.message || 'Token generation failed'
     });
