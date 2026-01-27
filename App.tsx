@@ -4,6 +4,7 @@ import { Header } from './components/Header';
 import { LeadList } from './components/LeadList';
 import { LeadDetail } from './components/LeadDetail';
 import { Dialer } from './components/Dialer';
+import DialerSound from './components/DialerSound';
 import { Dashboard } from './components/Dashboard';
 import { Contacts } from './components/Contacts';
 import { Deals } from './components/Deals';
@@ -204,6 +205,7 @@ export default function App() {
               </div>
               <div className="hidden lg:block lg:col-span-4 h-full overflow-hidden bg-white">
                  <Dialer targetLead={selectedLead} />
+                 <DialerSound />
               </div>
             </div>
           )}
