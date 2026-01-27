@@ -39,13 +39,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     // Extract Twilio webhook data
-    const { From, To, Body, MessageSid, AccountSid } = req.body;
+    const { 
+      From, 
+      To, 
+      Body, 
+      MessageSid, 
+      AccountSid,
+      NumMedia,
+      FromCity,
+      FromState,
+      FromCountry
+    } = req.body;
 
     console.log('📬 Incoming SMS received:', {
       from: From,
       to: To,
       messageSid: MessageSid,
-      bodyLength: Body?.length
+      bodyLength: Body?.length,
+      numMedia: NumMedia || 0,
+      location: `${FromCity}, ${FromState}, ${FromCountry}`
     });
 
     // Validate required fields
