@@ -63,9 +63,63 @@ app.get('/health', (req, res) => {
 });
 
 /**
+ * GET /api/twilio/token
+ * Generate Twilio access token (Vercel API Parity)
+ * Query params: identity (user identifier)
+ */
+app.get('/api/twilio/token', async (req, res) => {
+  let { identity } = req.query;
+  console.log('Received GET /api/twilio/token request. Query:', req.query);
+
+  if (!identity) {
+    console.error('Error: identity parameter missing in request query');
+    return res.status(400).json({ error: 'identity parameter required' });
+  }
+
+  // Sanitize identity
+  const sanitizedIdentity = String(identity).replace(/[^a-zA-Z0-9_]/g, '_');
+  
+  if (sanitizedIdentity.length === 0) {
+    return res.status(400).json({ error: 'identity must contain at least one valid character' });
+  }
+
+  if (!apiKey || !apiSecret) {
+    console.error('Error: Twilio API Key/Secret missing');
+    return res.status(500).json({ 
+      error: 'TWILIO_API_KEY and TWILIO_API_SECRET not configured in .env.local' 
+    });
+  }
+
+  try {
+    const AccessToken = twilio.jwt.AccessToken;
+    const VoiceGrant = AccessToken.VoiceGrant;
+
+    console.log(`Original identity: "${identity}"`);
+    console.log(`Sanitized identity: "${sanitizedIdentity}"`);
+
+    const token = new AccessToken(accountSid, apiKey, apiSecret, {
+      identity: sanitizedIdentity,
+      ttl: 3600 // 1 hour
+    });
+
+    token.addGrant(new VoiceGrant({
+      outgoingApplicationSid: process.env.TWILIO_TWIML_APP_SID,
+      incomingAllow: true
+    }));
+
+    const jwt = token.toJwt();
+    console.log(`✓ Token generated successfully for identity: "${sanitizedIdentity}"`);
+
+    res.json({ token: jwt });
+  } catch (error) {
+    console.error('Error generating token:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
  * POST /token
- * Generate Twilio access token for frontend Twilio.Device
- * Required params: identity (user identifier)
+ * Legacy endpoint support (optional, can be deprecated)
  */
 app.post('/token', async (req, res) => {
   let { identity } = req.body;

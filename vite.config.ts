@@ -11,6 +11,13 @@ export default defineConfig(({ mode }) => {
         host: '0.0.0.0',
         hmr: {
             clientPort: 3001
+        },
+        proxy: {
+          '/api': {
+            target: 'http://localhost:4000',
+            changeOrigin: true,
+            secure: false
+          }
         }
       },
       plugins: [
