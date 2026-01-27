@@ -54,7 +54,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       expiresIn: ttl
     });
 
-    console.log(`✅ Token generated successfully for identity: ${identity}, expires in ${ttl}s`);
+    // Debug logging
+    console.log(`✅ Token generated for identity: ${identity}`);
+    console.log(`📋 JWT Payload:`, JSON.stringify(payload, null, 2));
+    console.log(`🔐 Signing with:
+      - Algorithm: HS256
+      - Issuer (API Key): ${apiKey.substring(0, 8)}...
+      - Subject (Account SID): ${accountSid.substring(0, 8)}...
+      - Secret length: ${apiSecret.length} chars
+    `);
+    console.log(`📊 Token length: ${token.length} bytes`);
 
     return res.status(200).json({ 
       token, 
