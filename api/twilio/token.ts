@@ -1,8 +1,5 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import { AccessToken, jwt } from 'twilio';
-
-// For compatibility with how Twilio exports VoiceGrant
-const twilio = require('twilio');
+import twilio from 'twilio';
 
 /**
  * Generate Twilio Access Token for Voice
@@ -73,7 +70,7 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
     console.log(`🔐 Generating token for identity: ${sanitizedIdentity}`);
 
     // Create access token with Voice grant
-    const token = new AccessToken(
+    const token = new twilio.jwt.AccessToken(
       TWILIO_ACCOUNT_SID,
       TWILIO_API_KEY,
       TWILIO_API_SECRET,
