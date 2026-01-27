@@ -13,13 +13,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const accountSid = process.env.TWILIO_ACCOUNT_SID;
     const apiKey = process.env.TWILIO_API_KEY;
     const apiSecret = process.env.TWILIO_API_SECRET;
+    const authToken = process.env.TWILIO_AUTH_TOKEN;  // <-- AUTH_TOKEN is the secret!
     const appSid = process.env.TWILIO_TWIML_APP_SID;
 
-    if (!accountSid || !apiKey || !apiSecret || !appSid) {
+    if (!accountSid || !apiKey || !apiSecret || !authToken || !appSid) {
       console.error('❌ Missing Twilio env vars:', { 
         accountSid: !!accountSid, 
         apiKey: !!apiKey, 
-        apiSecret: !!apiSecret, 
+        apiSecret: !!apiSecret,
+        authToken: !!authToken,
         appSid: !!appSid 
       });
       return res.status(500).json({ error: 'Missing Twilio configuration' });
@@ -45,9 +47,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     };
 
     // Sign JWT with the correct algorithm and options
+    // IMPORTANT: For Access Tokens, use TWILIO_AUTH_TOKEN as the secret, NOT TWILIO_API_SECRET
     // issuer must be the API Key
     // subject must be the Account SID
-    const token = jwt.sign(payload, apiSecret, {
+    const token = jwt.sign(payload, authToken, {
       algorithm: 'HS256',
       issuer: apiKey,
       subject: accountSid,
