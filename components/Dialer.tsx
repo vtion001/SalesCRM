@@ -31,6 +31,7 @@ export const Dialer: React.FC<DialerProps> = ({ targetLead }) => {
   const [smsMessage, setSmsMessage] = useState('');
   const [messages, setMessages] = useState<any[]>([]);
   const [isSending, setIsSending] = useState(false);
+  const [currentCall, setCurrentCall] = useState<any>(null);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const callTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -54,15 +55,14 @@ export const Dialer: React.FC<DialerProps> = ({ targetLead }) => {
         const device = await initializeTwilioDevice(token, handleIncomingCall);
         console.log('✅ initializeTwilioDevice returned Device instance');
         
-        // Wait for the Device to be ready
-        // The ready event is triggered when Device.setup() completes and device is online
+        // Wait for the Device to be ready (registered)
         const readyPromise = new Promise<void>((resolve, reject) => {
           let hasResolved = false;
           
           // 10 second timeout for ready event
           const readyTimeout = setTimeout(() => {
             if (!hasResolved) {
-              console.warn('⚠️  Device ready timeout - proceeding anyway (may try to connect)');
+              console.warn('⚠️  Device registration timeout - proceeding anyway (may try to connect)');
               hasResolved = true;
               resolve(); // Resolve anyway after timeout to unblock UI
             }
@@ -72,9 +72,8 @@ export const Dialer: React.FC<DialerProps> = ({ targetLead }) => {
             if (!hasResolved) {
               clearTimeout(readyTimeout);
               hasResolved = true;
-              device.removeListener?.('ready', onReady);
-              device.removeListener?.('error', onError);
-              console.log('✅ Device ready event received!');
+              // Cleanup listeners not strictly necessary if we unmount, but good practice
+              console.log('✅ Device registered event received!');
               resolve();
             }
           };
@@ -83,16 +82,20 @@ export const Dialer: React.FC<DialerProps> = ({ targetLead }) => {
             if (!hasResolved) {
               clearTimeout(readyTimeout);
               hasResolved = true;
-              device.removeListener?.('ready', onReady);
-              device.removeListener?.('error', onError);
               const errorMsg = error?.message || 'Unknown device error';
               console.error('❌ Device error during initialization:', errorMsg);
               reject(new Error(errorMsg));
             }
           };
 
-          device.on('ready', onReady);
+          // v2 uses 'registered' instead of 'ready'
+          device.on('registered', onReady);
           device.on('error', onError);
+          
+          // Check if already registered (in case event fired before we listened)
+          if (device.state === 'registered') {
+            onReady();
+          }
         });
 
         await readyPromise;
@@ -144,17 +147,25 @@ export const Dialer: React.FC<DialerProps> = ({ targetLead }) => {
   // Handle incoming calls
   const handleIncomingCall = (call: any) => {
     const callData: IncomingCall = {
-      id: call.sid || Date.now().toString(),
-      from: call.parameters?.From || 'Unknown',
+      id: call.parameters.CallSid || Date.now().toString(),
+      from: call.parameters.From || 'Unknown',
       timestamp: new Date(),
     };
+    
+    // Store the call object so we can answer it later
+    setCurrentCall(call);
     setIncomingCall(callData);
     setCallStatus(`Incoming call from ${callData.from}`);
+    
+    // Listen for call ending remotely before we answer
+    call.on('disconnect', () => {
+      handleEndCall();
+    });
   };
 
   // Answer incoming call
   const handleAnswerCall = async () => {
-    if (!incomingCall || !twilioDevice) return;
+    if (!incomingCall || !currentCall) return;
 
     try {
       setError(null);
@@ -167,7 +178,8 @@ export const Dialer: React.FC<DialerProps> = ({ targetLead }) => {
         setCallDuration((prev) => prev + 1);
       }, 1000);
 
-      await twilioDevice.activeCall?.accept?.();
+      // v2: call.accept()
+      await currentCall.accept();
     } catch (err: any) {
       setError(err.message || 'Failed to answer call');
       setIsCallInProgress(false);
@@ -176,14 +188,15 @@ export const Dialer: React.FC<DialerProps> = ({ targetLead }) => {
 
   // Reject incoming call
   const handleRejectCall = () => {
-    if (!incomingCall) return;
+    if (!currentCall) return;
     setIncomingCall(null);
     setCallStatus(null);
     try {
-      twilioDevice?.activeCall?.reject?.();
+      currentCall.reject();
     } catch (err) {
       console.error('Error rejecting call:', err);
     }
+    setCurrentCall(null);
   };
 
   // End active call
@@ -199,10 +212,13 @@ export const Dialer: React.FC<DialerProps> = ({ targetLead }) => {
     setIsHold(false);
     
     try {
-      twilioDevice?.activeCall?.disconnect?.();
+      if (currentCall) {
+        currentCall.disconnect();
+      }
     } catch (err) {
       console.error('Error ending call:', err);
     }
+    setCurrentCall(null);
   };
 
   // Format call duration
@@ -217,7 +233,7 @@ export const Dialer: React.FC<DialerProps> = ({ targetLead }) => {
   };
 
   const handleMakeCall = async () => {
-    if (!phoneNumber || isCallInProgress || !isDeviceReady) return;
+    if (!phoneNumber || isCallInProgress || !isDeviceReady || !twilioDevice) return;
 
     setError(null);
     setIsCallInProgress(true);
@@ -225,18 +241,40 @@ export const Dialer: React.FC<DialerProps> = ({ targetLead }) => {
     setCallStatus('Initiating call...');
 
     try {
-      const response = await initiateCall(phoneNumber, targetLead?.name || 'Unknown');
+      // For outgoing calls in v2, we use device.connect() which returns a Promise<Call>
+      // We need to pass params if using TwiML app, typically 'To' number is passed via params 
+      // which the backend uses to dial.
+      // NOTE: The previous code called a backend endpoint /call. 
+      // If using Client-to-Client or Client-to-PSTN via TwiML App, we use device.connect({ params: { To: ... } })
+      
+      const params = { To: phoneNumber };
+      const call = await twilioDevice.connect({ params });
+      
+      setCurrentCall(call);
       setCallStatus(`Connected to ${phoneNumber}`);
       
-      callTimerRef.current = setInterval(() => {
-        setCallDuration((prev) => prev + 1);
-      }, 1000);
+      call.on('accept', () => {
+         setCallStatus(`Call accepted`);
+         callTimerRef.current = setInterval(() => {
+            setCallDuration((prev) => prev + 1);
+          }, 1000);
+      });
+      
+      call.on('disconnect', () => {
+        handleEndCall();
+      });
 
-      console.log('Call SID:', response.callSid);
+      call.on('error', (error: any) => {
+        console.error('Call error:', error);
+        setError(error.message || 'Call failed');
+        handleEndCall();
+      });
+
     } catch (err: any) {
       setError(err.message || 'Failed to initiate call');
       setCallStatus(null);
       setIsCallInProgress(false);
+      setCurrentCall(null);
     }
   };
 

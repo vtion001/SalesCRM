@@ -7,10 +7,14 @@
  * - Voice TwiML: /api/twiml/voice
  * - Incoming SMS: /api/incoming-sms
  */
+import { Device, Call, DeviceOptions } from '@twilio/voice-sdk';
 
 // Use relative API paths for Vercel deployment
 // These routes are relative to the deployed Vercel domain
 const API_BASE = '';  // Empty string = same origin (Vercel domain)
+const BACKEND_URL = (import.meta.env.VITE_BACKEND_URL as string) || 
+                    (process.env.BACKEND_URL) || 
+                    'http://localhost:4000';
 
 console.log('Twilio Service initialized for Vercel API Routes deployment');
 
@@ -132,45 +136,56 @@ export const sendSMS = async (phoneNumber: string, message: string): Promise<SMS
 
 /**
  * Initialize Twilio Device with token
- * Follows Twilio Voice JS SDK v1 best practices from official documentation
+ * Follows Twilio Voice JS SDK v2 best practices from official documentation
  * Returns the Twilio Device instance
  */
 export const initializeTwilioDevice = async (
   token: string,
-  onIncomingCall?: (call: any) => void
-): Promise<any> => {
+  onIncomingCall?: (call: Call) => void
+): Promise<Device> => {
   try {
-    // Dynamically import Twilio client
-    const { Device } = await import('twilio-client');
-
     // Check if WebRTC is supported in the browser
-    console.log('🌐 Browser WebRTC support check:', Device.isSupported);
-    if (!Device.isSupported) {
-      throw new Error('WebRTC is not supported in this browser. Please use a modern browser like Chrome, Firefox, or Edge.');
+    // Note: In v2, we assume modern browser or check manually if needed, 
+    // but the SDK handles compat checks internally usually.
+    // However, explicitly checking navigator is good practice.
+    if (typeof navigator === 'undefined' || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+       console.warn('⚠️ WebRTC might not be supported in this environment');
     }
 
-    console.log('🔧 Setting up Twilio Device with token:', token?.substring(0, 30) + '...');
+    console.log('🔧 Setting up Twilio Device instance with token:', token?.substring(0, 30) + '...');
     if (!token || token.length === 0) {
       throw new Error('Token is required to setup Twilio Device');
     }
 
-    // IMPORTANT: Register event listeners BEFORE calling setup()
-    // This ensures we catch all events including any errors during setup
+    // Initialize Device instance (v2 style)
+    const options: DeviceOptions = {
+      codecPreferences: [Call.Codec.Opus, Call.Codec.PCMU],
+      fakeLocalDTMF: true,
+      enableRingingState: true,
+      allowIncomingWhileBusy: false,
+      // maxAverageBitrate is not a direct option in v2 DeviceOptions root, 
+      // often handled via connection constraints or it's legacy. 
+      // We will omit it for standard v2 setup unless specifically required.
+      logLevel: 'debug' as const
+    };
+
+    const device = new Device(token, options);
+
+    // Register event listeners
     
-    // Register ready event handler - triggered when device is ready
-    Device.on('ready', (device: any) => {
-      console.log('✅ Twilio Device ready for calls');
-      console.log('📱 Device status:', device.status?.());
+    // 'registered' event replaces 'ready' in some contexts, but 'registered' 
+    // means it can receive calls.
+    device.on('registered', () => {
+      console.log('✅ Twilio Device registered and ready for calls');
+      console.log('📱 Device state:', device.state);
     });
 
-    // Register offline event handler - triggered when connection drops
-    Device.on('offline', (device: any) => {
-      console.log('⚠️  Twilio Device offline - cannot make/receive calls');
-      console.log('📱 Device status:', device.status?.());
+    device.on('unregistered', () => {
+      console.log('⚠️  Twilio Device unregistered');
     });
 
     // Register error event handler
-    Device.on('error', (error: any) => {
+    device.on('error', (error: any) => {
       const errorCode = error?.code;
       const errorMessage = error?.message || 'Unknown error';
       
@@ -195,59 +210,24 @@ export const initializeTwilioDevice = async (
         friendlyMessage: friendlyMessage,
         name: error?.name,
         twilioError: error?.twilioError,
-        connection: error?.connection?.parameters,
         fullError: error
       });
     });
 
-    // Register connect event handler - triggered when connection established
-    Device.on('connect', (connection: any) => {
-      console.log('✅ Twilio Connection established');
-      console.log('📞 Connection parameters:', connection?.parameters);
-    });
-
-    // Register disconnect event handler - triggered when connection ends
-    Device.on('disconnect', (connection: any) => {
-      console.log('⚠️  Twilio Connection disconnected');
-    });
-
-    // Register cancel event handler - incoming call cancelled before accept
-    Device.on('cancel', (connection: any) => {
-      console.log('⚠️  Incoming call cancelled by caller');
-    });
-
-    // Register incoming event handler for receiving calls
+    // 'incoming' event (v2)
     if (onIncomingCall) {
-      Device.on('incoming', (connection: any) => {
-        console.log('📞 Incoming call received from:', connection?.parameters?.From);
-        onIncomingCall(connection);
+      device.on('incoming', (call: Call) => {
+        console.log('📞 Incoming call received from:', call.parameters.From);
+        onIncomingCall(call);
       });
     }
 
-    // NOW call setup() with token and configuration options
-    // Per SDK docs: Device.setup(token, params)
-    console.log('📡 Calling Device.setup() with token and configuration...');
-    Device.setup(token, {
-      debug: true, // Enable debug logging to console
-      codecPreferences: ['opus', 'pcmu'], // Prefer Opus codec for better quality
-      fakeLocalDTMF: true, // Prevent double-tone DTMF
-      enableRingingState: true, // Enable ringing state for better UX
-      allowIncomingWhileBusy: false, // Don't allow calls when busy
-      maxAverageBitrate: 32000 // Opus bitrate
-    });
-
-    console.log('✅ Device.setup() called with configuration');
-
-    // Verify Device status after setup
-    const status = Device.status?.();
-    console.log('📊 Device status after setup:', status);
-    
-    if (status === 'offline') {
-      console.log('ℹ️  Device offline after setup - waiting for ready event or error');
-    }
+    // Register the device to receive calls
+    console.log('📡 Registering Device...');
+    await device.register();
 
     console.log('✅ Twilio Device initialization complete');
-    return Device;
+    return device;
   } catch (error: any) {
     console.error('❌ Error initializing Twilio Device:', {
       message: error?.message || error?.toString?.(),
@@ -259,3 +239,4 @@ export const initializeTwilioDevice = async (
     throw error;
   }
 };
+
