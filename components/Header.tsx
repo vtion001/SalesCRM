@@ -3,6 +3,8 @@ import { Search, Bell, Settings, LogOut, User, Moon, Shield, X, Lock, Smartphone
 import { CurrentUser } from '../types';
 import { MFASetupModal } from './MFASetupModal';
 import { motion, AnimatePresence } from 'framer-motion';
+import { supabase } from '../services/supabaseClient';
+import { toast } from 'react-hot-toast';
 
 interface HeaderProps {
   user: CurrentUser;
@@ -20,6 +22,11 @@ export const Header: React.FC<HeaderProps> = ({ user, onLogout, onUpdateProfile 
   const [editName, setEditName] = useState(user.name);
   const [editRole, setEditRole] = useState(user.role);
   const [editAvatar, setEditAvatar] = useState(user.avatar);
+
+  // Password Change State
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
 
   const headerRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -42,7 +49,11 @@ export const Header: React.FC<HeaderProps> = ({ user, onLogout, onUpdateProfile 
       setEditRole(user.role);
       setEditAvatar(user.avatar);
     }
-  }, [showAccountModal, user]);
+    if (showSecurityModal) {
+      setCurrentPassword('');
+      setNewPassword('');
+    }
+  }, [showAccountModal, showSecurityModal, user]);
 
   const toggleDropdown = (name: 'notifications' | 'settings' | 'profile') => {
     setActiveDropdown(activeDropdown === name ? null : name);
@@ -75,6 +86,54 @@ export const Header: React.FC<HeaderProps> = ({ user, onLogout, onUpdateProfile 
         setEditAvatar(reader.result as string);
       };
       reader.readAsDataURL(file);
+    }
+  };
+
+  const handlePasswordChange = async () => {
+    // Validation
+    if (!currentPassword || !newPassword) {
+      toast.error('Please fill in both password fields');
+      return;
+    }
+
+    if (newPassword.length < 12) {
+      toast.error('New password must be at least 12 characters');
+      return;
+    }
+
+    if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/.test(newPassword)) {
+      toast.error('Password must contain uppercase, lowercase, number, and special character');
+      return;
+    }
+
+    setIsChangingPassword(true);
+
+    try {
+      // First verify current password by attempting to sign in
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error('Session expired. Please login again.');
+        return;
+      }
+
+      // Attempt to update password
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      toast.success('Password updated successfully! 🔐');
+      setCurrentPassword('');
+      setNewPassword('');
+      setShowSecurityModal(false);
+    } catch (error: any) {
+      console.error('Password change error:', error);
+      toast.error(error.message || 'Failed to update password');
+    } finally {
+      setIsChangingPassword(false);
     }
   };
 
@@ -272,8 +331,23 @@ export const Header: React.FC<HeaderProps> = ({ user, onLogout, onUpdateProfile 
                   <Lock size={14} /> Password Management
                 </h3>
                 <div className="space-y-3">
-                  <input type="password" placeholder="Current Password" className="w-full px-5 py-3.5 bg-slate-50 border-2 border-transparent focus:bg-white focus:border-indigo-500/20 rounded-2xl text-sm font-bold outline-none" />
-                  <input type="password" placeholder="New Password" className="w-full px-5 py-3.5 bg-slate-50 border-2 border-transparent focus:bg-white focus:border-indigo-500/20 rounded-2xl text-sm font-bold outline-none" />
+                  <input 
+                    type="password" 
+                    placeholder="Current Password" 
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    className="w-full px-5 py-3.5 bg-slate-50 border-2 border-transparent focus:bg-white focus:border-indigo-500/20 rounded-2xl text-sm font-bold outline-none transition-all" 
+                  />
+                  <input 
+                    type="password" 
+                    placeholder="New Password (min 12 chars)" 
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="w-full px-5 py-3.5 bg-slate-50 border-2 border-transparent focus:bg-white focus:border-indigo-500/20 rounded-2xl text-sm font-bold outline-none transition-all" 
+                  />
+                  <p className="text-[10px] text-slate-400 font-medium px-1">
+                    Must include uppercase, lowercase, number, and special character
+                  </p>
                 </div>
               </div>
 
@@ -299,8 +373,27 @@ export const Header: React.FC<HeaderProps> = ({ user, onLogout, onUpdateProfile 
               </div>
             </div>
             <div className="p-8 border-t border-slate-50 flex justify-end gap-4 bg-slate-50/50">
-              <button onClick={() => setShowSecurityModal(false)} className="px-6 py-3 text-slate-600 font-bold hover:bg-slate-100 rounded-2xl transition-colors text-sm">Cancel</button>
-              <button className="px-8 py-3 bg-indigo-600 text-white font-black rounded-2xl hover:bg-indigo-700 shadow-xl shadow-indigo-600/20 transition-all active:scale-95 text-sm">Update Security</button>
+              <button 
+                onClick={() => setShowSecurityModal(false)} 
+                className="px-6 py-3 text-slate-600 font-bold hover:bg-slate-100 rounded-2xl transition-colors text-sm"
+                disabled={isChangingPassword}
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handlePasswordChange}
+                disabled={isChangingPassword || !currentPassword || !newPassword}
+                className="px-8 py-3 bg-indigo-600 text-white font-black rounded-2xl hover:bg-indigo-700 shadow-xl shadow-indigo-600/20 transition-all active:scale-95 text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                {isChangingPassword ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                    Updating...
+                  </>
+                ) : (
+                  'Update Security'
+                )}
+              </button>
             </div>
           </ModalContainer>
         )}
