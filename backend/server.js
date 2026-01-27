@@ -279,15 +279,71 @@ app.post('/sms', async (req, res) => {
 });
 
 /**
+ * POST /twiml/voice
+ * TwiML response for voice calls (MUST be POST for Twilio Device.connect())
+ * This endpoint is called by Twilio when a call is initiated via the browser SDK
+ * 
+ * Twilio sends: To, From, CallSid, AccountSid, etc. in the POST body
+ */
+app.post('/twiml/voice', (req, res) => {
+  // Get the destination number from the request body (sent by Twilio Device.connect())
+  const toNumber = req.body?.To || req.body?.to;
+  const fromNumber = req.body?.From || twilioPhoneNumber;
+  
+  console.log('📞 TwiML Voice Request:');
+  console.log('   To:', toNumber);
+  console.log('   From:', fromNumber);
+  console.log('   Body:', JSON.stringify(req.body));
+
+  const response = new twilio.twiml.VoiceResponse();
+  
+  if (toNumber) {
+    // If we have a destination number, dial it
+    console.log(`   Dialing: ${toNumber}`);
+    const dial = response.dial({
+      callerId: twilioPhoneNumber || fromNumber,
+      timeout: 30,
+      answerOnBridge: true
+    });
+    dial.number(toNumber);
+  } else {
+    // No number provided - this shouldn't happen but handle gracefully
+    console.log('   No destination number provided');
+    response.say('No destination number was provided. Please try again.', {
+      voice: 'alice'
+    });
+  }
+
+  res.type('text/xml');
+  res.send(response.toString());
+});
+
+/**
  * GET /twiml/voice
- * TwiML response for voice calls
- * This endpoint is called by Twilio when a call is initiated
+ * TwiML response for voice calls (fallback for GET requests)
+ * Some Twilio configurations may use GET
  */
 app.get('/twiml/voice', (req, res) => {
+  const toNumber = req.query?.To || req.query?.to;
+  
+  console.log('📞 TwiML Voice GET Request:');
+  console.log('   To:', toNumber);
+
   const response = new twilio.twiml.VoiceResponse();
-  response.say('Thank you for calling Sales CRM. Your call has been connected.', {
-    voice: 'alice'
-  });
+  
+  if (toNumber) {
+    const dial = response.dial({
+      callerId: twilioPhoneNumber,
+      timeout: 30,
+      answerOnBridge: true
+    });
+    dial.number(toNumber);
+  } else {
+    response.say('Thank you for calling Sales CRM. Your call has been connected.', {
+      voice: 'alice'
+    });
+  }
+
   res.type('text/xml');
   res.send(response.toString());
 });
