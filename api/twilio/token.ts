@@ -9,12 +9,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   try {
-    const accountSid = process.env.TWILIO_ACCOUNT_SID;
-    const authToken = process.env.TWILIO_AUTH_TOKEN;
-    const twimlAppSid = process.env.TWILIO_TWIML_APP_SID;
+    // 1. TRIM values to remove hidden whitespace (common cause of 20101)
+    const accountSid = process.env.TWILIO_ACCOUNT_SID?.trim();
+    const authToken = process.env.TWILIO_AUTH_TOKEN?.trim();
+    const twimlAppSid = process.env.TWILIO_TWIML_APP_SID?.trim();
 
     console.log('=== TOKEN GENERATION DEBUG ===');
-    console.log('Using Auth Token method (no API Key)');
+    console.log('Using Auth Token method (Account SID as Key SID)');
     console.log('Account SID:', accountSid ? `${accountSid.substring(0, 6)}...` : 'MISSING');
     console.log('Auth Token:', authToken ? `Length: ${authToken.length}` : 'MISSING');
     console.log('TwiML App SID:', twimlAppSid ? `${twimlAppSid.substring(0, 6)}...` : 'MISSING');
@@ -24,38 +25,31 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(500).json({ error: 'Missing Twilio configuration' });
     }
 
-    // Identity handling: Ensure string and fallback
+    // Identity handling
     let identity = req.query?.identity || req.body?.identity;
-    
-    // Explicitly check for valid identity
     if (!identity || identity === 'undefined' || identity === 'null') {
       identity = 'user_' + Math.random().toString(36).substring(7);
-      console.warn('⚠️ No identity provided, using random fallback:', identity);
     }
-    
     identity = String(identity).replace(/[^a-zA-Z0-9_]/g, '_');
-    console.log('Final Identity:', identity);
+    console.log('Identity:', identity);
 
-    // Explicitly check for imported module
-    if (!twilio || !twilio.jwt || !twilio.jwt.AccessToken) {
-      console.error('❌ Twilio library not loaded correctly', twilio);
-      throw new Error('Twilio library import failed');
-    }
-
+    // Import AccessToken from twilio
     const AccessToken = twilio.jwt.AccessToken;
     const VoiceGrant = AccessToken.VoiceGrant;
 
-    // Create token using Account SID as the signing key (valid strategy)
+    // 2. Create the token using AUTH TOKEN
+    // Note: We pass 'accountSid' as the 2nd argument (KeySid) as well.
     const token = new AccessToken(
-      accountSid,
-      accountSid,  // Signing Key SID (using Account SID)
-      authToken,   // Signing Key Secret (using Auth Token)
-      { identity, ttl: 3600 }
+      accountSid,                   // 1. Account SID
+      accountSid,                   // 2. Key SID (Account SID is used here)
+      authToken,                    // 3. Key Secret (Auth Token is used here)
+      { identity, ttl: 3600 }       // Options
     );
 
+    // 3. CRITICAL: Add the Voice Grant
     const voiceGrant = new VoiceGrant({
       outgoingApplicationSid: twimlAppSid,
-      incomingAllow: true,
+      incomingAllow: true, // Allow incoming calls
     });
 
     token.addGrant(voiceGrant);
