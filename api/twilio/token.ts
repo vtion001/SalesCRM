@@ -54,7 +54,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.log(`🔧 Creating token for identity: ${identity}`);
     console.log(`📋 Using Account SID: ${accountSid.substring(0, 10)}...`);
     console.log(`🔑 Using API Key: ${apiKey.substring(0, 10)}...`);
-    console.log(`📱 Using TwiML App SID: ${twimlAppSid.substring(0, 10)}...`);
+    console.log(`� Auth Token present: ${!!authToken}, length: ${authToken?.length}`);
+    console.log(`�📱 Using TwiML App SID: ${twimlAppSid.substring(0, 10)}...`);
 
     // Create the access token
     // IMPORTANT: Use TWILIO_AUTH_TOKEN, NOT TWILIO_API_SECRET
