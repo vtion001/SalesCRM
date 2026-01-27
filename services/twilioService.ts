@@ -229,11 +229,11 @@ export const initializeTwilioDevice = async (
     console.log('✅ Twilio Device initialization complete');
     return device;
   } catch (error: any) {
+    const errorMessage = error?.message || (typeof error === 'string' ? error : 'Unknown error during device initialization');
     console.error('❌ Error initializing Twilio Device:', {
-      message: error?.message || error?.toString?.(),
+      message: errorMessage,
       name: error?.name,
       code: error?.code,
-      stack: error?.stack,
       fullError: error
     });
     throw error;
