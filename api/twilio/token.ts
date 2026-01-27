@@ -1,20 +1,21 @@
+import { VercelRequest, VercelResponse } from '@vercel/node';
 const crypto = require('crypto');
 
-function base64url(str) {
-  return Buffer.from(str).toString('base64').replace(/[=+/]/g, c => ({
+function base64url(str: string): string {
+  return Buffer.from(str).toString('base64').replace(/[=+/]/g, (c) => ({
     '=': '', '+': '-', '/': '_'
-  }[c]));
+  }[c] || ''));
 }
 
-function signJWT(header, payload, secret) {
+function signJWT(header: any, payload: any, secret: string): string {
   const msg = base64url(JSON.stringify(header)) + '.' + base64url(JSON.stringify(payload));
-  const sig = crypto.createHmac('sha256', secret).update(msg).digest('base64').replace(/[=+/]/g, c => ({
+  const sig = crypto.createHmac('sha256', secret).update(msg).digest('base64').replace(/[=+/]/g, (c) => ({
     '=': '', '+': '-', '/': '_'
-  }[c]));
+  }[c] || ''));
   return msg + '.' + sig;
 }
 
-module.exports = async (req, res) => {
+export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Content-Type', 'application/json');
@@ -32,7 +33,7 @@ module.exports = async (req, res) => {
       return res.status(500).json({ error: 'Missing Twilio configuration' });
     }
 
-    const identity = (req.query?.identity || 'user').replace(/[^a-zA-Z0-9_]/g, '_');
+    const identity = String(req.query?.identity || 'user').replace(/[^a-zA-Z0-9_]/g, '_');
     const now = Math.floor(Date.now() / 1000);
     const ttl = 3600;
 
@@ -46,8 +47,8 @@ module.exports = async (req, res) => {
     const token = signJWT(header, payload, apiSecret);
     return res.status(200).json({ token, identity, expiresIn: ttl });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Token error:', error);
-    return res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message || 'Token generation failed' });
   }
-};
+}
