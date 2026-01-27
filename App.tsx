@@ -254,7 +254,9 @@ export default function App() {
             />
           )}
 
-          {currentView === 'analytics' && <Analytics leads={leads} deals={deals} />}
+          {currentView === 'analytics' && (
+            <Analytics items={allPipelineItems} />
+          )}
         </div>
         
         {isContactModalOpen && <ContactForm onSave={handleSaveContactAction} onCancel={() => setIsContactModalOpen(false)} />}
