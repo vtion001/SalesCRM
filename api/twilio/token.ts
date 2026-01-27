@@ -1,5 +1,5 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
-const crypto = require('crypto');
+import crypto from 'crypto';
 
 function base64url(str: string): string {
   return Buffer.from(str).toString('base64').replace(/[=+/]/g, (c) => ({
