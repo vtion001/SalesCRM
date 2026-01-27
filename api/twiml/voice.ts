@@ -4,8 +4,11 @@ import { VercelRequest, VercelResponse } from '@vercel/node';
  * Handle incoming and outgoing calls with TwiML
  * POST /api/twiml/voice
  * 
- * This handler is simplified to resolve Twilio Error 31005 by ensuring
- * the correct Content-Type: text/xml is returned.
+ * This is called by Twilio when:
+ * 1. A browser client initiates an outgoing call via Device.connect()
+ * 2. An incoming call needs to be routed
+ * 
+ * Twilio sends: To, From, CallSid, AccountSid, Direction, etc.
  */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Set CORS headers
@@ -18,21 +21,48 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).end();
   }
 
+  // Get Twilio phone number from environment for caller ID
+  const twilioPhoneNumber = process.env.TWILIO_PHONE_NUMBER?.trim();
+
   // 1. Get the phone number the user dialed (sent by Twilio as 'To')
-  // For robustness, check both body (POST) and query (GET)
-  const toNumber = req.body?.To || req.body?.to || req.query?.to;
+  // Twilio sends parameters in the body for POST requests
+  const toNumber = req.body?.To || req.body?.to || req.query?.To || req.query?.to;
+  const fromNumber = req.body?.From || req.body?.from || twilioPhoneNumber;
+  const callSid = req.body?.CallSid || req.body?.callSid;
+  const direction = req.body?.Direction || 'outbound-api';
 
-  console.log("TwiML received request to dial:", toNumber);
+  // Log the request for debugging
+  console.log('📞 TwiML Voice Request:');
+  console.log('   Method:', req.method);
+  console.log('   To:', toNumber);
+  console.log('   From:', fromNumber);
+  console.log('   CallSid:', callSid);
+  console.log('   Direction:', direction);
+  console.log('   Twilio Phone:', twilioPhoneNumber);
+  console.log('   Body:', JSON.stringify(req.body));
 
-  // 2. Create the TwiML (The XML instructions for Twilio)
-  // We tell Twilio to <Dial> the number.
-  const twiml = `<?xml version="1.0" encoding="UTF-8"?>
+  // 2. Create the TwiML response
+  let twiml: string;
+
+  if (toNumber) {
+    // Outgoing call - dial the destination number
+    console.log(`   ✅ Dialing: ${toNumber}`);
+    twiml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  ${toNumber ? `<Dial>${toNumber}</Dial>` : '<Say>No destination number provided.</Say>'}
+  <Dial callerId="${twilioPhoneNumber || fromNumber}" timeout="30" answerOnBridge="true">
+    <Number>${toNumber}</Number>
+  </Dial>
 </Response>`;
+  } else {
+    // No destination number provided
+    console.log('   ⚠️ No destination number provided');
+    twiml = `<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Say voice="alice">No destination number was provided. Please try again.</Say>
+</Response>`;
+  }
 
-  // 3. CRITICAL: You MUST return Content-Type: text/xml
-  // If you don't set this, you may get Error 31005.
+  // 3. CRITICAL: Return Content-Type: text/xml to prevent Error 31005
   res.setHeader('Content-Type', 'text/xml');
   return res.status(200).send(twiml);
 }

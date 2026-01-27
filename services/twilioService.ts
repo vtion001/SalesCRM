@@ -2,23 +2,22 @@
  * Twilio Service - Handles all Twilio API communication
  * This service bridges the frontend Dialer component with Vercel API Routes
  * 
- * Migration to Vercel Serverless Functions:
+ * All endpoints now use Vercel Serverless Functions:
  * - Token endpoint: /api/twilio/token
  * - Voice TwiML: /api/twiml/voice
+ * - SMS: /api/sms
  * - Incoming SMS: /api/incoming-sms
  */
 import { Device, Call } from '@twilio/voice-sdk';
 
 // Use relative API paths for Vercel deployment
-// These routes are relative to the deployed Vercel domain
-const API_BASE = '';  // Empty string = same origin (Vercel domain)
-const BACKEND_URL = (import.meta.env.VITE_BACKEND_URL as string) || 
-                    (process.env.BACKEND_URL) || 
-                    'http://localhost:4000';
+// Empty string means same origin - works for both local dev and production
+const API_BASE = '';
 
 // Environment detection for better debugging
 const isDevelopment = import.meta.env.DEV || process.env.NODE_ENV === 'development';
 console.log('🌍 Environment:', isDevelopment ? 'Development' : 'Production');
+console.log('📡 Using API Base:', API_BASE || '(same origin)');
 
 console.log('Twilio Service initialized for Vercel API Routes deployment');
 
@@ -106,11 +105,14 @@ export const getAccessToken = async (identity: string, retryCount = 0): Promise<
 };
 
 /**
- * Initiate an outgoing call
+ * Initiate an outgoing call via REST API (alternative to Device.connect)
+ * Note: For browser-based calling, use Device.connect() instead.
+ * This function is kept for server-side call initiation if needed.
  */
 export const initiateCall = async (phoneNumber: string, userId: string): Promise<CallResponse> => {
   try {
-    const response = await fetch(`${BACKEND_URL}/call`, {
+    // Use Vercel API route
+    const response = await fetch(`${API_BASE}/api/call`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ to: phoneNumber, from: userId })
@@ -129,11 +131,12 @@ export const initiateCall = async (phoneNumber: string, userId: string): Promise
 };
 
 /**
- * Send SMS message via Twilio
+ * Send SMS message via Vercel API Route
  */
 export const sendSMS = async (phoneNumber: string, message: string): Promise<SMSResponse> => {
   try {
-    const response = await fetch(`${BACKEND_URL}/sms`, {
+    // Use Vercel API route
+    const response = await fetch(`${API_BASE}/api/sms`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ to: phoneNumber, body: message })
