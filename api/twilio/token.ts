@@ -1,4 +1,5 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
+import twilio from 'twilio';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -23,8 +24,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const identity = String(req.query?.identity || 'user').replace(/[^a-zA-Z0-9_]/g, '_');
 
-    // Import twilio and use Auth Token to create Access Token
-    const twilio = await import('twilio');
+    // Use regular import
     const AccessToken = twilio.jwt.AccessToken;
     const VoiceGrant = AccessToken.VoiceGrant;
 
@@ -53,7 +53,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
 
   } catch (error: any) {
-    console.error('❌ Error:', error.message);
+    console.error('❌ Error:', error.message, error.stack);
     return res.status(500).json({ error: error.message });
   }
 }

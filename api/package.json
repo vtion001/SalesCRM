@@ -1,0 +1,7 @@
+{
+  "type": "module",
+  "dependencies": {
+    "twilio": "^5.3.5",
+    "@vercel/node": "^3.0.0"
+  }
+}
