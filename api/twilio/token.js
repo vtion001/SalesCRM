@@ -1,12 +1,13 @@
-import { VercelRequest, VercelResponse } from '@vercel/node';
-
 /**
  * Generate Twilio Access Token for Voice
  * GET /api/twilio/token?identity=user123
  * 
  * Returns: { token: "eyJhbGc..." }
  */
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+
+const twilio = require('twilio');
+
+module.exports = async (req, res) => {
   // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -23,11 +24,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    // Dynamically import twilio using CommonJS require syntax
-    // This works in Node.js 12.20+ and Vercel's Node runtime
-    const { createRequire } = await import('module');
-    const require = createRequire(import.meta.url);
-    const twilio = require('twilio');
     // Get environment variables at request time (not at module load time)
     const TWILIO_ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID;
     const TWILIO_API_KEY = process.env.TWILIO_API_KEY;
@@ -35,9 +31,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const TWILIO_TWIML_APP_SID = process.env.TWILIO_TWIML_APP_SID;
 
     // Get identity from query params or body
-    const identity = (req.query.identity as string) || 
-                     (req.body?.identity as string) || 
-                     'sales-user';
+    const identity = (req.query?.identity) || (req.body?.identity) || 'sales-user';
 
     // Validate environment variables with detailed error message
     const missingVars = [];
@@ -103,15 +97,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       expiresIn: 3600
     });
 
-  } catch (error: any) {
+  } catch (error) {
     console.error('❌ Error generating Twilio token:', {
       message: error?.message,
       stack: error?.stack
     });
 
     return res.status(500).json({ 
-      error: error?.message || 'Failed to generate access token',
-      debug: process.env.NODE_ENV === 'development' ? error?.stack : undefined
+      error: error?.message || 'Failed to generate access token'
     });
   }
-}
+};
