@@ -110,16 +110,19 @@ export default function App() {
 
   const handleUpdateItem = async (id: string, updates: Partial<Lead>) => {
     const isContact = contacts.some(c => c.id === id);
-    const updatePromise = isContact 
-      ? updateContact(id, { ...updates, status: updates.status === 'Closed' ? 'Inactive' : 'Active' } as any)
-      : updateLead(id, updates);
+    const updatePromise = async () => {
+      if (isContact) {
+        await updateContact(id, { ...updates, status: updates.status === 'Closed' ? 'Inactive' : 'Active' } as any);
+      } else {
+        await updateLead(id, updates);
+      }
+    };
     
-    toast.promise(updatePromise, {
+    await toast.promise(updatePromise(), {
       loading: 'Updating record...',
       success: 'Record updated successfully',
       error: 'Failed to update record',
     });
-    await updatePromise;
   };
 
   const handleDeleteItem = async (id: string) => {
@@ -180,21 +183,28 @@ export default function App() {
     const userId = sessionData?.session?.user?.id;
     if (!userId) return;
 
-    const updatePromise = supabase.from('profiles').update({
-      full_name: updates.name,
-      role: updates.role,
-      avatar_url: updates.avatar,
-      updated_at: new Date().toISOString()
-    }).eq('id', userId);
+    const updatePromise = async () => {
+      const { error } = await supabase.from('profiles').update({
+        full_name: updates.name,
+        role: updates.role,
+        avatar_url: updates.avatar,
+        updated_at: new Date().toISOString()
+      }).eq('id', userId);
+      
+      if (error) throw error;
+      return true;
+    };
 
-    toast.promise(updatePromise, {
-      loading: 'Saving profile...',
-      success: 'Profile updated',
-      error: 'Failed to save profile',
-    });
-
-    const { error } = await updatePromise;
-    if (!error) setCurrentUser(prev => ({ ...prev, ...updates }));
+    try {
+      await toast.promise(updatePromise(), {
+        loading: 'Saving profile...',
+        success: 'Profile updated',
+        error: 'Failed to save profile',
+      });
+      setCurrentUser(prev => ({ ...prev, ...updates }));
+    } catch (error) {
+      console.error('Profile update error:', error);
+    }
   };
 
   const handleAddLeadAction = async (leadData: Omit<Lead, 'id'>) => {
