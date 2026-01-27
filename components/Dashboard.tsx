@@ -9,80 +9,92 @@ interface DashboardProps {
 
 export const Dashboard: React.FC<DashboardProps> = ({ leads, deals }) => {
   const safeDeals = deals || [];
-  const safeLeads = leads || [];
-  
   const totalRevenue = safeDeals.reduce((acc, deal) => acc + deal.value, 0);
   const wonDeals = safeDeals.filter(d => d.stage === 'Closed').length;
   const pipelineValue = safeDeals.filter(d => d.stage !== 'Closed').reduce((acc, deal) => acc + deal.value, 0);
 
   return (
-    <div className="h-full overflow-y-auto bg-gray-50/50 p-8">
+    <div className="h-full overflow-y-auto bg-slate-50/50 p-10">
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">Dashboard Overview</h1>
+        <header className="mb-10">
+          <h1 className="text-3xl font-black text-slate-900 tracking-tight">Executive Dashboard</h1>
+          <p className="text-slate-500 font-medium mt-1">Operational summary and performance metrics.</p>
+        </header>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
           <StatCard 
             title="Total Revenue" 
             value={`$${totalRevenue.toLocaleString()}`} 
             trend="+12.5%" 
             isPositive={true}
-            icon={<DollarSign size={20} className="text-white" />}
-            color="bg-blue-600"
+            icon={<DollarSign size={20} />}
+            color="bg-indigo-600"
+            shadow="shadow-indigo-200"
           />
           <StatCard 
             title="Active Leads" 
             value={leads.length.toString()} 
             trend="+5.2%" 
             isPositive={true}
-            icon={<Users size={20} className="text-white" />}
-            color="bg-purple-600"
+            icon={<Users size={20} />}
+            color="bg-fuchsia-600"
+            shadow="shadow-fuchsia-200"
           />
           <StatCard 
             title="Pipeline Value" 
             value={`$${pipelineValue.toLocaleString()}`} 
             trend="-2.4%" 
             isPositive={false}
-            icon={<TrendingUp size={20} className="text-white" />}
+            icon={<TrendingUp size={20} />}
             color="bg-emerald-500"
+            shadow="shadow-emerald-200"
           />
           <StatCard 
             title="Win Rate" 
             value={deals.length > 0 ? `${Math.round((wonDeals / deals.length) * 100)}%` : '0%'} 
             trend="+1.2%" 
             isPositive={true}
-            icon={<Briefcase size={20} className="text-white" />}
+            icon={<Briefcase size={20} />}
             color="bg-orange-500"
+            shadow="shadow-orange-200"
           />
         </div>
 
-        {/* Recent Activity & Quick Actions */}
+        {/* Tables & Tasks */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Recent Deals */}
-          <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">Recent Opportunities</h2>
+          <div className="lg:col-span-2 bg-white rounded-[32px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 p-8">
+            <div className="flex items-center justify-between mb-8">
+              <h2 className="text-xl font-black text-slate-900 tracking-tight">Recent Opportunities</h2>
+              <button className="text-xs font-black text-indigo-600 hover:text-indigo-700 uppercase tracking-widest">View All</button>
+            </div>
             <div className="overflow-hidden">
               {deals.length === 0 ? (
-                <div className="text-center py-12 text-gray-400 text-sm">No recent deals found.</div>
+                <div className="text-center py-16 text-slate-400">
+                  <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Briefcase size={24} className="text-slate-300" />
+                  </div>
+                  <p className="text-sm font-bold">No active opportunities</p>
+                </div>
               ) : (
-                <table className="w-full text-left">
+                <table className="w-full text-left border-separate border-spacing-y-2">
                   <thead>
-                    <tr className="border-b border-gray-100 text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                      <th className="pb-3 pl-2">Deal Name</th>
-                      <th className="pb-3">Company</th>
-                      <th className="pb-3">Value</th>
-                      <th className="pb-3">Stage</th>
+                    <tr className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                      <th className="pb-4 pl-4">Opportunity</th>
+                      <th className="pb-4">Company</th>
+                      <th className="pb-4">Potential</th>
+                      <th className="pb-4">Status</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-50">
+                  <tbody>
                     {deals.slice(0, 5).map(deal => (
-                      <tr key={deal.id} className="group hover:bg-gray-50 transition-colors">
-                        <td className="py-3 pl-2 text-sm font-medium text-gray-900">{deal.title}</td>
-                        <td className="py-3 text-sm text-gray-500">{deal.company}</td>
-                        <td className="py-3 text-sm font-semibold text-gray-900">${deal.value.toLocaleString()}</td>
-                        <td className="py-3">
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                            deal.stage === 'Closed' ? 'bg-green-100 text-green-700' : 'bg-blue-50 text-blue-700'
+                      <tr key={deal.id} className="group hover:bg-slate-50 transition-colors">
+                        <td className="py-4 pl-4 rounded-l-2xl text-sm font-bold text-slate-900">{deal.title}</td>
+                        <td className="py-4 text-sm font-semibold text-slate-500">{deal.company}</td>
+                        <td className="py-4 text-sm font-black text-indigo-600">${deal.value.toLocaleString()}</td>
+                        <td className="py-4 rounded-r-2xl">
+                          <span className={`inline-flex items-center px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider ${
+                            deal.stage === 'Closed' ? 'bg-emerald-50 text-emerald-700' : 'bg-indigo-50 text-indigo-700'
                           }`}>
                             {deal.stage}
                           </span>
@@ -95,23 +107,20 @@ export const Dashboard: React.FC<DashboardProps> = ({ leads, deals }) => {
             </div>
           </div>
 
-          {/* Quick Tasks */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">Tasks Today</h2>
-            <div className="space-y-3">
+          <div className="bg-white rounded-[32px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 p-8">
+            <h2 className="text-xl font-black text-slate-900 tracking-tight mb-8">Schedule</h2>
+            <div className="space-y-4">
               {[
-                { label: 'Call with Acme Corp', time: '10:00 AM', done: true },
-                { label: 'Follow up on proposal', time: '11:30 AM', done: false },
-                { label: 'Team Meeting', time: '2:00 PM', done: false },
-                { label: 'Update CRM records', time: '4:30 PM', done: false },
+                { label: 'Client Discovery Call', time: '10:00 AM', done: true, color: 'bg-indigo-500' },
+                { label: 'Proposal Review', time: '11:30 AM', done: false, color: 'bg-fuchsia-500' },
+                { label: 'Stakeholder Sync', time: '2:00 PM', done: false, color: 'bg-emerald-500' },
+                { label: 'CRM Record Update', time: '4:30 PM', done: false, color: 'bg-orange-500' },
               ].map((task, i) => (
-                <div key={i} className="flex items-center gap-3 p-3 rounded-lg border border-gray-100 hover:border-blue-100 hover:bg-blue-50/30 transition-all">
-                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center cursor-pointer ${task.done ? 'bg-blue-500 border-blue-500' : 'border-gray-300'}`}>
-                    {task.done && <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg>}
-                  </div>
+                <div key={i} className="flex items-center gap-4 p-4 rounded-2xl border border-slate-50 hover:border-indigo-100 hover:bg-indigo-50/20 transition-all cursor-pointer group">
+                  <div className={`w-1.5 h-8 rounded-full ${task.color} opacity-40 group-hover:opacity-100 transition-opacity`}></div>
                   <div className="flex-1">
-                    <p className={`text-sm font-medium ${task.done ? 'text-gray-400 line-through' : 'text-gray-900'}`}>{task.label}</p>
-                    <p className="text-xs text-gray-400">{task.time}</p>
+                    <p className={`text-sm font-bold ${task.done ? 'text-slate-400 line-through' : 'text-slate-900'}`}>{task.label}</p>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-0.5">{task.time}</p>
                   </div>
                 </div>
               ))}
@@ -123,19 +132,23 @@ export const Dashboard: React.FC<DashboardProps> = ({ leads, deals }) => {
   );
 };
 
-const StatCard = ({ title, value, trend, isPositive, icon, color }: any) => (
-  <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200 flex items-start justify-between">
-    <div>
-      <p className="text-sm font-medium text-gray-500 mb-1">{title}</p>
-      <h3 className="text-2xl font-bold text-gray-900 mb-2">{value}</h3>
-      <div className={`flex items-center text-xs font-semibold ${isPositive ? 'text-green-600' : 'text-red-500'}`}>
-        {isPositive ? <ArrowUpRight size={14} className="mr-1" /> : <ArrowDownRight size={14} className="mr-1" />}
-        {trend}
-        <span className="text-gray-400 font-normal ml-1">vs last month</span>
+const StatCard = ({ title, value, trend, isPositive, icon, color, shadow }: any) => (
+  <div className="bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 relative overflow-hidden group hover:shadow-[0_20px_50px_rgba(0,0,0,0.08)] transition-all duration-300">
+    <div className="relative z-10">
+      <div className="flex items-center justify-between mb-6">
+        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-white ${color} shadow-xl ${shadow} group-hover:scale-110 transition-transform`}>
+          {icon}
+        </div>
+        <div className={`flex items-center text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-lg ${isPositive ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
+          {isPositive ? <ArrowUpRight size={12} className="mr-1" /> : <ArrowDownRight size={12} className="mr-1" />}
+          {trend}
+        </div>
       </div>
+      <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">{title}</p>
+      <h3 className="text-3xl font-black text-slate-900 tracking-tighter">{value}</h3>
     </div>
-    <div className={`w-10 h-10 rounded-lg flex items-center justify-center shadow-lg shadow-gray-100 ${color}`}>
-      {icon}
+    <div className="absolute -right-4 -bottom-4 opacity-[0.03] group-hover:opacity-[0.06] group-hover:scale-110 transition-all text-slate-900">
+      {React.cloneElement(icon as React.ReactElement, { size: 120 })}
     </div>
   </div>
 );

@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { Toaster, toast } from 'react-hot-toast';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
 import { LeadList } from './components/LeadList';
@@ -46,7 +48,6 @@ export default function App() {
     avatar: 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80'
   });
 
-  // Combine and normalize Leads and Contacts for the Pipeline view
   const allPipelineItems = useMemo(() => {
     const normalizedContacts: Lead[] = contacts.map(c => ({
       id: c.id,
@@ -63,11 +64,8 @@ export default function App() {
       probability: 0,
       lastContactDate: c.lastContacted || 'Never'
     }));
-
-    // Avoid duplicates if a contact was promoted to a lead (by ID)
     const leadIds = new Set(leads.map(l => l.id));
     const filteredContacts = normalizedContacts.filter(c => !leadIds.has(c.id));
-
     return [...leads, ...filteredContacts];
   }, [leads, contacts]);
 
@@ -81,214 +79,249 @@ export default function App() {
     [contacts, selectedLeadId]
   );
 
-  // Generic Update Handler for LeadDetail & Deals
   const handleUpdateItem = async (id: string, updates: Partial<Lead>) => {
-    if (isSelectedContact) {
-      await updateContact(id, {
-        name: updates.name,
-        role: updates.role,
-        company: updates.company,
-        email: updates.email,
-        phone: updates.phone,
-        status: updates.status === 'Closed' ? 'Inactive' : 'Active'
-      } as Partial<Contact>);
-    } else {
-      await updateLead(id, updates);
-    }
+    const isContact = contacts.some(c => c.id === id);
+    const updatePromise = isContact 
+      ? updateContact(id, { ...updates, status: updates.status === 'Closed' ? 'Inactive' : 'Active' } as any)
+      : updateLead(id, updates);
+    
+    toast.promise(updatePromise, {
+      loading: 'Updating record...',
+      success: 'Record updated successfully',
+      error: 'Failed to update record',
+    });
+    await updatePromise;
   };
 
-  // Generic Delete Handler
   const handleDeleteItem = async (id: string) => {
-    if (isSelectedContact) {
-      await deleteContact(id);
-    } else {
-      await deleteLead(id);
-    }
+    const isContact = contacts.some(c => c.id === id);
+    const deletePromise = isContact ? deleteContact(id) : deleteLead(id);
+    
+    toast.promise(deletePromise, {
+      loading: 'Deleting...',
+      success: 'Deleted successfully',
+      error: 'Delete failed',
+    });
+    
+    await deletePromise;
     if (selectedLeadId === id) setSelectedLeadId(null);
   };
 
-  // Fetch or Create Profile
   const fetchProfile = async (userId: string, email: string) => {
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-
+      const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).single();
       if (error && error.code === 'PGRST116') {
-        const newProfile = {
-          id: userId,
-          full_name: 'Alex Rivers',
-          email: email,
-          role: 'Sales Lead',
-          avatar_url: 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80'
-        };
+        const newProfile = { id: userId, full_name: 'Alex Rivers', email: email, role: 'Sales Lead', avatar_url: 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80' };
         await supabase.from('profiles').insert([newProfile]);
         setCurrentUser({ name: newProfile.full_name, email: newProfile.email, role: newProfile.role, avatar: newProfile.avatar_url });
       } else if (data) {
         setCurrentUser({ name: data.full_name, email: data.email, role: data.role, avatar: data.avatar_url });
       }
-    } catch (err) {
-      console.error('Error fetching profile:', err);
-    }
+    } catch (err) { console.error(err); }
   };
 
-  // Auth Effects
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const { data, error } = await supabase.auth.getSession();
-        if (error) throw error;
+        const { data } = await supabase.auth.getSession();
         if (data?.session?.user) {
           setIsAuthenticated(true);
           await fetchProfile(data.session.user.id, data.session.user.email || '');
-        } else {
-          setIsAuthenticated(false);
-        }
-      } catch (err) {
-        console.error('Auth check failed:', err);
-        setIsAuthenticated(false);
-      } finally {
-        setAuthLoading(false);
-      }
+        } else { setIsAuthenticated(false); }
+      } catch (err) { setIsAuthenticated(false); } finally { setAuthLoading(false); }
     };
     checkAuth();
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (session?.user) {
         setIsAuthenticated(true);
         fetchProfile(session.user.id, session.user.email || '');
-      } else {
-        setIsAuthenticated(false);
-      }
+      } else { setIsAuthenticated(false); }
     });
     return () => subscription?.unsubscribe();
   }, []);
 
   const handleLogout = async () => {
-    try {
-      await supabase.auth.signOut();
-      setIsAuthenticated(false);
-      setCurrentView('dashboard');
-    } catch (err) {
-      console.error('Logout failed:', err);
-    }
+    await supabase.auth.signOut();
+    setIsAuthenticated(false);
+    toast.success('Signed out successfully');
   };
 
   const handleUpdateProfile = async (updates: Partial<CurrentUser>) => {
-    try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const userId = sessionData?.session?.user?.id;
-      if (!userId) return;
-      const { error } = await supabase.from('profiles').update({
-        full_name: updates.name,
-        role: updates.role,
-        avatar_url: updates.avatar,
-        updated_at: new Date().toISOString()
-      }).eq('id', userId);
-      if (error) throw error;
-      setCurrentUser(prev => ({ ...prev, ...updates }));
-    } catch (err) {
-      console.error('❌ Failed to update profile:', err);
-    }
+    const { data: sessionData } = await supabase.auth.getSession();
+    const userId = sessionData?.session?.user?.id;
+    if (!userId) return;
+
+    const updatePromise = supabase.from('profiles').update({
+      full_name: updates.name,
+      role: updates.role,
+      avatar_url: updates.avatar,
+      updated_at: new Date().toISOString()
+    }).eq('id', userId);
+
+    toast.promise(updatePromise, {
+      loading: 'Saving profile...',
+      success: 'Profile updated',
+      error: 'Failed to save profile',
+    });
+
+    const { error } = await updatePromise;
+    if (!error) setCurrentUser(prev => ({ ...prev, ...updates }));
   };
 
   const handleAddLeadAction = async (leadData: Omit<Lead, 'id'>) => {
-    // 1. Create Lead in leads table
-    const addedLead = await addLead(leadData);
-    
-    if (addedLead) {
-      // 2. Automatically create Contact in contacts table
-      await addContact({
-        name: leadData.name,
-        role: leadData.role,
-        company: leadData.company,
-        email: leadData.email,
-        phone: leadData.phone,
-        lastContacted: 'Never',
-        status: 'Active'
-      });
+    const leadPromise = (async () => {
+      const addedLead = await addLead(leadData);
+      if (addedLead) {
+        await addContact({
+          name: leadData.name, role: leadData.role, company: leadData.company,
+          email: leadData.email, phone: leadData.phone, lastContacted: 'Never', status: 'Active'
+        });
+        setSelectedLeadId(addedLead.id);
+        setIsLeadModalOpen(false);
+        return addedLead;
+      }
+      throw new Error('Failed to add lead');
+    })();
 
-      setSelectedLeadId(addedLead.id);
-      setIsLeadModalOpen(false);
-      console.log('✅ Lead created and mirrored to Contacts');
-    }
+    toast.promise(leadPromise, {
+      loading: 'Creating lead opportunity...',
+      success: 'Lead and Contact created',
+      error: 'Failed to create lead',
+    });
   };
 
   const handleSaveContactAction = async (contactData: Omit<Contact, 'id' | 'lastContacted' | 'status'>) => {
-    const newContactData: Omit<Contact, 'id'> = {
-      ...contactData,
-      lastContacted: 'Never',
-      status: 'Active'
-    };
-    const added = await addContact(newContactData);
+    const contactPromise = addContact({ ...contactData, lastContacted: 'Never', status: 'Active' });
+    toast.promise(contactPromise, {
+      loading: 'Saving contact...',
+      success: 'Contact added to network',
+      error: 'Failed to save contact',
+    });
+    const added = await contactPromise;
     if (added && currentView === 'leads') setSelectedLeadId(added.id);
     setIsContactModalOpen(false);
   };
 
   if (authLoading) return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <div className="text-center">
-        <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
-        <p className="text-gray-600">Loading...</p>
-      </div>
+    <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+      <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center">
+        <div className="w-16 h-16 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin mx-auto mb-6 shadow-lg shadow-indigo-500/20"></div>
+        <p className="text-slate-400 font-bold tracking-widest text-xs uppercase animate-pulse">Initializing SalesCRM</p>
+      </motion.div>
     </div>
   );
 
   if (!isAuthenticated) return <Auth />;
 
+  const pageVariants = {
+    initial: { opacity: 0, x: 10 },
+    animate: { opacity: 1, x: 0 },
+    exit: { opacity: 0, x: -10 }
+  };
+
   return (
-    <div className="flex h-screen w-full bg-white text-gray-900 font-sans">
+    <div className="flex h-screen w-full bg-white text-slate-900 font-sans selection:bg-indigo-100 selection:text-indigo-900">
+      <Toaster position="top-right" toastOptions={{
+        className: 'font-bold text-sm rounded-2xl border border-slate-100 shadow-2xl',
+        duration: 3000,
+      }} />
+      
       <Sidebar currentView={currentView} onNavigate={setCurrentView} />
       
-      <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
+      <main className="flex-1 flex flex-col min-w-0 overflow-hidden bg-white">
         <Header user={currentUser} onLogout={handleLogout} onUpdateProfile={handleUpdateProfile} />
         
         <div className="flex-1 overflow-hidden relative">
-          {currentView === 'dashboard' && <Dashboard leads={leads} deals={deals} />}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentView}
+              variants={pageVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              transition={{ duration: 0.2, ease: "easeOut" }}
+              className="h-full w-full"
+            >
+              {currentView === 'dashboard' && <Dashboard leads={leads} deals={deals} />}
 
-          {currentView === 'leads' && (
-            <div className="grid grid-cols-12 h-full">
-              <div className="col-span-12 md:col-span-4 lg:col-span-3 border-r border-gray-200 h-full overflow-hidden">
-                <LeadList leads={allPipelineItems} selectedId={selectedLeadId} onSelect={setSelectedLeadId} onAddLead={() => setIsLeadModalOpen(true)} />
-              </div>
-              <div className="col-span-12 md:col-span-8 lg:col-span-5 border-r border-gray-200 h-full overflow-hidden bg-white">
-                <LeadDetail 
-                  lead={selectedItem} 
-                  activities={activities} 
-                  note={notes.length > 0 ? notes[0] : undefined} 
-                  onDelete={handleDeleteItem} 
-                  onUpdate={handleUpdateItem} 
-                  onAddNote={addNote} 
-                  onAddActivity={addActivity} 
-                />
-              </div>
-              <div className="hidden lg:block lg:col-span-4 h-full overflow-hidden bg-white">
-                 <Dialer targetLead={selectedItem} onLogActivity={addActivity} />
-                 <DialerSound />
-              </div>
-            </div>
-          )}
+              {currentView === 'leads' && (
+                <div className="grid grid-cols-12 h-full">
+                  <div className="col-span-12 md:col-span-4 lg:col-span-3 border-r border-slate-50 h-full overflow-hidden">
+                    <LeadList leads={allPipelineItems} selectedId={selectedLeadId} onSelect={setSelectedLeadId} onAddLead={() => setIsLeadModalOpen(true)} />
+                  </div>
+                  <div className="col-span-12 md:col-span-8 lg:col-span-5 border-r border-slate-50 h-full overflow-hidden bg-white">
+                    <LeadDetail 
+                      lead={selectedItem} 
+                      activities={activities} 
+                      note={notes.length > 0 ? notes[0] : undefined} 
+                      onDelete={handleDeleteItem} 
+                      onUpdate={handleUpdateItem} 
+                      onAddNote={async (n) => {
+                        const p = addNote(n);
+                        toast.promise(p, { loading: 'Saving note...', success: 'Note saved', error: 'Failed to save' });
+                        await p;
+                      }} 
+                      onAddActivity={async (a) => {
+                        const p = addActivity(a);
+                        toast.promise(p, { loading: 'Logging activity...', success: 'Activity logged', error: 'Failed' });
+                        await p;
+                      }} 
+                    />
+                  </div>
+                  <div className="hidden lg:block lg:col-span-4 h-full overflow-hidden bg-white">
+                     <Dialer targetLead={selectedItem} onLogActivity={addActivity} />
+                     <DialerSound />
+                  </div>
+                </div>
+              )}
 
-          {currentView === 'contacts' && (
-            <Contacts contacts={contacts} onAddContact={() => setIsContactModalOpen(true)} onDeleteContact={deleteContact} />
-          )}
+              {currentView === 'contacts' && (
+                <Contacts contacts={contacts} onAddContact={() => setIsContactModalOpen(true)} onDeleteContact={handleDeleteItem} />
+              )}
 
-          {currentView === 'deals' && (
-            <Deals 
-              items={allPipelineItems} 
-              onUpdateItem={handleUpdateItem} 
-              onDeleteItem={handleDeleteItem} 
-              onAddNew={() => setIsLeadModalOpen(true)} 
-            />
-          )}
+              {currentView === 'deals' && (
+                <Deals items={allPipelineItems} onUpdateItem={handleUpdateItem} onDeleteItem={handleDeleteItem} onAddNew={() => setIsLeadModalOpen(true)} />
+              )}
 
-          {currentView === 'analytics' && <Analytics items={allPipelineItems} />}
+              {currentView === 'analytics' && <Analytics items={allPipelineItems} />}
+            </motion.div>
+          </AnimatePresence>
         </div>
         
-        {isContactModalOpen && <ContactForm onSave={handleSaveContactAction} onCancel={() => setIsContactModalOpen(false)} />}
-        {isLeadModalOpen && <LeadForm onSave={handleAddLeadAction} onCancel={() => setIsLeadModalOpen(false)} />}
+        {/* Modals with AnimatePresence */}
+        <AnimatePresence>
+          {isContactModalOpen && (
+            <ModalWrapper onClose={() => setIsContactModalOpen(false)}>
+              <ContactForm onSave={handleSaveContactAction} onCancel={() => setIsContactModalOpen(false)} />
+            </ModalWrapper>
+          )}
+          {isLeadModalOpen && (
+            <ModalWrapper onClose={() => setIsLeadModalOpen(false)}>
+              <LeadForm onSave={handleAddLeadAction} onCancel={() => setIsLeadModalOpen(false)} />
+            </ModalWrapper>
+          )}
+        </AnimatePresence>
       </main>
     </div>
   );
 }
+
+const ModalWrapper = ({ children, onClose }: any) => (
+  <motion.div
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    exit={{ opacity: 0 }}
+    className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm"
+    onClick={onClose}
+  >
+    <motion.div
+      initial={{ scale: 0.95, opacity: 0, y: 20 }}
+      animate={{ scale: 1, opacity: 1, y: 0 }}
+      exit={{ scale: 0.95, opacity: 0, y: 20 }}
+      onClick={e => e.stopPropagation()}
+      className="w-full max-w-md"
+    >
+      {children}
+    </motion.div>
+  </motion.div>
+);

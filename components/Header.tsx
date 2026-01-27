@@ -77,42 +77,46 @@ export const Header: React.FC<HeaderProps> = ({ user, onLogout, onUpdateProfile 
 
   return (
     <>
-      <header ref={headerRef} className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 flex-shrink-0 relative z-30">
+      <header ref={headerRef} className="h-20 bg-white/80 backdrop-blur-md border-b border-slate-100 flex items-center justify-between px-8 flex-shrink-0 relative z-30 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
         {/* Search Bar */}
-        <div className="flex-1 max-w-lg">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+        <div className="flex-1 max-w-xl">
+          <div className="relative group">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5 group-focus-within:text-indigo-500 transition-colors" />
             <input
               type="text"
-              placeholder="Search leads or contacts..."
-              className="w-full pl-10 pr-4 py-2 bg-gray-100 border-transparent focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent rounded-lg text-sm transition-all outline-none"
+              placeholder="Search leads, contacts, or deals... (⌘K)"
+              className="w-full pl-12 pr-4 py-3 bg-slate-50 border-transparent focus:bg-white focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500/20 rounded-2xl text-sm font-medium transition-all outline-none text-slate-900 placeholder:text-slate-400"
             />
           </div>
         </div>
 
         {/* Right Actions */}
-        <div className="flex items-center gap-6">
-          <div className="flex items-center gap-4 text-gray-500">
+        <div className="flex items-center gap-8">
+          <div className="flex items-center gap-2">
             
             {/* Notifications */}
             <div className="relative">
               <button 
                 onClick={() => toggleDropdown('notifications')}
-                className={`relative hover:text-gray-700 transition-colors p-1 rounded-md ${activeDropdown === 'notifications' ? 'bg-gray-100 text-gray-900' : ''}`}
+                className={`relative hover:bg-slate-50 transition-all p-2.5 rounded-xl text-slate-500 ${activeDropdown === 'notifications' ? 'bg-slate-50 text-indigo-600' : ''}`}
               >
                 <Bell size={20} />
-                <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full border-2 border-white translate-x-1/3 -translate-y-1/3"></span>
+                <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-rose-500 rounded-full border-2 border-white"></span>
               </button>
               
               {activeDropdown === 'notifications' && (
-                <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden animation-fade-in z-50">
-                  <div className="p-4 border-b border-gray-100 flex justify-between items-center">
-                    <h3 className="font-semibold text-gray-900">Notifications</h3>
-                    <button className="text-xs text-blue-600 hover:text-blue-700 font-medium">Mark all read</button>
+                <div className="absolute right-0 top-[calc(100%+8px)] w-96 bg-white rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.1)] border border-slate-100 overflow-hidden animation-fade-in z-50">
+                  <div className="p-6 border-b border-slate-50 flex justify-between items-center">
+                    <h3 className="font-bold text-slate-900">Notifications</h3>
+                    <button className="text-xs text-indigo-600 hover:text-indigo-700 font-bold uppercase tracking-wider">Mark all read</button>
                   </div>
-                  <div className="max-h-80 overflow-y-auto">
-                    <div className="p-8 text-center text-gray-400">
-                      <p className="text-sm">No notifications yet</p>
+                  <div className="max-h-96 overflow-y-auto">
+                    <div className="p-12 text-center">
+                      <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Bell className="text-slate-300" size={24} />
+                      </div>
+                      <p className="text-sm font-bold text-slate-900">All caught up!</p>
+                      <p className="text-xs text-slate-400 mt-1">No new notifications at the moment.</p>
                     </div>
                   </div>
                 </div>
@@ -123,69 +127,69 @@ export const Header: React.FC<HeaderProps> = ({ user, onLogout, onUpdateProfile 
             <div className="relative">
               <button 
                 onClick={() => toggleDropdown('settings')}
-                className={`hover:text-gray-700 transition-colors p-1 rounded-md ${activeDropdown === 'settings' ? 'bg-gray-100 text-gray-900' : ''}`}
+                className={`hover:bg-slate-50 transition-all p-2.5 rounded-xl text-slate-500 ${activeDropdown === 'settings' ? 'bg-slate-50 text-indigo-600' : ''}`}
               >
                 <Settings size={20} />
               </button>
 
               {activeDropdown === 'settings' && (
-                <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden animation-fade-in z-50">
-                  <div className="p-2 space-y-1">
+                <div className="absolute right-0 top-[calc(100%+8px)] w-72 bg-white rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.1)] border border-slate-100 overflow-hidden animation-fade-in z-50">
+                  <div className="p-3 space-y-1">
                     <SettingsItem 
-                      icon={<User size={16} />} 
+                      icon={<User size={18} />} 
                       label="Account Settings" 
                       onClick={openAccountSettings} 
                     />
                     <SettingsItem 
-                      icon={<Shield size={16} />} 
+                      icon={<Shield size={18} />} 
                       label="Privacy & Security" 
                       onClick={openSecuritySettings} 
                     />
-                    <div className="h-px bg-gray-100 my-1"></div>
-                    <SettingsItem icon={<Moon size={16} />} label="Dark Mode" toggle />
+                    <div className="h-px bg-slate-50 my-2 mx-3"></div>
+                    <SettingsItem icon={<Moon size={18} />} label="Dark Mode" toggle />
                   </div>
                 </div>
               )}
             </div>
           </div>
 
-          <div className="h-8 w-px bg-gray-200"></div>
+          <div className="h-10 w-px bg-slate-100"></div>
 
           {/* Profile */}
           <div className="relative">
             <button 
               onClick={() => toggleDropdown('profile')}
-              className="flex items-center gap-3 cursor-pointer group"
+              className="flex items-center gap-4 cursor-pointer group p-1.5 pr-4 rounded-2xl hover:bg-slate-50 transition-all"
             >
-              <div className="text-right hidden sm:block">
-                <p className="text-sm font-semibold text-gray-900 leading-tight group-hover:text-blue-600 transition-colors">{user.name}</p>
-                <p className="text-xs text-gray-500">{user.role}</p>
-              </div>
               <img
                 src={user.avatar}
                 alt="User"
-                className={`w-10 h-10 rounded-full border-2 transition-all object-cover ${activeDropdown === 'profile' ? 'border-blue-500 shadow-md' : 'border-white shadow-sm'}`}
+                className={`w-10 h-10 rounded-xl border-2 transition-all object-cover shadow-sm ${activeDropdown === 'profile' ? 'border-indigo-500' : 'border-white'}`}
               />
+              <div className="text-left hidden lg:block">
+                <p className="text-sm font-black text-slate-900 leading-tight group-hover:text-indigo-600 transition-colors">{user.name}</p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{user.role}</p>
+              </div>
             </button>
 
             {activeDropdown === 'profile' && (
-              <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden animation-fade-in z-50">
-                <div className="p-4 border-b border-gray-100 bg-gray-50">
-                  <p className="font-bold text-gray-900">{user.name}</p>
-                  <p className="text-xs text-gray-500">{user.email}</p>
+              <div className="absolute right-0 top-[calc(100%+8px)] w-64 bg-white rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.1)] border border-slate-100 overflow-hidden animation-fade-in z-50">
+                <div className="p-6 border-b border-slate-50 bg-slate-50/50">
+                  <p className="font-black text-slate-900">{user.name}</p>
+                  <p className="text-xs font-medium text-slate-500 mt-1">{user.email}</p>
                 </div>
-                <div className="p-2">
+                <div className="p-3">
                   <button 
                     onClick={openAccountSettings}
-                    className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg flex items-center gap-2"
+                    className="w-full text-left px-4 py-3 text-sm font-bold text-slate-700 hover:bg-slate-50 rounded-2xl flex items-center gap-3 transition-colors"
                   >
-                     <User size={16} /> Edit Profile
+                     <User size={18} className="text-slate-400" /> Edit Profile
                   </button>
                   <button 
                     onClick={onLogout}
-                    className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg flex items-center gap-2 mt-1"
+                    className="w-full text-left px-4 py-3 text-sm font-bold text-rose-600 hover:bg-rose-50 rounded-2xl flex items-center gap-3 mt-1 transition-colors"
                   >
-                     <LogOut size={16} /> Sign Out
+                     <LogOut size={18} /> Sign Out
                   </button>
                 </div>
               </div>
@@ -194,117 +198,71 @@ export const Header: React.FC<HeaderProps> = ({ user, onLogout, onUpdateProfile 
         </div>
       </header>
 
-      {/* Account Settings Modal */}
+      {/* Modern Glassmorphism Modals */}
       {showAccountModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl animate-fade-in">
-            <div className="p-6 border-b border-gray-100 flex justify-between items-center">
-              <h2 className="text-xl font-bold text-gray-900">Account Settings</h2>
-              <button onClick={() => setShowAccountModal(false)} className="text-gray-400 hover:text-gray-600">
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-[32px] w-full max-w-md shadow-[0_32px_64px_-12px_rgba(0,0,0,0.14)] animate-fade-in overflow-hidden border border-white">
+            <div className="p-8 border-b border-slate-50 flex justify-between items-center bg-white">
+              <h2 className="text-2xl font-black text-slate-900 tracking-tight">Account Settings</h2>
+              <button onClick={() => setShowAccountModal(false)} className="p-2 text-slate-400 hover:bg-slate-50 rounded-xl transition-colors">
                 <X size={24} />
               </button>
             </div>
-            <div className="p-6 space-y-4">
-              <div className="flex flex-col items-center mb-6">
-                <div className="relative group">
-                  <img
-                    src={editAvatar}
-                    alt="Profile"
-                    className="w-20 h-20 rounded-full border-4 border-gray-50 shadow-sm mb-2 object-cover"
-                  />
-                  <div className="absolute inset-0 bg-black/20 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer pointer-events-none">
-                    <span className="text-white text-[10px] font-bold uppercase">Change</span>
+            <div className="p-8 space-y-6">
+              <div className="flex flex-col items-center">
+                <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+                  <img src={editAvatar} alt="Profile" className="w-24 h-24 rounded-3xl border-4 border-slate-50 shadow-xl mb-4 object-cover group-hover:scale-105 transition-transform" />
+                  <div className="absolute inset-0 bg-indigo-600/20 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <span className="text-white text-[10px] font-black uppercase tracking-widest bg-indigo-600 px-2 py-1 rounded-lg">Change</span>
                   </div>
                 </div>
-                <input 
-                  type="file" 
-                  ref={fileInputRef} 
-                  onChange={handleFileChange} 
-                  className="hidden" 
-                  accept="image/*"
-                />
-                <button 
-                  onClick={() => fileInputRef.current?.click()}
-                  className="text-sm text-blue-600 font-semibold hover:text-blue-700"
-                >
-                  Change Photo
-                </button>
+                <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*" />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-                <input 
-                  type="text" 
-                  value={editName}
-                  onChange={(e) => setEditName(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" 
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
-                <input 
-                  type="email" 
-                  value={user.email} 
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed" 
-                  disabled 
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Job Title</label>
-                <input 
-                  type="text" 
-                  value={editRole}
-                  onChange={(e) => setEditRole(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" 
-                />
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Full Name</label>
+                  <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)} className="w-full px-5 py-3.5 bg-slate-50 border-2 border-transparent focus:bg-white focus:border-indigo-500/20 focus:ring-4 focus:ring-indigo-500/5 rounded-2xl text-sm font-bold outline-none transition-all" />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Email Address</label>
+                  <input type="email" value={user.email} className="w-full px-5 py-3.5 bg-slate-100 border-2 border-transparent rounded-2xl text-sm font-bold text-slate-400 cursor-not-allowed outline-none" disabled />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Job Title</label>
+                  <input type="text" value={editRole} onChange={(e) => setEditRole(e.target.value)} className="w-full px-5 py-3.5 bg-slate-50 border-2 border-transparent focus:bg-white focus:border-indigo-500/20 focus:ring-4 focus:ring-indigo-500/5 rounded-2xl text-sm font-bold outline-none transition-all" />
+                </div>
               </div>
             </div>
-            <div className="p-6 border-t border-gray-100 flex justify-end gap-3 bg-gray-50 rounded-b-2xl">
-              <button onClick={() => setShowAccountModal(false)} className="px-4 py-2 text-gray-700 font-medium hover:bg-gray-200 rounded-lg transition-colors">Cancel</button>
-              <button onClick={handleSaveProfile} className="px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors">Save Changes</button>
+            <div className="p-8 border-t border-slate-50 flex justify-end gap-4 bg-slate-50/50">
+              <button onClick={() => setShowAccountModal(false)} className="px-6 py-3 text-slate-600 font-bold hover:bg-slate-100 rounded-2xl transition-colors">Cancel</button>
+              <button onClick={handleSaveProfile} className="px-8 py-3 bg-indigo-600 text-white font-black rounded-2xl hover:bg-indigo-700 shadow-xl shadow-indigo-600/20 transition-all active:scale-95">Save Changes</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Security Modal */}
+      {/* Security Modal - Simplified styling */}
       {showSecurityModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl animate-fade-in">
-            <div className="p-6 border-b border-gray-100 flex justify-between items-center">
-              <h2 className="text-xl font-bold text-gray-900">Privacy & Security</h2>
-              <button onClick={() => setShowSecurityModal(false)} className="text-gray-400 hover:text-gray-600">
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-[32px] w-full max-w-md shadow-2xl animate-fade-in overflow-hidden border border-white">
+            <div className="p-8 border-b border-slate-50 flex justify-between items-center">
+              <h2 className="text-2xl font-black text-slate-900 tracking-tight">Security</h2>
+              <button onClick={() => setShowSecurityModal(false)} className="p-2 text-slate-400 hover:bg-slate-50 rounded-xl transition-colors">
                 <X size={24} />
               </button>
             </div>
-            <div className="p-6 space-y-6">
-              <div>
-                <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                  <Lock size={16} /> Password
+            <div className="p-8 space-y-8">
+              <div className="space-y-4">
+                <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                  <Lock size={14} /> Change Password
                 </h3>
-                <div className="space-y-3">
-                  <input type="password" placeholder="Current Password" className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm" />
-                  <input type="password" placeholder="New Password" className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm" />
-                </div>
-              </div>
-              
-              <div className="pt-4 border-t border-gray-100">
-                <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                  <Smartphone size={16} /> Two-Factor Authentication
-                </h3>
-                <div className="flex items-center justify-between p-3 border border-gray-200 rounded-xl bg-gray-50">
-                  <div className="text-sm">
-                    <p className="font-medium text-gray-900">Text Message (SMS)</p>
-                    <p className="text-gray-500 text-xs">Receive a code via SMS</p>
-                  </div>
-                  <div className="w-10 h-6 bg-gray-200 rounded-full relative cursor-pointer">
-                    <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full shadow-sm"></div>
-                  </div>
-                </div>
+                <input type="password" placeholder="Current Password" className="w-full px-5 py-3.5 bg-slate-50 border-2 border-transparent focus:bg-white focus:border-indigo-500/20 rounded-2xl text-sm font-bold outline-none" />
+                <input type="password" placeholder="New Password" className="w-full px-5 py-3.5 bg-slate-50 border-2 border-transparent focus:bg-white focus:border-indigo-500/20 rounded-2xl text-sm font-bold outline-none" />
               </div>
             </div>
-            <div className="p-6 border-t border-gray-100 flex justify-end gap-3 bg-gray-50 rounded-b-2xl">
-              <button onClick={() => setShowSecurityModal(false)} className="px-4 py-2 text-gray-700 font-medium hover:bg-gray-200 rounded-lg transition-colors">Cancel</button>
-              <button onClick={() => setShowSecurityModal(false)} className="px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors">Update Security</button>
+            <div className="p-8 border-t border-slate-50 flex justify-end gap-4 bg-slate-50/50">
+              <button onClick={() => setShowSecurityModal(false)} className="px-6 py-3 text-slate-600 font-bold hover:bg-slate-100 rounded-2xl transition-colors">Cancel</button>
+              <button onClick={() => setShowSecurityModal(false)} className="px-8 py-3 bg-indigo-600 text-white font-black rounded-2xl hover:bg-indigo-700 shadow-xl shadow-indigo-600/20 transition-all">Update</button>
             </div>
           </div>
         </div>
@@ -313,28 +271,18 @@ export const Header: React.FC<HeaderProps> = ({ user, onLogout, onUpdateProfile 
   );
 };
 
-const NotificationItem = ({ title, desc, time, unread, type }: any) => (
-  <div className={`p-4 border-b border-gray-50 hover:bg-gray-50 transition-colors cursor-pointer ${unread ? 'bg-blue-50/30' : ''}`}>
-    <div className="flex justify-between items-start mb-1">
-      <span className={`text-sm font-semibold ${type === 'alert' ? 'text-red-600' : 'text-gray-900'}`}>{title}</span>
-      <span className="text-xs text-gray-400 whitespace-nowrap ml-2">{time}</span>
-    </div>
-    <p className="text-xs text-gray-500 leading-relaxed">{desc}</p>
-  </div>
-);
-
 const SettingsItem = ({ icon, label, toggle, onClick }: any) => (
   <button 
     onClick={onClick}
-    className="w-full flex items-center justify-between px-3 py-2.5 text-sm text-gray-700 hover:bg-gray-50 rounded-lg group transition-colors text-left"
+    className="w-full flex items-center justify-between px-4 py-3.5 text-sm font-bold text-slate-700 hover:bg-slate-50 rounded-2xl group transition-all text-left"
   >
     <div className="flex items-center gap-3">
-      <span className="text-gray-400 group-hover:text-blue-600 transition-colors">{icon}</span>
+      <span className="text-slate-400 group-hover:text-indigo-600 transition-colors">{icon}</span>
       <span>{label}</span>
     </div>
     {toggle && (
-      <div className="w-8 h-4 bg-gray-200 rounded-full relative">
-        <div className="absolute left-0.5 top-0.5 w-3 h-3 bg-white rounded-full shadow-sm"></div>
+      <div className="w-10 h-5 bg-slate-100 rounded-full relative border border-slate-200">
+        <div className="absolute left-1 top-1 w-3 h-3 bg-white rounded-full shadow-sm border border-slate-200"></div>
       </div>
     )}
   </button>

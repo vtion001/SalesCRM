@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Mail, Phone, Clock, Pin, FolderOpen, Trash2, MoreHorizontal, Send, Plus, MessageSquare, Check, X } from 'lucide-react';
+import { Mail, Phone, Clock, Pin, FolderOpen, Trash2, MoreHorizontal, Send, Plus, MessageSquare, Check, X, Target, DollarSign } from 'lucide-react';
 import { Lead, Activity, Note } from '../types';
 
 interface LeadDetailProps {
@@ -13,13 +13,7 @@ interface LeadDetailProps {
 }
 
 export const LeadDetail: React.FC<LeadDetailProps> = ({ 
-  lead, 
-  activities, 
-  note, 
-  onDelete, 
-  onUpdate,
-  onAddNote,
-  onAddActivity
+  lead, activities, note, onDelete, onUpdate, onAddNote, onAddActivity
 }) => {
   const [showOptions, setShowOptions] = useState(false);
   const [isAddingNote, setIsAddingNote] = useState(false);
@@ -27,10 +21,8 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [editingStat, setEditingStat] = useState<'dealValue' | 'probability' | null>(null);
   const [tempStatValue, setTempStatValue] = useState<number>(0);
-  
   const [editData, setEditData] = useState<Partial<Lead>>({});
 
-  // Reset editing states when lead changes
   useEffect(() => {
     setEditingStat(null);
     setIsEditingProfile(false);
@@ -39,32 +31,24 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
 
   if (!lead) {
     return (
-      <div className="h-full flex flex-col items-center justify-center bg-gray-50/50 p-8 text-center">
-        <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm mb-4 border border-gray-100">
-          <FolderOpen className="text-blue-500" size={32} />
+      <div className="h-full flex flex-col items-center justify-center bg-white/50 backdrop-blur-sm p-12 text-center">
+        <div className="w-24 h-24 bg-white rounded-[32px] shadow-[0_20px_50px_rgba(0,0,0,0.05)] flex items-center justify-center mb-8 border border-slate-50 rotate-3">
+          <FolderOpen className="text-indigo-500" size={40} />
         </div>
-        <h3 className="text-lg font-bold text-gray-900">No Lead Selected</h3>
-        <p className="text-gray-500 max-w-xs mt-2">Select a lead from the list or create a new one to view details and activity timelines.</p>
+        <h3 className="text-2xl font-black text-slate-900 tracking-tight">Select an Entity</h3>
+        <p className="text-slate-400 max-w-xs mt-3 font-medium">Choose a lead or contact from the pipeline to view their detailed activity feed and metrics.</p>
       </div>
     );
   }
 
   const handleStartEdit = () => {
-    setEditData({
-      name: lead.name,
-      role: lead.role,
-      company: lead.company,
-      email: lead.email,
-      phone: lead.phone
-    });
+    setEditData({ name: lead.name, role: lead.role, company: lead.company, email: lead.email, phone: lead.phone });
     setIsEditingProfile(true);
     setShowOptions(false);
   };
 
   const handleSaveProfile = async () => {
-    if (onUpdate) {
-      await onUpdate(lead.id, editData);
-    }
+    if (onUpdate) await onUpdate(lead.id, editData);
     setIsEditingProfile(false);
   };
 
@@ -82,11 +66,7 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
 
   const handleSaveNote = async () => {
     if (onAddNote && newNoteContent.trim()) {
-      await onAddNote({
-        content: newNoteContent,
-        isPinned: false,
-        author: 'Me' 
-      });
+      await onAddNote({ content: newNoteContent, isPinned: false, author: 'Me' });
       setNewNoteContent('');
       setIsAddingNote(false);
     }
@@ -96,123 +76,78 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
     if (onAddActivity) {
       await onAddActivity({
         type,
-        title: type === 'call' ? 'Manual Call Log' : 'Manual SMS Log',
-        description: type === 'call' ? 'Log of a manual call interaction' : 'Manual record of an SMS sent/received',
+        title: type === 'call' ? 'Manual Call' : 'Manual SMS',
+        description: type === 'call' ? 'Manual voice interaction recorded' : 'Manual SMS record added',
         timestamp: new Date().toLocaleString(),
       });
     }
   };
 
   return (
-    <div className="h-full overflow-y-auto bg-white p-8">
+    <div className="h-full overflow-y-auto bg-white p-10 custom-scrollbar">
       {/* Header Profile */}
-      <div className="flex items-start justify-between mb-8">
-        <div className="flex items-start gap-6">
-          <img src={lead.avatar} alt={lead.name} className="w-20 h-20 rounded-xl object-cover shadow-sm bg-gray-200" />
+      <div className="flex items-start justify-between mb-12">
+        <div className="flex items-start gap-8">
+          <img src={lead.avatar} alt={lead.name} className="w-24 h-24 rounded-[32px] object-cover shadow-2xl shadow-slate-200 border-4 border-white bg-slate-50" />
           
           {isEditingProfile ? (
-            <div className="space-y-3">
-              <input 
-                className="text-2xl font-bold text-gray-900 mb-1 border-b border-blue-500 focus:outline-none w-full"
-                value={editData.name}
-                onChange={e => setEditData({...editData, name: e.target.value})}
-              />
+            <div className="space-y-4 pt-2">
+              <input className="text-3xl font-black text-slate-900 border-b-2 border-indigo-500 focus:outline-none w-full bg-transparent" value={editData.name} onChange={e => setEditData({...editData, name: e.target.value})} />
               <div className="flex items-center gap-2">
-                <input 
-                  className="text-gray-500 text-base border-b border-gray-200 focus:outline-none"
-                  value={editData.role}
-                  onChange={e => setEditData({...editData, role: e.target.value})}
-                />
-                <span className="text-gray-400 text-sm">at</span>
-                <input 
-                  className="text-gray-900 font-medium border-b border-gray-200 focus:outline-none"
-                  value={editData.company}
-                  onChange={e => setEditData({...editData, company: e.target.value})}
-                />
+                <input className="text-slate-500 font-bold border-b border-slate-200 focus:outline-none bg-transparent" value={editData.role} onChange={e => setEditData({...editData, role: e.target.value})} />
+                <span className="text-slate-300">@</span>
+                <input className="text-indigo-600 font-black border-b border-slate-200 focus:outline-none bg-transparent uppercase text-sm tracking-wider" value={editData.company} onChange={e => setEditData({...editData, company: e.target.value})} />
               </div>
-              <div className="flex gap-2 pt-2">
-                <button onClick={handleSaveProfile} className="px-3 py-1 bg-blue-600 text-white text-sm rounded-lg font-semibold shadow-sm shadow-blue-100">Save</button>
-                <button onClick={() => setIsEditingProfile(false)} className="px-3 py-1 bg-gray-100 text-gray-600 text-sm rounded-lg font-semibold">Cancel</button>
+              <div className="flex gap-3 pt-2">
+                <button onClick={handleSaveProfile} className="px-6 py-2 bg-indigo-600 text-white text-xs font-black uppercase tracking-widest rounded-xl shadow-lg shadow-indigo-600/20 active:scale-95 transition-all">Save</button>
+                <button onClick={() => setIsEditingProfile(false)} className="px-6 py-2 bg-slate-50 text-slate-500 text-xs font-black uppercase tracking-widest rounded-xl transition-all hover:bg-slate-100">Cancel</button>
               </div>
             </div>
           ) : (
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 mb-1">{lead.name}</h1>
-              <p className="text-gray-500 text-base mb-4">
-                {lead.role} at <span className="text-gray-900 font-medium">{lead.company}</span>
+            <div className="pt-2">
+              <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-1">{lead.name}</h1>
+              <p className="text-slate-500 font-bold mb-6 flex items-center gap-2">
+                {lead.role} <span className="w-1.5 h-1.5 rounded-full bg-slate-200"></span> <span className="text-indigo-600 uppercase tracking-widest text-xs font-black">{lead.company}</span>
               </p>
               
-              <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-gray-500">
-                <div className="flex items-center gap-2 hover:text-blue-600 cursor-pointer transition-colors">
-                  <Mail size={16} />
-                  <span>{lead.email}</span>
+              <div className="flex flex-wrap gap-6 text-sm">
+                <div className="flex items-center gap-3 px-4 py-2 bg-slate-50 rounded-2xl text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 transition-all cursor-pointer group border border-transparent hover:border-indigo-100">
+                  <Mail size={16} className="text-slate-400 group-hover:text-indigo-500" />
+                  <span className="font-bold">{lead.email}</span>
                 </div>
-                <div className="flex items-center gap-2 hover:text-blue-600 cursor-pointer transition-colors">
-                  <Phone size={16} />
-                  <span>{lead.phone}</span>
+                <div className="flex items-center gap-3 px-4 py-2 bg-slate-50 rounded-2xl text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 transition-all cursor-pointer group border border-transparent hover:border-indigo-100">
+                  <Phone size={16} className="text-slate-400 group-hover:text-indigo-500" />
+                  <span className="font-bold">{lead.phone}</span>
                 </div>
               </div>
             </div>
           )}
         </div>
         
-        <div className="flex items-center gap-2">
-           {onDelete && (
-            <button 
-              onClick={() => onDelete(lead.id)}
-              className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors"
-              title="Delete"
-            >
-              <Trash2 size={20} />
-            </button>
+        <div className="flex items-center gap-3">
+           <button onClick={() => setShowOptions(!showOptions)} className="p-3 text-slate-400 hover:bg-slate-50 rounded-2xl transition-all">
+             <MoreHorizontal size={24} />
+           </button>
+           {showOptions && (
+             <div className="absolute right-10 mt-12 w-56 bg-white rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.1)] border border-slate-50 z-50 py-3 overflow-hidden animate-fade-in">
+               <button onClick={handleStartEdit} className="w-full text-left px-6 py-3 text-sm font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition-colors">
+                 <Edit2 size={18} className="text-slate-400" /> Edit Profile
+               </button>
+               <button onClick={() => {onDelete?.(lead.id); setShowOptions(false)}} className="w-full text-left px-6 py-3 text-sm font-bold text-rose-600 hover:bg-rose-50 flex items-center gap-3 transition-colors mt-1 border-t border-slate-50 pt-4">
+                 <Trash2 size={18} /> Delete Record
+               </button>
+             </div>
            )}
-           <div className="relative">
-             <button 
-               onClick={() => setShowOptions(!showOptions)}
-               className="p-2 text-gray-300 hover:text-gray-500 rounded-full transition-colors"
-             >
-               <MoreHorizontal size={20} />
-             </button>
-             {showOptions && (
-               <div className="absolute right-0 top-full mt-2 w-48 bg-white border border-gray-100 rounded-xl shadow-lg z-50 py-1">
-                 <button 
-                   className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
-                   onClick={handleStartEdit}
-                 >
-                   Edit Profile
-                 </button>
-                 <button 
-                   className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
-                   onClick={() => setShowOptions(false)}
-                 >
-                   Export Data
-                 </button>
-                 {onDelete && (
-                    <button 
-                      className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 border-t border-gray-50 mt-1 pt-2"
-                      onClick={() => {
-                        onDelete(lead.id);
-                        setShowOptions(false);
-                      }}
-                    >
-                      Delete
-                    </button>
-                 )}
-               </div>
-             )}
-             {showOptions && (
-                <div className="fixed inset-0 z-40" onClick={() => setShowOptions(false)}></div>
-             )}
-           </div>
         </div>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-3 gap-4 mb-10">
+      <div className="grid grid-cols-3 gap-6 mb-12">
         <StatCard 
           label="Deal Value" 
           value={`$${(lead.dealValue || 0).toLocaleString()}`} 
-          color="text-blue-600"
+          icon={<DollarSign size={14} />}
+          color="text-indigo-600"
           isEditing={editingStat === 'dealValue'}
           onEdit={() => startEditingStat('dealValue')}
           onSave={handleSaveStat}
@@ -221,9 +156,10 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
           onInputChange={(val) => setTempStatValue(val)}
         />
         <StatCard 
-          label="Probability" 
+          label="Conversion" 
           value={`${lead.probability || 0}%`} 
-          color="text-gray-900"
+          icon={<Target size={14} />}
+          color="text-slate-900"
           isEditing={editingStat === 'probability'}
           onEdit={() => startEditingStat('probability')}
           onSave={handleSaveStat}
@@ -231,152 +167,126 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
           inputValue={tempStatValue}
           onInputChange={(val) => setTempStatValue(val)}
         />
-        <StatCard label="Last Contact" value={lead.lastContactDate || 'Never'} color="text-gray-900" />
+        <StatCard 
+          label="Last Sync" 
+          value={lead.lastContactDate || 'Never'} 
+          icon={<Clock size={14} />}
+          color="text-slate-900" 
+        />
       </div>
 
-      {/* Activity Timeline */}
-      <div className="mb-10">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="flex items-center gap-2 text-lg font-bold text-gray-900">
-            <Clock size={20} className="text-gray-900" />
-            Activity Timeline
+      {/* Timeline */}
+      <div className="mb-12">
+        <div className="flex items-center justify-between mb-8">
+          <h3 className="text-lg font-black text-slate-900 uppercase tracking-widest flex items-center gap-3">
+            <div className="w-2 h-2 bg-indigo-500 rounded-full"></div>
+            Activity Feed
           </h3>
-          <div className="flex gap-2">
-            <button 
-              onClick={() => handleManualLog('call')}
-              className="text-xs font-semibold bg-blue-50 text-blue-600 px-3 py-1.5 rounded-lg hover:bg-blue-100 transition-colors flex items-center gap-1"
-            >
-              <Phone size={14} /> Log Call
+          <div className="flex gap-3">
+            <button onClick={() => handleManualLog('call')} className="text-[10px] font-black uppercase tracking-widest bg-slate-900 text-white px-4 py-2 rounded-xl hover:bg-slate-800 transition-all active:scale-95 shadow-lg shadow-slate-900/10 flex items-center gap-2">
+              <Phone size={12} /> Log Call
             </button>
-            <button 
-              onClick={() => handleManualLog('email')}
-              className="text-xs font-semibold bg-purple-50 text-purple-600 px-3 py-1.5 rounded-lg hover:bg-purple-100 transition-colors flex items-center gap-1"
-            >
-              <MessageSquare size={14} /> Log SMS
+            <button onClick={() => handleManualLog('email')} className="text-[10px] font-black uppercase tracking-widest bg-white border-2 border-slate-100 text-slate-900 px-4 py-2 rounded-xl hover:bg-slate-50 transition-all active:scale-95 flex items-center gap-2">
+              <MessageSquare size={12} /> Log SMS
             </button>
           </div>
         </div>
         
         {(activities || []).length > 0 ? (
-          <div className="relative pl-4 border-l-2 border-gray-100 space-y-8">
+          <div className="relative pl-4 space-y-8 before:absolute before:left-4 before:top-4 before:bottom-4 before:w-px before:bg-slate-100">
             {(activities || []).map((activity) => (
-              <div key={activity.id} className="relative pl-8">
-                <div className={`absolute -left-[21px] top-0 w-10 h-10 rounded-full flex items-center justify-center border-4 border-white ${
-                  activity.type === 'call' ? 'bg-blue-100 text-blue-600' : 'bg-purple-100 text-purple-600'
+              <div key={activity.id} className="relative pl-10">
+                <div className={`absolute left-0 top-0 w-8 h-8 rounded-2xl flex items-center justify-center shadow-lg border-2 border-white translate-x-[-16px] z-10 ${
+                  activity.type === 'call' ? 'bg-indigo-600 text-white' : 'bg-fuchsia-600 text-white'
                 }`}>
-                  <div className="absolute inset-0 flex items-center justify-center">
-                      {activity.type === 'call' ? <Phone size={16} /> : <MessageSquare size={16} />}
-                  </div>
+                  {activity.type === 'call' ? <Phone size={14} /> : <MessageSquare size={14} />}
                 </div>
 
-                <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 hover:shadow-sm transition-shadow">
-                  <div className="flex justify-between items-start mb-1">
-                    <h4 className="font-semibold text-gray-900 text-sm">{activity.title}</h4>
-                    <span className="text-xs text-gray-400 font-medium">{activity.timestamp}</span>
+                <div className="bg-slate-50/50 rounded-3xl p-6 border border-slate-50 hover:bg-white hover:shadow-xl hover:shadow-slate-200/50 transition-all group border-transparent hover:border-indigo-100">
+                  <div className="flex justify-between items-start mb-2">
+                    <h4 className="font-black text-slate-900 text-sm leading-tight">{activity.title}</h4>
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{activity.timestamp}</span>
                   </div>
-                  <p className="text-sm text-gray-600 leading-relaxed">
-                    {activity.description}
-                    {activity.duration && (
-                       <span className="block mt-2 text-xs font-medium text-gray-500">Duration: {activity.duration}</span>
-                    )}
-                  </p>
+                  <p className="text-sm text-slate-500 font-medium leading-relaxed mb-3">{activity.description}</p>
+                  {activity.duration && (
+                     <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white rounded-lg border border-slate-100 text-[10px] font-black text-slate-400 uppercase">
+                       <Clock size={10} /> {activity.duration}
+                     </div>
+                  )}
                 </div>
               </div>
             ))}
           </div>
         ) : (
-          <div className="text-center py-12 border border-dashed border-gray-200 rounded-2xl bg-gray-50/30">
-            <Clock className="mx-auto text-gray-300 mb-3" size={32} />
-            <p className="text-sm text-gray-500 font-medium">No recent activity recorded.</p>
-            <p className="text-xs text-gray-400 mt-1">Start by logging a call or sending an SMS.</p>
+          <div className="text-center py-20 border-2 border-dashed border-slate-100 rounded-[40px] bg-slate-50/30">
+            <div className="w-16 h-16 bg-white rounded-3xl shadow-sm flex items-center justify-center mx-auto mb-4 border border-slate-50">
+              <Clock className="text-slate-200" size={24} />
+            </div>
+            <p className="text-sm font-black text-slate-400 uppercase tracking-widest">No recent records</p>
           </div>
         )}
       </div>
 
-      {/* Notes Section */}
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-bold text-gray-900">Notes</h3>
-          <button 
-            onClick={() => setIsAddingNote(!isAddingNote)}
-            className="text-sm font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1"
-          >
-            {isAddingNote ? 'Cancel' : <><Plus size={14} /> New Note</>}
+      {/* Notes */}
+      <div className="bg-slate-900 rounded-[40px] p-10 text-white shadow-2xl shadow-indigo-900/20">
+        <div className="flex items-center justify-between mb-8">
+          <h3 className="text-lg font-black uppercase tracking-widest flex items-center gap-3">
+            <div className="w-2 h-2 bg-indigo-400 rounded-full animate-pulse"></div>
+            Private Notes
+          </h3>
+          <button onClick={() => setIsAddingNote(!isAddingNote)} className="text-xs font-black text-indigo-400 hover:text-indigo-300 uppercase tracking-widest flex items-center gap-2">
+            {isAddingNote ? 'Discard' : <><Plus size={16} /> Add Note</>}
           </button>
         </div>
 
         {isAddingNote && (
-          <div className="mb-6 bg-blue-50/30 p-4 rounded-xl border border-blue-100 animate-fade-in">
-            <textarea 
-              className="w-full bg-white border border-gray-200 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none min-h-[100px] shadow-sm"
-              placeholder="Type your note here..."
-              autoFocus
-              value={newNoteContent}
-              onChange={e => setNewNoteContent(e.target.value)}
-            />
-            <div className="flex justify-end mt-3">
-              <button 
-                onClick={handleSaveNote}
-                disabled={!newNoteContent.trim()}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-bold disabled:opacity-50 flex items-center gap-2 shadow-md shadow-blue-100 hover:bg-blue-700 transition-all active:scale-95"
-              >
-                <Send size={14} /> Save Note
+          <div className="mb-8 animate-fade-in">
+            <textarea className="w-full bg-slate-800/50 border-2 border-slate-700 rounded-3xl p-6 text-sm font-medium focus:border-indigo-500 outline-none min-h-[120px] transition-all" placeholder="Capture your thoughts..." autoFocus value={newNoteContent} onChange={e => setNewNoteContent(e.target.value)} />
+            <div className="flex justify-end mt-4">
+              <button onClick={handleSaveNote} disabled={!newNoteContent.trim()} className="bg-indigo-500 text-white px-8 py-3 rounded-2xl text-xs font-black uppercase tracking-widest disabled:opacity-30 hover:bg-indigo-400 transition-all active:scale-95 shadow-xl shadow-indigo-500/20 flex items-center gap-3">
+                <Send size={14} /> Commit Note
               </button>
             </div>
           </div>
         )}
 
-        <div className="space-y-4">
-          {(activities || []).filter(a => a.type as any === 'note').length === 0 && !note ? (
-            <div className="text-center py-8 border border-gray-100 rounded-xl text-gray-400 text-sm italic bg-gray-50/30">
-              No notes available.
-            </div>
-          ) : (
-            note && (
-              <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm relative group hover:border-blue-200 transition-colors">
-                <p className="text-gray-700 leading-relaxed mb-6 whitespace-pre-wrap">
-                  {note.content}
-                </p>
-                <div className="flex items-center justify-between border-t border-gray-100 pt-3">
-                  <span className="text-xs text-gray-400 italic font-medium">Pinned by {note.author}</span>
-                  <Pin size={14} className="text-blue-500" fill="currentColor" />
-                </div>
+        {note ? (
+          <div className="bg-slate-800/50 border border-slate-700 rounded-3xl p-8 relative group hover:border-slate-600 transition-all">
+            <p className="text-slate-300 leading-relaxed font-medium whitespace-pre-wrap mb-8 text-lg italic">"{note.content}"</p>
+            <div className="flex items-center justify-between opacity-60">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-indigo-500/20 flex items-center justify-center text-[10px] font-black text-indigo-400 uppercase tracking-widest border border-indigo-500/20">{note.author.charAt(0)}</div>
+                <span className="text-[10px] font-black uppercase tracking-widest tracking-tighter">{note.author} • Lead Strategist</span>
               </div>
-            )
-          )}
-        </div>
+              <Pin size={16} className="text-indigo-400" fill="currentColor" />
+            </div>
+          </div>
+        ) : (
+          <div className="text-center py-12 border-2 border-dashed border-slate-800 rounded-3xl text-slate-600">
+            <p className="text-xs font-black uppercase tracking-widest">Workspace is clear</p>
+          </div>
+        )}
       </div>
     </div>
   );
 };
 
-const StatCard = ({ 
-  label, value, color, isEditing, onEdit, onSave, onCancel, inputValue, onInputChange 
-}: any) => (
-  <div 
-    className={`border border-gray-200 rounded-xl p-4 flex flex-col items-center text-center bg-white transition-all shadow-sm ${!isEditing && onEdit ? 'hover:border-blue-200 hover:shadow-md cursor-pointer' : ''}`}
-    onClick={!isEditing && onEdit ? onEdit : undefined}
-  >
-    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1 block h-8 flex items-center justify-center leading-tight">
-        {label.split(' ').map((word: string, i: number) => <span key={i} className="block">{word}</span>)}
-    </span>
-    
+const StatCard = ({ label, value, icon, color, isEditing, onEdit, onSave, onCancel, inputValue, onInputChange }: any) => (
+  <div className={`bg-slate-50/50 rounded-[32px] p-6 border border-transparent transition-all ${!isEditing && onEdit ? 'hover:bg-white hover:border-indigo-100 hover:shadow-2xl hover:shadow-slate-200/50 cursor-pointer' : ''}`} onClick={!isEditing && onEdit ? onEdit : undefined}>
+    <div className="flex items-center gap-2 mb-2">
+      <span className="text-slate-400">{icon}</span>
+      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{label}</span>
+    </div>
     {isEditing ? (
-      <div className="flex flex-col items-center gap-2 w-full" onClick={e => e.stopPropagation()}>
-        <input 
-          type="number"
-          autoFocus
-          className="w-full text-center text-lg font-bold border-b-2 border-blue-500 focus:outline-none"
-          value={inputValue}
-          onChange={e => onInputChange(Number(e.target.value))}
-        />
+      <div className="flex flex-col gap-3" onClick={e => e.stopPropagation()}>
+        <input type="number" autoFocus className="w-full text-xl font-black border-b-2 border-indigo-500 focus:outline-none bg-transparent" value={inputValue} onChange={e => onInputChange(Number(e.target.value))} />
         <div className="flex gap-2">
-          <button onClick={onSave} className="p-1 text-green-600 hover:bg-green-50 rounded-full"><Check size={16} /></button>
-          <button onClick={onCancel} className="p-1 text-red-600 hover:bg-red-50 rounded-full"><X size={16} /></button>
+          <button onClick={onSave} className="p-1.5 bg-indigo-600 text-white rounded-lg active:scale-90 transition-all"><Check size={14} /></button>
+          <button onClick={onCancel} className="p-1.5 bg-slate-200 text-slate-600 rounded-lg active:scale-90 transition-all"><X size={14} /></button>
         </div>
       </div>
     ) : (
-      <span className={`text-2xl font-bold ${color}`}>{value}</span>
+      <span className={`text-2xl font-black tracking-tighter ${color}`}>{value}</span>
     )}
   </div>
 );
