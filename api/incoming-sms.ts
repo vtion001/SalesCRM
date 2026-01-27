@@ -1,5 +1,5 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import { VoiceResponse } from 'twilio';
+import twilio from 'twilio';
 import { createClient } from '@supabase/supabase-js';
 
 const {
@@ -92,9 +92,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const shouldAutoReply = req.query.autoReply === 'true' || false;
     
     if (shouldAutoReply) {
-      const response = new VoiceResponse();
-      // Note: For SMS, we don't use Voice response, just return 200 OK
-      // Twilio handles the SMS response differently
+      const response = new twilio.twiml.MessagingResponse();
+      // For SMS, we use MessagingResponse instead of VoiceResponse
       console.log('📤 Auto-reply enabled (would send SMS response)');
     }
 
