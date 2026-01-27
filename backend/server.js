@@ -98,13 +98,29 @@ app.get('/api/twilio/token', async (req, res) => {
     console.log(`Original identity: "${identity}"`);
     console.log(`Sanitized identity: "${sanitizedIdentity}"`);
 
-    // 2. Create the token using AUTH TOKEN method (Account SID as Key SID)
-    const token = new AccessToken(
-      accountSid,                   // 1. Account SID
-      accountSid,                   // 2. Key SID (Account SID used as signing key)
-      authToken,                    // 3. Key Secret (Auth Token used as secret)
-      { identity: sanitizedIdentity, ttl: 3600 }
-    );
+    // 2. Create the token
+    let token;
+    // Check global variables loaded at top of file
+    const apiKey = process.env.TWILIO_API_KEY;
+    const apiSecret = process.env.TWILIO_API_SECRET;
+
+    if (apiKey && apiSecret) {
+      // Standard method
+      token = new AccessToken(
+        accountSid,
+        apiKey,
+        apiSecret,
+        { identity: sanitizedIdentity, ttl: 3600 }
+      );
+    } else {
+      // Legacy method (Account SID as Key SID)
+      token = new AccessToken(
+        accountSid,                   // 1. Account SID
+        accountSid,                   // 2. Key SID (Account SID used as signing key)
+        authToken,                    // 3. Key Secret (Auth Token used as secret)
+        { identity: sanitizedIdentity, ttl: 3600 }
+      );
+    }
 
     // 3. Add Voice Grant
     token.addGrant(new VoiceGrant({

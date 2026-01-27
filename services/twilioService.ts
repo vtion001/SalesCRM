@@ -7,7 +7,7 @@
  * - Voice TwiML: /api/twiml/voice
  * - Incoming SMS: /api/incoming-sms
  */
-import { Device, Call, DeviceOptions } from '@twilio/voice-sdk';
+import { Device, Call } from '@twilio/voice-sdk';
 
 // Use relative API paths for Vercel deployment
 // These routes are relative to the deployed Vercel domain
@@ -16,10 +16,15 @@ const BACKEND_URL = (import.meta.env.VITE_BACKEND_URL as string) ||
                     (process.env.BACKEND_URL) || 
                     'http://localhost:4000';
 
+// Environment detection for better debugging
+const isDevelopment = import.meta.env.DEV || process.env.NODE_ENV === 'development';
+console.log('🌍 Environment:', isDevelopment ? 'Development' : 'Production');
+
 console.log('Twilio Service initialized for Vercel API Routes deployment');
 
 interface TwilioToken {
   token: string;
+  method?: string;
 }
 
 interface CallResponse {
@@ -38,7 +43,9 @@ interface SMSResponse {
  * Get Twilio access token from Vercel API
  * This token allows the frontend to use Twilio.Device
  */
-export const getAccessToken = async (identity: string): Promise<string> => {
+export const getAccessToken = async (identity: string, retryCount = 0): Promise<string> => {
+  const MAX_RETRIES = 2;
+  
   try {
     console.log('🔐 Requesting token for identity:', identity);
     
@@ -74,6 +81,7 @@ export const getAccessToken = async (identity: string): Promise<string> => {
 
     console.log('✅ Token received successfully');
     console.log('   Token length:', token.length);
+    console.log('   Token method:', data.method || 'Unknown');
     console.log('   Token format: valid JWT (3 parts)');
     console.log('   Token preview:', token.substring(0, 50) + '...' + token.substring(token.length - 20));
     
@@ -82,8 +90,17 @@ export const getAccessToken = async (identity: string): Promise<string> => {
     console.error('❌ Error getting Twilio token:', {
       message: error?.message,
       endpoint: '/api/twilio/token',
+      retryCount,
       fullError: error
     });
+    
+    // Retry on network failures or 5xx errors
+    if (retryCount < MAX_RETRIES && (error?.message?.includes('fetch') || error?.message?.includes('network'))) {
+      console.log(`🔄 Retrying token request (${retryCount + 1}/${MAX_RETRIES})...`);
+      await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1))); // Exponential backoff
+      return getAccessToken(identity, retryCount + 1);
+    }
+    
     throw error;
   }
 };
@@ -158,7 +175,7 @@ export const initializeTwilioDevice = async (
     }
 
     // Initialize Device instance (v2 style)
-    const options: DeviceOptions = {
+    const options = {
       codecPreferences: [Call.Codec.Opus, Call.Codec.PCMU],
       fakeLocalDTMF: true,
       enableRingingState: true,

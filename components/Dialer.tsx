@@ -78,23 +78,29 @@ export const Dialer: React.FC<DialerProps> = ({ targetLead }) => {
             }
           };
 
-          const onError = (error: any) => {
-            if (!hasResolved) {
-              clearTimeout(readyTimeout);
-              hasResolved = true;
-              // Ensure we have a valid error message even if the error object is non-standard
-              const errorMsg = error?.message || (typeof error === 'string' ? error : 'Unknown device error');
-              const errorCode = error?.code || 'N/A';
-              
-              console.error('❌ Device error during initialization:', {
-                message: errorMsg,
-                code: errorCode,
-                originalError: error
-              });
-              
-              reject(new Error(`${errorMsg} (Code: ${errorCode})`));
-            }
-          };
+           const onError = (error: any) => {
+             if (!hasResolved) {
+               clearTimeout(readyTimeout);
+               hasResolved = true;
+               // Ensure we have a valid error message even if the error object is non-standard
+               const errorMsg = error?.message || (typeof error === 'string' ? error : 'Unknown device error');
+               const errorCode = error?.code || 'N/A';
+               
+               console.error('❌ Device error during initialization:', {
+                 message: errorMsg,
+                 code: errorCode,
+                 originalError: error,
+                 isAccessTokenInvalid: errorCode === 20101
+               });
+               
+               // Special handling for AccessTokenInvalid errors
+               if (errorCode === 20101) {
+                 reject(new Error(`Access Token validation failed. This may indicate incorrect Twilio credentials. (Code: ${errorCode})`));
+               } else {
+                 reject(new Error(`${errorMsg} (Code: ${errorCode})`));
+               }
+             }
+           };
 
           // v2 uses 'registered' instead of 'ready'
           device.on('registered', onReady);
