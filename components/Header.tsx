@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Search, Bell, Settings, LogOut, User, Moon, Shield, X, Lock, Smartphone } from 'lucide-react';
+import { Search, Bell, Settings, LogOut, User, Moon, Shield, X, Lock, Smartphone, ChevronRight } from 'lucide-react';
 import { CurrentUser } from '../types';
 import { MFASetupModal } from './MFASetupModal';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface HeaderProps {
   user: CurrentUser;
@@ -106,23 +107,30 @@ export const Header: React.FC<HeaderProps> = ({ user, onLogout, onUpdateProfile 
                 <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-rose-500 rounded-full border-2 border-white"></span>
               </button>
               
-              {activeDropdown === 'notifications' && (
-                <div className="absolute right-0 top-[calc(100%+8px)] w-96 bg-white rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.1)] border border-slate-100 overflow-hidden animation-fade-in z-50">
-                  <div className="p-6 border-b border-slate-50 flex justify-between items-center">
-                    <h3 className="font-bold text-slate-900">Notifications</h3>
-                    <button className="text-xs text-indigo-600 hover:text-indigo-700 font-bold uppercase tracking-wider">Mark all read</button>
-                  </div>
-                  <div className="max-h-96 overflow-y-auto">
-                    <div className="p-12 text-center">
-                      <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <Bell className="text-slate-300" size={24} />
-                      </div>
-                      <p className="text-sm font-bold text-slate-900">All caught up!</p>
-                      <p className="text-xs text-slate-400 mt-1">No new notifications at the moment.</p>
+              <AnimatePresence>
+                {activeDropdown === 'notifications' && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 10 }}
+                    className="absolute right-0 top-[calc(100%+8px)] w-96 bg-white rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.1)] border border-slate-100 overflow-hidden z-50"
+                  >
+                    <div className="p-6 border-b border-slate-50 flex justify-between items-center">
+                      <h3 className="font-bold text-slate-900">Notifications</h3>
+                      <button className="text-xs text-indigo-600 hover:text-indigo-700 font-bold uppercase tracking-wider">Mark all read</button>
                     </div>
-                  </div>
-                </div>
-              )}
+                    <div className="max-h-96 overflow-y-auto">
+                      <div className="p-12 text-center">
+                        <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                          <Bell className="text-slate-300" size={24} />
+                        </div>
+                        <p className="text-sm font-bold text-slate-900">All caught up!</p>
+                        <p className="text-xs text-slate-400 mt-1">No new notifications at the moment.</p>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
             {/* Settings */}
@@ -134,24 +142,31 @@ export const Header: React.FC<HeaderProps> = ({ user, onLogout, onUpdateProfile 
                 <Settings size={20} />
               </button>
 
-              {activeDropdown === 'settings' && (
-                <div className="absolute right-0 top-[calc(100%+8px)] w-72 bg-white rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.1)] border border-slate-100 overflow-hidden animation-fade-in z-50">
-                  <div className="p-3 space-y-1">
-                    <SettingsItem 
-                      icon={<User size={18} />} 
-                      label="Account Settings" 
-                      onClick={openAccountSettings} 
-                    />
-                    <SettingsItem 
-                      icon={<Shield size={18} />} 
-                      label="Privacy & Security" 
-                      onClick={openSecuritySettings} 
-                    />
-                    <div className="h-px bg-slate-50 my-2 mx-3"></div>
-                    <SettingsItem icon={<Moon size={18} />} label="Dark Mode" toggle />
-                  </div>
-                </div>
-              )}
+              <AnimatePresence>
+                {activeDropdown === 'settings' && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 10 }}
+                    className="absolute right-0 top-[calc(100%+8px)] w-72 bg-white rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.1)] border border-slate-100 overflow-hidden z-50"
+                  >
+                    <div className="p-3 space-y-1">
+                      <SettingsItem 
+                        icon={<User size={18} />} 
+                        label="Account Settings" 
+                        onClick={openAccountSettings} 
+                      />
+                      <SettingsItem 
+                        icon={<Shield size={18} />} 
+                        label="Privacy & Security" 
+                        onClick={openSecuritySettings} 
+                      />
+                      <div className="h-px bg-slate-50 my-2 mx-3"></div>
+                      <SettingsItem icon={<Moon size={18} />} label="Dark Mode" toggle />
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </div>
 
@@ -174,45 +189,43 @@ export const Header: React.FC<HeaderProps> = ({ user, onLogout, onUpdateProfile 
               </div>
             </button>
 
-            {activeDropdown === 'profile' && (
-              <div className="absolute right-0 top-[calc(100%+8px)] w-64 bg-white rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.1)] border border-slate-100 overflow-hidden animation-fade-in z-50">
-                <div className="p-6 border-b border-slate-50 bg-slate-50/50">
-                  <p className="font-black text-slate-900">{user.name}</p>
-                  <p className="text-xs font-medium text-slate-500 mt-1">{user.email}</p>
-                </div>
-                <div className="p-3">
-                  <button 
-                    onClick={openAccountSettings}
-                    className="w-full text-left px-4 py-3 text-sm font-bold text-slate-700 hover:bg-slate-50 rounded-2xl flex items-center gap-3 transition-colors"
-                  >
-                     <User size={18} className="text-slate-400" /> Edit Profile
-                  </button>
-                  <button 
-                    onClick={() => {
-                      setActiveDropdown(null);
-                      setShowMFASetupModal(true);
-                    }}
-                    className="w-full text-left px-4 py-3 text-sm font-bold text-blue-600 hover:bg-blue-50 rounded-2xl flex items-center gap-3 mt-1 transition-colors"
-                  >
-                     <Shield size={18} /> Set Up MFA
-                  </button>
-                  <button 
-                    onClick={onLogout}
-                    className="w-full text-left px-4 py-3 text-sm font-bold text-rose-600 hover:bg-rose-50 rounded-2xl flex items-center gap-3 mt-1 transition-colors"
-                  >
-                     <LogOut size={18} /> Sign Out
-                  </button>
-                </div>
-              </div>
-            )}
+            <AnimatePresence>
+              {activeDropdown === 'profile' && (
+                <motion.div 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 10 }}
+                  className="absolute right-0 top-[calc(100%+8px)] w-64 bg-white rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.1)] border border-slate-100 overflow-hidden z-50"
+                >
+                  <div className="p-6 border-b border-slate-50 bg-slate-50/50">
+                    <p className="font-black text-slate-900">{user.name}</p>
+                    <p className="text-xs font-medium text-slate-500 mt-1">{user.email}</p>
+                  </div>
+                  <div className="p-3">
+                    <button 
+                      onClick={openAccountSettings}
+                      className="w-full text-left px-4 py-3 text-sm font-bold text-slate-700 hover:bg-slate-50 rounded-2xl flex items-center gap-3 transition-colors"
+                    >
+                       <User size={18} className="text-slate-400" /> Edit Profile
+                    </button>
+                    <button 
+                      onClick={onLogout}
+                      className="w-full text-left px-4 py-3 text-sm font-bold text-rose-600 hover:bg-rose-50 rounded-2xl flex items-center gap-3 mt-1 transition-colors"
+                    >
+                       <LogOut size={18} /> Sign Out
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
       </header>
 
-      {/* Modern Glassmorphism Modals */}
-      {showAccountModal && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-[32px] w-full max-w-md shadow-[0_32px_64px_-12px_rgba(0,0,0,0.14)] animate-fade-in overflow-hidden border border-white">
+      {/* Account Modal */}
+      <AnimatePresence>
+        {showAccountModal && (
+          <ModalContainer onClose={() => setShowAccountModal(false)}>
             <div className="p-8 border-b border-slate-50 flex justify-between items-center bg-white">
               <h2 className="text-2xl font-black text-slate-900 tracking-tight">Account Settings</h2>
               <button onClick={() => setShowAccountModal(false)} className="p-2 text-slate-400 hover:bg-slate-50 rounded-xl transition-colors">
@@ -230,33 +243,24 @@ export const Header: React.FC<HeaderProps> = ({ user, onLogout, onUpdateProfile 
                 <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*" />
               </div>
               <div className="space-y-4">
-                <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Full Name</label>
-                  <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)} className="w-full px-5 py-3.5 bg-slate-50 border-2 border-transparent focus:bg-white focus:border-indigo-500/20 focus:ring-4 focus:ring-indigo-500/5 rounded-2xl text-sm font-bold outline-none transition-all" />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Email Address</label>
-                  <input type="email" value={user.email} className="w-full px-5 py-3.5 bg-slate-100 border-2 border-transparent rounded-2xl text-sm font-bold text-slate-400 cursor-not-allowed outline-none" disabled />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Job Title</label>
-                  <input type="text" value={editRole} onChange={(e) => setEditRole(e.target.value)} className="w-full px-5 py-3.5 bg-slate-50 border-2 border-transparent focus:bg-white focus:border-indigo-500/20 focus:ring-4 focus:ring-indigo-500/5 rounded-2xl text-sm font-bold outline-none transition-all" />
-                </div>
+                <InputGroup label="Full Name" value={editName} onChange={setEditName} />
+                <InputGroup label="Email Address" value={user.email} disabled />
+                <InputGroup label="Job Title" value={editRole} onChange={setEditRole} />
               </div>
             </div>
             <div className="p-8 border-t border-slate-50 flex justify-end gap-4 bg-slate-50/50">
-              <button onClick={() => setShowAccountModal(false)} className="px-6 py-3 text-slate-600 font-bold hover:bg-slate-100 rounded-2xl transition-colors">Cancel</button>
-              <button onClick={handleSaveProfile} className="px-8 py-3 bg-indigo-600 text-white font-black rounded-2xl hover:bg-indigo-700 shadow-xl shadow-indigo-600/20 transition-all active:scale-95">Save Changes</button>
+              <button onClick={() => setShowAccountModal(false)} className="px-6 py-3 text-slate-600 font-bold hover:bg-slate-100 rounded-2xl transition-colors text-sm">Cancel</button>
+              <button onClick={handleSaveProfile} className="px-8 py-3 bg-indigo-600 text-white font-black rounded-2xl hover:bg-indigo-700 shadow-xl shadow-indigo-600/20 transition-all active:scale-95 text-sm">Save Changes</button>
             </div>
-          </div>
-        </div>
-      )}
+          </ModalContainer>
+        )}
+      </AnimatePresence>
 
-      {/* Security Modal - Simplified styling */}
-      {showSecurityModal && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-[32px] w-full max-w-md shadow-2xl animate-fade-in overflow-hidden border border-white">
-            <div className="p-8 border-b border-slate-50 flex justify-between items-center">
+      {/* Security Modal */}
+      <AnimatePresence>
+        {showSecurityModal && (
+          <ModalContainer onClose={() => setShowSecurityModal(false)}>
+            <div className="p-8 border-b border-slate-50 flex justify-between items-center bg-white">
               <h2 className="text-2xl font-black text-slate-900 tracking-tight">Security</h2>
               <button onClick={() => setShowSecurityModal(false)} className="p-2 text-slate-400 hover:bg-slate-50 rounded-xl transition-colors">
                 <X size={24} />
@@ -264,33 +268,80 @@ export const Header: React.FC<HeaderProps> = ({ user, onLogout, onUpdateProfile 
             </div>
             <div className="p-8 space-y-8">
               <div className="space-y-4">
-                <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                  <Lock size={14} /> Change Password
+                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                  <Lock size={14} /> Password Management
                 </h3>
-                <input type="password" placeholder="Current Password" className="w-full px-5 py-3.5 bg-slate-50 border-2 border-transparent focus:bg-white focus:border-indigo-500/20 rounded-2xl text-sm font-bold outline-none" />
-                <input type="password" placeholder="New Password" className="w-full px-5 py-3.5 bg-slate-50 border-2 border-transparent focus:bg-white focus:border-indigo-500/20 rounded-2xl text-sm font-bold outline-none" />
+                <div className="space-y-3">
+                  <input type="password" placeholder="Current Password" className="w-full px-5 py-3.5 bg-slate-50 border-2 border-transparent focus:bg-white focus:border-indigo-500/20 rounded-2xl text-sm font-bold outline-none" />
+                  <input type="password" placeholder="New Password" className="w-full px-5 py-3.5 bg-slate-50 border-2 border-transparent focus:bg-white focus:border-indigo-500/20 rounded-2xl text-sm font-bold outline-none" />
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                  <Smartphone size={14} /> Multi-Factor Auth
+                </h3>
+                <button 
+                  onClick={() => { setShowSecurityModal(false); setShowMFASetupModal(true); }}
+                  className="w-full flex items-center justify-between p-5 bg-indigo-50 border-2 border-indigo-100 rounded-2xl group hover:bg-indigo-100 transition-all"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-indigo-600 shadow-sm">
+                      <Shield size={20} />
+                    </div>
+                    <div className="text-left">
+                      <p className="text-sm font-black text-indigo-900">Authenticator App</p>
+                      <p className="text-[10px] font-bold text-indigo-500 uppercase tracking-tight">Highly Recommended</p>
+                    </div>
+                  </div>
+                  <ChevronRight size={20} className="text-indigo-300 group-hover:translate-x-1 transition-transform" />
+                </button>
               </div>
             </div>
             <div className="p-8 border-t border-slate-50 flex justify-end gap-4 bg-slate-50/50">
-              <button onClick={() => setShowSecurityModal(false)} className="px-6 py-3 text-slate-600 font-bold hover:bg-slate-100 rounded-2xl transition-colors">Cancel</button>
-              <button onClick={() => setShowSecurityModal(false)} className="px-8 py-3 bg-indigo-600 text-white font-black rounded-2xl hover:bg-indigo-700 shadow-xl shadow-indigo-600/20 transition-all">Update</button>
+              <button onClick={() => setShowSecurityModal(false)} className="px-6 py-3 text-slate-600 font-bold hover:bg-slate-100 rounded-2xl transition-colors text-sm">Cancel</button>
+              <button className="px-8 py-3 bg-indigo-600 text-white font-black rounded-2xl hover:bg-indigo-700 shadow-xl shadow-indigo-600/20 transition-all active:scale-95 text-sm">Update Security</button>
             </div>
-          </div>
-        </div>
-      )}
-      
-      {/* MFA Setup Modal */}
+          </ModalContainer>
+        )}
+      </AnimatePresence>
+
       <MFASetupModal 
-        isOpen={showMFASetupModal}
-        onClose={() => setShowMFASetupModal(false)}
-        onSuccess={() => {
-          // Optionally refresh user data to reflect MFA status
-          console.log('MFA enabled successfully');
-        }}
+        isOpen={showMFASetupModal} 
+        onClose={() => setShowMFASetupModal(false)} 
+        onSuccess={() => { setShowMFASetupModal(false); }}
       />
     </>
   );
 };
+
+const ModalContainer = ({ children, onClose }: any) => (
+  <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <motion.div 
+      initial={{ scale: 0.95, opacity: 0, y: 20 }}
+      animate={{ scale: 1, opacity: 1, y: 0 }}
+      exit={{ scale: 0.95, opacity: 0, y: 20 }}
+      className="bg-white rounded-[32px] w-full max-w-md shadow-2xl overflow-hidden border border-white"
+    >
+      {children}
+    </motion.div>
+  </div>
+);
+
+const InputGroup = ({ label, value, onChange, disabled }: any) => (
+  <div>
+    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">{label}</label>
+    <input 
+      type="text" 
+      value={value} 
+      onChange={e => onChange?.(e.target.value)} 
+      disabled={disabled}
+      className={`w-full px-5 py-3.5 border-2 border-transparent rounded-2xl text-sm font-bold outline-none transition-all ${
+        disabled ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-slate-50 focus:bg-white focus:border-indigo-500/20 focus:ring-4 focus:ring-indigo-500/5 text-slate-900'
+      }`} 
+    />
+  </div>
+);
 
 const SettingsItem = ({ icon, label, toggle, onClick }: any) => (
   <button 

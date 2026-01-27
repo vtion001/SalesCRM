@@ -21,11 +21,12 @@ import { motion } from 'framer-motion';
 
 interface AnalyticsProps {
   items: Lead[];
+  onNavigate?: (view: string) => void;
 }
 
 const COLORS = ['#6366f1', '#a855f7', '#ec4899', '#f43f5e'];
 
-export const Analytics: React.FC<AnalyticsProps> = ({ items }) => {
+export const Analytics: React.FC<AnalyticsProps> = ({ items, onNavigate }) => {
   const { activities, loading: loadingActivities } = useAllActivities();
 
   // 1. Calculate Pipeline Metrics
@@ -96,9 +97,9 @@ export const Analytics: React.FC<AnalyticsProps> = ({ items }) => {
 
         {/* Top Level KPIs */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-          <KPIBox label="Pipeline Value" value={`$${metrics.totalPipelineValue.toLocaleString()}`} icon={<DollarSign size={20} />} trend="+14%" />
-          <KPIBox label="Weighted Forecast" value={`$${Math.round(metrics.weightedValue).toLocaleString()}`} icon={<TrendingUp size={20} />} trend="+8%" />
-          <KPIBox label="Avg. Confidence" value={`${metrics.avgProbability}%`} icon={<Target size={20} />} trend="+2%" />
+          <KPIBox label="Pipeline Value" value={`$${metrics.totalPipelineValue.toLocaleString()}`} icon={<DollarSign size={20} />} trend="+14%" onClick={() => onNavigate?.('deals')} />
+          <KPIBox label="Weighted Forecast" value={`$${Math.round(metrics.weightedValue).toLocaleString()}`} icon={<TrendingUp size={20} />} trend="+8%" onClick={() => onNavigate?.('deals')} />
+          <KPIBox label="Avg. Confidence" value={`${metrics.avgProbability}%`} icon={<Target size={20} />} trend="+2%" onClick={() => onNavigate?.('leads')} />
           <KPIBox label="Total Touchpoints" value={(interactionData[0].value + interactionData[1].value).toString()} icon={<BarChart3 size={20} />} trend="+22%" />
         </div>
 
@@ -221,10 +222,11 @@ export const Analytics: React.FC<AnalyticsProps> = ({ items }) => {
   );
 };
 
-const KPIBox = ({ label, value, icon, trend }: any) => (
+const KPIBox = ({ label, value, icon, trend, onClick }: any) => (
   <motion.div 
     whileHover={{ y: -5 }}
-    className="bg-white rounded-[32px] p-8 border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.02)]"
+    onClick={onClick}
+    className={`bg-white rounded-[32px] p-8 border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.02)] ${onClick ? 'cursor-pointer' : ''}`}
   >
     <div className="flex items-center justify-between mb-6">
       <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-indigo-600 shadow-inner">

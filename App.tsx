@@ -28,6 +28,7 @@ export default function App() {
   const [currentView, setCurrentView] = useState('dashboard');
   const [authLoading, setAuthLoading] = useState(true);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+  const [dialerActiveTab, setDialerActiveTab] = useState('Dialer');
   
   // Supabase Hooks
   const { leads, addLead, deleteLead, updateLead } = useLeads();
@@ -74,6 +75,11 @@ export default function App() {
   const selectedItem = useMemo(() => 
     allPipelineItems.find(item => item.id === selectedLeadId),
     [allPipelineItems, selectedLeadId]
+  );
+
+  const isSelectedContact = useMemo(() => 
+    contacts.some(c => c.id === selectedLeadId),
+    [contacts, selectedLeadId]
   );
 
   // Global Keyboard Shortcuts
@@ -266,16 +272,13 @@ export default function App() {
               className="h-full w-full"
             >
               {currentView === 'dashboard' && (
-            <Dashboard 
-              leads={leads} 
-              deals={allPipelineItems} 
-              onNavigate={setCurrentView}
-              onSelectLead={(id) => {
-                setSelectedLeadId(id);
-                setCurrentView('leads');
-              }}
-            />
-          )}
+                <Dashboard 
+                  leads={leads} 
+                  deals={allPipelineItems} 
+                  onNavigate={setCurrentView} 
+                  onSelectLead={handleSelectItem} 
+                />
+              )}
 
               {currentView === 'leads' && (
                 <div className="grid grid-cols-12 h-full">
@@ -298,25 +301,37 @@ export default function App() {
                         const p = addActivity(a);
                         toast.promise(p, { loading: 'Logging activity...', success: 'Activity logged', error: 'Failed' });
                         await p;
-                      }} 
+                      }}
+                      onDial={() => setDialerActiveTab('Dialer')}
+                      onMessage={() => setDialerActiveTab('SMS')}
                     />
                   </div>
                   <div className="hidden lg:block lg:col-span-4 h-full overflow-hidden bg-white">
-                     <Dialer targetLead={selectedItem} onLogActivity={addActivity} />
+                     <Dialer 
+                       targetLead={selectedItem} 
+                       onLogActivity={addActivity} 
+                       activeTab={dialerActiveTab}
+                       onTabChange={setDialerActiveTab}
+                     />
                      <DialerSound />
                   </div>
                 </div>
               )}
 
               {currentView === 'contacts' && (
-                <Contacts contacts={contacts} onAddContact={() => setIsContactModalOpen(true)} onDeleteContact={handleDeleteItem} />
+                <Contacts 
+                  contacts={contacts} 
+                  onAddContact={() => setIsContactModalOpen(true)} 
+                  onDeleteContact={handleDeleteItem} 
+                  onViewProfile={handleSelectItem}
+                />
               )}
 
               {currentView === 'deals' && (
                 <Deals items={allPipelineItems} onUpdateItem={handleUpdateItem} onDeleteItem={handleDeleteItem} onAddNew={() => setIsLeadModalOpen(true)} />
               )}
 
-              {currentView === 'analytics' && <Analytics items={allPipelineItems} />}
+              {currentView === 'analytics' && <Analytics items={allPipelineItems} onNavigate={setCurrentView} />}
             </motion.div>
           </AnimatePresence>
         </div>
