@@ -70,7 +70,10 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
     console.log(`🔐 Generating token for identity: ${sanitizedIdentity}`);
 
     // Create access token with Voice grant
-    const token = new twilio.jwt.AccessToken(
+    const AccessToken = twilio.jwt.AccessToken;
+    const VoiceGrant = AccessToken.VoiceGrant;
+    
+    const token = new AccessToken(
       TWILIO_ACCOUNT_SID,
       TWILIO_API_KEY,
       TWILIO_API_SECRET,
@@ -78,7 +81,7 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
     );
 
     // Add Voice grant for outgoing calls
-    const voiceGrant = new twilio.jwt.VoiceGrant({
+    const voiceGrant = new VoiceGrant({
       outgoingApplicationSid: TWILIO_TWIML_APP_SID,
       incomingAllow: true
     });
