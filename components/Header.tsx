@@ -93,23 +93,9 @@ export const Header: React.FC<HeaderProps> = ({ user, onLogout, onUpdateProfile 
                     <button className="text-xs text-blue-600 hover:text-blue-700 font-medium">Mark all read</button>
                   </div>
                   <div className="max-h-80 overflow-y-auto">
-                    <NotificationItem 
-                      title="New Lead Assigned" 
-                      desc="High value prospect from Future Corp assigned to you." 
-                      time="10m ago" 
-                      unread 
-                    />
-                    <NotificationItem 
-                      title="Meeting Reminder" 
-                      desc="Demo with Acme Inc starts in 30 minutes." 
-                      time="30m ago" 
-                    />
-                    <NotificationItem 
-                      title="Task Overdue" 
-                      desc="Follow up call with Sarah Jenkins." 
-                      time="2h ago" 
-                      type="alert"
-                    />
+                    <div className="p-8 text-center text-gray-400">
+                      <p className="text-sm">No notifications yet</p>
+                    </div>
                   </div>
                 </div>
               )}

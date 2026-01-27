@@ -1,15 +1,23 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { Deal } from '../types';
 
 interface DealsProps {
   deals: Deal[];
   onAddDeal: () => void;
+  onDeleteDeal?: (id: string) => void;
 }
 
 const STAGES = ['Qualified', 'Proposal', 'Negotiation', 'Closed'];
 
-export const Deals: React.FC<DealsProps> = ({ deals, onAddDeal }) => {
+export const Deals: React.FC<DealsProps> = ({ deals, onAddDeal, onDeleteDeal }) => {
+  const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
+
+  const toggleMenu = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setActiveMenuId(activeMenuId === id ? null : id);
+  };
+
   return (
     <div className="h-full flex flex-col bg-gray-50">
       <div className="px-6 py-4 bg-white border-b border-gray-200 flex items-center justify-between shadow-sm z-10">
@@ -44,9 +52,41 @@ export const Deals: React.FC<DealsProps> = ({ deals, onAddDeal }) => {
                 <div className="flex-1 overflow-y-auto p-3 space-y-3">
                   {stageDeals.map((deal) => (
                     <div key={deal.id} className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 cursor-move hover:shadow-md transition-all group">
-                      <div className="flex justify-between items-start mb-2">
+                      <div className="flex justify-between items-start mb-2 relative">
                         <span className="bg-blue-50 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded border border-blue-100">{deal.company}</span>
-                        <button className="text-gray-300 hover:text-gray-500">•••</button>
+                        <div className="relative">
+                          <button 
+                            onClick={(e) => toggleMenu(deal.id, e)}
+                            className="text-gray-300 hover:text-gray-500 p-1 rounded-full hover:bg-gray-50 transition-colors"
+                          >
+                            •••
+                          </button>
+                          
+                          {activeMenuId === deal.id && (
+                            <>
+                              <div 
+                                className="fixed inset-0 z-10 cursor-default" 
+                                onClick={(e) => { e.stopPropagation(); setActiveMenuId(null); }}
+                              ></div>
+                              <div className="absolute right-0 top-full mt-1 w-32 bg-white border border-gray-100 rounded-lg shadow-lg z-20 py-1">
+                                <button className="w-full text-left px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-50">Edit</button>
+                                <button className="w-full text-left px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-50">Move</button>
+                                {onDeleteDeal && (
+                                  <button 
+                                    className="w-full text-left px-3 py-1.5 text-xs text-red-600 hover:bg-red-50 border-t border-gray-50 mt-1"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      onDeleteDeal(deal.id);
+                                      setActiveMenuId(null);
+                                    }}
+                                  >
+                                    Delete
+                                  </button>
+                                )}
+                              </div>
+                            </>
+                          )}
+                        </div>
                       </div>
                       <h4 className="font-semibold text-gray-900 text-sm mb-1">{deal.title}</h4>
                       <div className="text-lg font-bold text-gray-900 mb-3">${deal.value.toLocaleString()}</div>

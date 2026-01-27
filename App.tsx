@@ -9,6 +9,7 @@ import { Dashboard } from './components/Dashboard';
 import { Contacts } from './components/Contacts';
 import { Deals } from './components/Deals';
 import { Analytics } from './components/Analytics';
+import { ContactForm } from './components/ContactForm';
 import { Lead, Activity, Note, Contact, Deal, CurrentUser } from './types';
 
 export default function App() {
@@ -32,13 +33,12 @@ export default function App() {
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [currentNote, setCurrentNote] = useState<Note | undefined>(undefined);
+  const [isContactModalOpen, setIsContactModalOpen] = useState(false);
 
   const selectedLead = leads.find(l => l.id === selectedLeadId);
 
   const handleLogin = () => {
     setIsAuthenticated(true);
-    // Auto-create some data for the "end-to-end" experience immediately upon login if empty
-    if(leads.length === 0) handleAddLead();
   };
 
   const handleLogout = () => {
@@ -50,55 +50,64 @@ export default function App() {
     setCurrentUser(prev => ({ ...prev, ...updates }));
   };
 
-  const handleAddLead = () => {
+  const handleAddLead = (leadData?: Partial<Lead>) => {
     const newLead: Lead = {
       id: Date.now().toString(),
-      name: `Lead ${Math.floor(Math.random() * 1000)}`,
-      role: 'Decision Maker',
-      company: 'Future Corp',
-      avatar: `https://ui-avatars.com/api/?name=Lead+${Math.floor(Math.random() * 10)}&background=random`,
-      status: 'New Lead',
-      lastActivityTime: 'Just now',
-      email: 'prospect@futurecorp.com',
-      phone: '+1 (555) 012-3456',
-      isOnline: true,
-      dealValue: 15000,
-      probability: 25,
-      lastContactDate: 'Today'
+      name: leadData?.name || '',
+      role: leadData?.role || '',
+      company: leadData?.company || '',
+      avatar: leadData?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(leadData?.name || 'User')}&background=random`,
+      status: leadData?.status || 'New Lead',
+      lastActivityTime: leadData?.lastActivityTime || 'Just now',
+      email: leadData?.email || '',
+      phone: leadData?.phone || '',
+      isOnline: leadData?.isOnline ?? false,
+      dealValue: leadData?.dealValue || 0,
+      probability: leadData?.probability || 0,
+      lastContactDate: leadData?.lastContactDate || 'Never'
     };
-    
-    // Auto-create a linked deal for dashboard stats
-    handleAddDeal(newLead.company, 15000);
 
     setLeads([newLead, ...leads]);
     setSelectedLeadId(newLead.id);
   };
 
-  const handleAddContact = () => {
+  const handleSaveContact = (contactData: Omit<Contact, 'id' | 'lastContacted' | 'status'>) => {
     const newContact: Contact = {
+      ...contactData,
       id: Date.now().toString(),
-      name: 'Sarah Jenkins',
-      email: 'sarah.j@techsolutions.io',
-      phone: '+1 (555) 987-6543',
-      role: 'VP of Engineering',
-      company: 'Tech Solutions Inc',
-      lastContacted: '2 days ago',
+      lastContacted: 'Never',
       status: 'Active'
     };
     setContacts([newContact, ...contacts]);
+    setIsContactModalOpen(false);
   };
 
-  const handleAddDeal = (company = 'Acme Co', value = 25000) => {
+  const handleDeleteContact = (id: string) => {
+    setContacts(contacts.filter(c => c.id !== id));
+  };
+
+  const handleAddDeal = (company: string, value: number, dealData?: Partial<Deal>) => {
     const newDeal: Deal = {
       id: Date.now().toString(),
-      title: 'Enterprise License Expansion',
+      title: dealData?.title || '',
       value: value,
       company: company,
-      stage: 'Proposal',
-      owner: 'Alex Rivers',
-      closingDate: 'Next Month'
+      stage: dealData?.stage || 'Qualified',
+      owner: dealData?.owner || currentUser.name,
+      closingDate: dealData?.closingDate || ''
     };
     setDeals([newDeal, ...deals]);
+  };
+
+  const handleDeleteDeal = (id: string) => {
+    setDeals(deals.filter(d => d.id !== id));
+  };
+
+  const handleDeleteLead = (id: string) => {
+    setLeads(leads.filter(l => l.id !== id));
+    if (selectedLeadId === id) {
+      setSelectedLeadId(null);
+    }
   };
 
   if (!isAuthenticated) {
@@ -130,7 +139,7 @@ export default function App() {
                   leads={leads} 
                   selectedId={selectedLeadId} 
                   onSelect={setSelectedLeadId}
-                  onAddLead={handleAddLead}
+                  onAddContact={() => setIsContactModalOpen(true)}
                 />
               </div>
               <div className="col-span-12 md:col-span-8 lg:col-span-5 border-r border-gray-200 h-full overflow-hidden bg-white">
@@ -138,6 +147,7 @@ export default function App() {
                   lead={selectedLead} 
                   activities={selectedLead ? activities : []}
                   note={selectedLead ? currentNote : undefined}
+                  onDelete={handleDeleteLead}
                 />
               </div>
               <div className="hidden lg:block lg:col-span-4 h-full overflow-hidden bg-white">
@@ -147,11 +157,19 @@ export default function App() {
           )}
 
           {currentView === 'contacts' && (
-            <Contacts contacts={contacts} onAddContact={handleAddContact} />
+            <Contacts 
+              contacts={contacts} 
+              onAddContact={() => setIsContactModalOpen(true)}
+              onDeleteContact={handleDeleteContact}
+            />
           )}
 
           {currentView === 'deals' && (
-            <Deals deals={deals} onAddDeal={() => handleAddDeal()} />
+            <Deals 
+              deals={deals} 
+              onAddDeal={() => handleAddDeal('', 0)} 
+              onDeleteDeal={handleDeleteDeal}
+            />
           )}
 
           {currentView === 'analytics' && (
@@ -159,6 +177,13 @@ export default function App() {
           )}
 
         </div>
+        
+        {isContactModalOpen && (
+          <ContactForm 
+            onSave={handleSaveContact} 
+            onCancel={() => setIsContactModalOpen(false)} 
+          />
+        )}
       </main>
     </div>
   );

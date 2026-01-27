@@ -1,14 +1,17 @@
-import React from 'react';
-import { Mail, Phone, Clock, Pin, User, FolderOpen } from 'lucide-react';
+import React, { useState } from 'react';
+import { Mail, Phone, Clock, Pin, FolderOpen, Trash2, MoreHorizontal } from 'lucide-react';
 import { Lead, Activity, Note } from '../types';
 
 interface LeadDetailProps {
   lead: Lead | undefined;
   activities: Activity[];
   note: Note | undefined;
+  onDelete?: (id: string) => void;
 }
 
-export const LeadDetail: React.FC<LeadDetailProps> = ({ lead, activities, note }) => {
+export const LeadDetail: React.FC<LeadDetailProps> = ({ lead, activities, note, onDelete }) => {
+  const [showOptions, setShowOptions] = useState(false);
+
   if (!lead) {
     return (
       <div className="h-full flex flex-col items-center justify-center bg-gray-50/50 p-8 text-center">
@@ -24,24 +27,77 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({ lead, activities, note }
   return (
     <div className="h-full overflow-y-auto bg-white p-8">
       {/* Header Profile */}
-      <div className="flex items-start gap-6 mb-8">
-        <img src={lead.avatar} alt={lead.name} className="w-20 h-20 rounded-xl object-cover shadow-sm bg-gray-200" />
-        <div className="flex-1">
-          <h1 className="text-2xl font-bold text-gray-900 mb-1">{lead.name}</h1>
-          <p className="text-gray-500 text-base mb-4">
-            {lead.role} at <span className="text-gray-900 font-medium">{lead.company}</span>
-          </p>
-          
-          <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-gray-500">
-            <div className="flex items-center gap-2 hover:text-blue-600 cursor-pointer transition-colors">
-              <Mail size={16} />
-              <span>{lead.email}</span>
-            </div>
-            <div className="flex items-center gap-2 hover:text-blue-600 cursor-pointer transition-colors">
-              <Phone size={16} />
-              <span>{lead.phone}</span>
+      <div className="flex items-start justify-between mb-8">
+        <div className="flex items-start gap-6">
+          <img src={lead.avatar} alt={lead.name} className="w-20 h-20 rounded-xl object-cover shadow-sm bg-gray-200" />
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-1">{lead.name}</h1>
+            <p className="text-gray-500 text-base mb-4">
+              {lead.role} at <span className="text-gray-900 font-medium">{lead.company}</span>
+            </p>
+            
+            <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-gray-500">
+              <div className="flex items-center gap-2 hover:text-blue-600 cursor-pointer transition-colors">
+                <Mail size={16} />
+                <span>{lead.email}</span>
+              </div>
+              <div className="flex items-center gap-2 hover:text-blue-600 cursor-pointer transition-colors">
+                <Phone size={16} />
+                <span>{lead.phone}</span>
+              </div>
             </div>
           </div>
+        </div>
+        
+        <div className="flex items-center gap-2">
+           {onDelete && (
+            <button 
+              onClick={() => onDelete(lead.id)}
+              className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors"
+              title="Delete Lead"
+            >
+              <Trash2 size={20} />
+            </button>
+           )}
+           <div className="relative">
+             <button 
+               onClick={() => setShowOptions(!showOptions)}
+               className="p-2 text-gray-300 hover:text-gray-500 rounded-full transition-colors"
+             >
+               <MoreHorizontal size={20} />
+             </button>
+             {showOptions && (
+               <div className="absolute right-0 top-full mt-2 w-48 bg-white border border-gray-100 rounded-xl shadow-lg z-10 py-1">
+                 <button 
+                   className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                   onClick={() => setShowOptions(false)}
+                 >
+                   Edit Profile
+                 </button>
+                 <button 
+                   className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                   onClick={() => setShowOptions(false)}
+                 >
+                   Export Data
+                 </button>
+                 {onDelete && (
+                    <button 
+                      className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 border-t border-gray-50 mt-1 pt-2"
+                      onClick={() => {
+                        onDelete(lead.id);
+                        setShowOptions(false);
+                      }}
+                    >
+                      Delete Lead
+                    </button>
+                 )}
+               </div>
+             )}
+             {/* Click outside listener could be added here for robustness */}
+             {showOptions && (
+                <div className="fixed inset-0 z-0" onClick={() => setShowOptions(false)}></div>
+             )}
+           </div>
         </div>
       </div>
 
