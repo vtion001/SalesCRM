@@ -57,7 +57,7 @@ export const Deals: React.FC<DealsProps> = ({ items, onUpdateItem, onDeleteItem,
       <div className="flex-1 overflow-x-auto p-8">
         <div className="flex h-full gap-8 min-w-max">
           {STAGES.map((stage) => {
-            const stageItems = items.filter(i => i.status === stage);
+            const stageItems = (items || []).filter(i => i.status === stage);
             const totalValue = stageItems.reduce((acc, curr) => acc + (curr.dealValue || 0), 0);
 
             return (

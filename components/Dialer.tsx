@@ -38,6 +38,13 @@ export const Dialer: React.FC<DialerProps> = ({ targetLead, onLogActivity }) => 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const callTimerRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Reset messages when target lead changes
+  useEffect(() => {
+    if (!targetLead) {
+      setMessages([]);
+    }
+  }, [targetLead?.id]);
+
   // Initialize Twilio Device on component mount
   useEffect(() => {
     const initDevice = async () => {
@@ -484,7 +491,7 @@ export const Dialer: React.FC<DialerProps> = ({ targetLead, onLogActivity }) => 
               <>
                 <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50/50">
                   <div className="text-center text-xs text-gray-400 my-4">Today</div>
-                  {messages.map((msg) => (
+                  {(messages || []).map((msg) => (
                     <div key={msg.id} className={`flex ${msg.sender === 'me' ? 'justify-end' : 'justify-start'}`}>
                       <div className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm shadow-sm ${
                         msg.sender === 'me' 

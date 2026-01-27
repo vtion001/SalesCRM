@@ -219,9 +219,9 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
           </div>
         </div>
         
-        {activities.length > 0 ? (
+        {(activities || []).length > 0 ? (
           <div className="relative pl-4 border-l-2 border-gray-100 space-y-8">
-            {activities.map((activity) => (
+            {(activities || []).map((activity) => (
               <div key={activity.id} className="relative pl-8">
                 <div className={`absolute -left-[21px] top-0 w-10 h-10 rounded-full flex items-center justify-center border-4 border-white ${
                   activity.type === 'call' ? 'bg-blue-100 text-blue-600' : 'bg-purple-100 text-purple-600'
@@ -289,7 +289,7 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
         )}
 
         <div className="space-y-4">
-          {activities.filter(a => a.type as any === 'note').length === 0 && !note ? (
+          {(activities || []).filter(a => a.type as any === 'note').length === 0 && !note ? (
             <div className="text-center py-8 border border-gray-100 rounded-xl text-gray-400 text-sm italic bg-gray-50/30">
               No notes available.
             </div>

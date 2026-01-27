@@ -8,9 +8,12 @@ interface DashboardProps {
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({ leads, deals }) => {
-  const totalRevenue = deals.reduce((acc, deal) => acc + deal.value, 0);
-  const wonDeals = deals.filter(d => d.stage === 'Closed').length;
-  const pipelineValue = deals.filter(d => d.stage !== 'Closed').reduce((acc, deal) => acc + deal.value, 0);
+  const safeDeals = deals || [];
+  const safeLeads = leads || [];
+  
+  const totalRevenue = safeDeals.reduce((acc, deal) => acc + deal.value, 0);
+  const wonDeals = safeDeals.filter(d => d.stage === 'Closed').length;
+  const pipelineValue = safeDeals.filter(d => d.stage !== 'Closed').reduce((acc, deal) => acc + deal.value, 0);
 
   return (
     <div className="h-full overflow-y-auto bg-gray-50/50 p-8">
