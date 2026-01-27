@@ -1,5 +1,5 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import jwt from 'jsonwebtoken';
+import twilio from 'twilio';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -13,70 +13,61 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const accountSid = process.env.TWILIO_ACCOUNT_SID;
     const apiKey = process.env.TWILIO_API_KEY;
     const apiSecret = process.env.TWILIO_API_SECRET;
-    const authToken = process.env.TWILIO_AUTH_TOKEN;  // <-- AUTH_TOKEN is the secret!
-    const appSid = process.env.TWILIO_TWIML_APP_SID;
+    const twimlAppSid = process.env.TWILIO_TWIML_APP_SID;
 
-    if (!accountSid || !apiKey || !apiSecret || !authToken || !appSid) {
+    if (!accountSid || !apiKey || !apiSecret || !twimlAppSid) {
       console.error('❌ Missing Twilio env vars:', { 
         accountSid: !!accountSid, 
         apiKey: !!apiKey, 
-        apiSecret: !!apiSecret,
-        authToken: !!authToken,
-        appSid: !!appSid 
+        apiSecret: !!apiSecret, 
+        twimlAppSid: !!twimlAppSid 
       });
       return res.status(500).json({ error: 'Missing Twilio configuration' });
     }
 
     const identity = String(req.query?.identity || 'user').replace(/[^a-zA-Z0-9_]/g, '_');
-    const ttl = 3600;
 
-    // Create JWT payload with Twilio Voice grants
-    // Structure matches Twilio's expected format exactly
-    const payload = {
-      grants: {
-        identity: identity,
-        voice: {
-          outgoing: {
-            application_sid: appSid
-          },
-          incoming: {
-            allow: true
-          }
-        }
-      }
-    };
+    // Use Twilio SDK to generate access token
+    // This ensures the token format is exactly what Twilio Client SDK expects
+    const AccessToken = twilio.jwt.AccessToken;
+    const VoiceGrant = AccessToken.VoiceGrant;
 
-    // Sign JWT with the correct algorithm and options
-    // IMPORTANT: For Access Tokens, use TWILIO_AUTH_TOKEN as the secret, NOT TWILIO_API_SECRET
-    // issuer must be the API Key
-    // subject must be the Account SID
-    const token = jwt.sign(payload, authToken, {
-      algorithm: 'HS256',
-      issuer: apiKey,
-      subject: accountSid,
-      expiresIn: ttl
+    console.log(`🔧 Creating token for identity: ${identity}`);
+    console.log(`📋 Using Account SID: ${accountSid.substring(0, 10)}...`);
+    console.log(`🔑 Using API Key: ${apiKey.substring(0, 10)}...`);
+    console.log(`📱 Using TwiML App SID: ${twimlAppSid.substring(0, 10)}...`);
+
+    // Create the access token
+    const token = new AccessToken(accountSid, apiKey, apiSecret, { 
+      identity: identity,
+      ttl: 3600 // 1 hour
     });
 
-    // Debug logging
-    console.log(`✅ Token generated for identity: ${identity}`);
-    console.log(`📋 JWT Payload:`, JSON.stringify(payload, null, 2));
-    console.log(`🔐 Signing with:
-      - Algorithm: HS256
-      - Issuer (API Key): ${apiKey.substring(0, 8)}...
-      - Subject (Account SID): ${accountSid.substring(0, 8)}...
-      - Secret length: ${apiSecret.length} chars
-    `);
-    console.log(`📊 Token length: ${token.length} bytes`);
+    // Add voice grant for outgoing and incoming calls
+    const voiceGrant = new VoiceGrant({
+      outgoingApplicationSid: twimlAppSid,
+      incomingAllow: true
+    });
+
+    token.addGrant(voiceGrant);
+
+    // Convert to JWT string
+    const jwt = token.toJwt();
+
+    console.log(`✅ Access token generated successfully`);
+    console.log(`📊 Token length: ${jwt.length} bytes`);
+    console.log(`⏰ Token expires in: 3600 seconds (1 hour)`);
 
     return res.status(200).json({ 
-      token, 
-      identity, 
-      expiresIn: ttl 
+      token: jwt, 
+      identity: identity,
+      expiresIn: 3600
     });
 
   } catch (error: any) {
     console.error('❌ Token generation error:', {
       message: error.message,
+      code: error.code,
       stack: error.stack
     });
     return res.status(500).json({ 
