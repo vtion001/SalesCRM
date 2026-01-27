@@ -9,8 +9,8 @@ const mapContactFromDB = (data: any): Contact => ({
   company: data.company,
   email: data.email,
   phone: data.phone,
-  lastContacted: data.last_contact_contacted || data.last_contacted,
-  status: data.status
+  lastContacted: data.last_contacted || 'Never',
+  status: data.status as 'Active' | 'Inactive'
 });
 
 const mapContactToDB = (contact: Partial<Contact>) => ({
@@ -35,17 +35,21 @@ export const useContacts = () => {
   const fetchContacts = async () => {
     try {
       setLoading(true);
+      console.log('🔄 Fetching contacts from Supabase...');
       const { data, error: fetchError } = await supabase
         .from('contacts')
         .select('*')
         .order('created_at', { ascending: false });
 
       if (fetchError) throw fetchError;
-      setContacts((data || []).map(mapContactFromDB));
+      
+      const mappedContacts = (data || []).map(mapContactFromDB);
+      console.log(`✅ Fetched ${mappedContacts.length} contacts`);
+      setContacts(mappedContacts);
       setError(null);
     } catch (err: any) {
       setError(err.message);
-      console.error('Error fetching contacts:', err);
+      console.error('❌ Error fetching contacts:', err);
     } finally {
       setLoading(false);
     }
@@ -53,20 +57,28 @@ export const useContacts = () => {
 
   const addContact = async (contact: Omit<Contact, 'id'>) => {
     try {
+      console.log('💾 Adding contact to Supabase:', contact);
       const dbData = mapContactToDB(contact);
+      
       const { data, error: insertError } = await supabase
         .from('contacts')
         .insert([dbData])
         .select()
         .single();
 
-      if (insertError) throw insertError;
+      if (insertError) {
+        console.error('❌ Supabase insert error:', insertError);
+        throw insertError;
+      }
+
+      console.log('✅ Contact added successfully:', data);
       const newContact = mapContactFromDB(data);
-      setContacts([newContact, ...contacts]);
+      setContacts(prev => [newContact, ...prev]);
       return newContact;
     } catch (err: any) {
       setError(err.message);
-      console.error('Error adding contact:', err);
+      console.error('❌ Error adding contact:', err);
+      return null;
     }
   };
 
@@ -82,26 +94,28 @@ export const useContacts = () => {
 
       if (updateError) throw updateError;
       const updatedContact = mapContactFromDB(data);
-      setContacts(contacts.map(c => c.id === id ? updatedContact : c));
+      setContacts(prev => prev.map(c => c.id === id ? updatedContact : c));
       return updatedContact;
     } catch (err: any) {
       setError(err.message);
-      console.error('Error updating contact:', err);
+      console.error('❌ Error updating contact:', err);
     }
   };
 
   const deleteContact = async (id: string) => {
     try {
+      console.log('🗑️ Deleting contact:', id);
       const { error: deleteError } = await supabase
         .from('contacts')
         .delete()
         .eq('id', id);
 
       if (deleteError) throw deleteError;
-      setContacts(contacts.filter(c => c.id !== id));
+      setContacts(prev => prev.filter(c => c.id !== id));
+      console.log('✅ Contact deleted');
     } catch (err: any) {
       setError(err.message);
-      console.error('Error deleting contact:', err);
+      console.error('❌ Error deleting contact:', err);
     }
   };
 
