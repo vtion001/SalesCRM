@@ -82,9 +82,17 @@ export const Dialer: React.FC<DialerProps> = ({ targetLead }) => {
             if (!hasResolved) {
               clearTimeout(readyTimeout);
               hasResolved = true;
-              const errorMsg = error?.message || 'Unknown device error';
-              console.error('❌ Device error during initialization:', errorMsg);
-              reject(new Error(errorMsg));
+              // Ensure we have a valid error message even if the error object is non-standard
+              const errorMsg = error?.message || (typeof error === 'string' ? error : 'Unknown device error');
+              const errorCode = error?.code || 'N/A';
+              
+              console.error('❌ Device error during initialization:', {
+                message: errorMsg,
+                code: errorCode,
+                originalError: error
+              });
+              
+              reject(new Error(`${errorMsg} (Code: ${errorCode})`));
             }
           };
 
@@ -104,7 +112,7 @@ export const Dialer: React.FC<DialerProps> = ({ targetLead }) => {
         setTwilioDevice(device);
         setIsDeviceReady(true);
       } catch (err: any) {
-        const errorMsg = err.message || 'Failed to initialize Twilio Device';
+        const errorMsg = err?.message || (typeof err === 'string' ? err : 'Failed to initialize Twilio Device');
         console.error('❌ Device initialization failed:', {
           message: errorMsg,
           error: err
