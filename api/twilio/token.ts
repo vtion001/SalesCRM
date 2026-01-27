@@ -1,5 +1,4 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import twilio from 'twilio';
 
 /**
  * Generate Twilio Access Token for Voice
@@ -24,6 +23,8 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
+    // Import twilio within the handler to ensure it's available
+    const twilio = require('twilio');
     // Get environment variables at request time (not at module load time)
     const TWILIO_ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID;
     const TWILIO_API_KEY = process.env.TWILIO_API_KEY;
