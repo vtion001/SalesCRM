@@ -16,7 +16,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const appSid = process.env.TWILIO_TWIML_APP_SID;
 
     if (!accountSid || !apiKey || !apiSecret || !appSid) {
-      console.error('Missing env vars:', { accountSid: !!accountSid, apiKey: !!apiKey, apiSecret: !!apiSecret, appSid: !!appSid });
+      console.error('❌ Missing Twilio env vars:', { 
+        accountSid: !!accountSid, 
+        apiKey: !!apiKey, 
+        apiSecret: !!apiSecret, 
+        appSid: !!appSid 
+      });
       return res.status(500).json({ error: 'Missing Twilio configuration' });
     }
 
@@ -24,6 +29,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const ttl = 3600;
 
     // Create JWT payload with Twilio Voice grants
+    // Structure matches Twilio's expected format exactly
     const payload = {
       grants: {
         identity: identity,
@@ -38,16 +44,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     };
 
-    // Sign the JWT using jsonwebtoken library (proper implementation)
+    // Sign JWT with the correct algorithm and options
+    // issuer must be the API Key
+    // subject must be the Account SID
     const token = jwt.sign(payload, apiSecret, {
       algorithm: 'HS256',
       issuer: apiKey,
       subject: accountSid,
-      expiresIn: ttl,
-      jwtid: `${apiKey}-${Date.now()}`
+      expiresIn: ttl
     });
 
-    console.log(`✅ Token generated for identity: ${identity}`);
+    console.log(`✅ Token generated successfully for identity: ${identity}, expires in ${ttl}s`);
 
     return res.status(200).json({ 
       token, 
@@ -56,10 +63,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
 
   } catch (error: any) {
-    console.error('❌ Token error:', error);
+    console.error('❌ Token generation error:', {
+      message: error.message,
+      stack: error.stack
+    });
     return res.status(500).json({ 
-      error: error.message || 'Token generation failed',
-      details: 'Failed to generate Twilio access token'
+      error: error.message || 'Token generation failed'
     });
   }
 }
