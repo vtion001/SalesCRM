@@ -209,6 +209,23 @@ max_frequency = "5s"
 # [auth.sms.test_otp]
 # 4152127777 = "123456"
 
+# MFA configuration
+[auth.mfa]
+# Maximum number of enrolled factors per user
+max_enrolled_factors = 10
+
+# TOTP (Time-based One-Time Password) - Authenticator apps
+[auth.mfa.totp]
+enroll_enabled = true
+verify_enabled = true
+
+# Phone-based MFA - SMS OTP
+[auth.mfa.phone]
+enroll_enabled = true
+verify_enabled = true
+otp_length = 6
+template = "Your SalesCRM verification code is: {{ .Code }}"
+
 # Configure logged in session timeouts.
 # [auth.sessions]
 # Force log out after the specified duration.

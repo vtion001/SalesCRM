@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Search, Bell, Settings, LogOut, User, Moon, Shield, X, Lock, Smartphone } from 'lucide-react';
 import { CurrentUser } from '../types';
+import { MFASetupModal } from './MFASetupModal';
 
 interface HeaderProps {
   user: CurrentUser;
@@ -12,6 +13,7 @@ export const Header: React.FC<HeaderProps> = ({ user, onLogout, onUpdateProfile 
   const [activeDropdown, setActiveDropdown] = useState<'notifications' | 'settings' | 'profile' | null>(null);
   const [showAccountModal, setShowAccountModal] = useState(false);
   const [showSecurityModal, setShowSecurityModal] = useState(false);
+  const [showMFASetupModal, setShowMFASetupModal] = useState(false);
 
   // Edit Profile State
   const [editName, setEditName] = useState(user.name);
@@ -186,6 +188,15 @@ export const Header: React.FC<HeaderProps> = ({ user, onLogout, onUpdateProfile 
                      <User size={18} className="text-slate-400" /> Edit Profile
                   </button>
                   <button 
+                    onClick={() => {
+                      setActiveDropdown(null);
+                      setShowMFASetupModal(true);
+                    }}
+                    className="w-full text-left px-4 py-3 text-sm font-bold text-blue-600 hover:bg-blue-50 rounded-2xl flex items-center gap-3 mt-1 transition-colors"
+                  >
+                     <Shield size={18} /> Set Up MFA
+                  </button>
+                  <button 
                     onClick={onLogout}
                     className="w-full text-left px-4 py-3 text-sm font-bold text-rose-600 hover:bg-rose-50 rounded-2xl flex items-center gap-3 mt-1 transition-colors"
                   >
@@ -267,6 +278,16 @@ export const Header: React.FC<HeaderProps> = ({ user, onLogout, onUpdateProfile 
           </div>
         </div>
       )}
+      
+      {/* MFA Setup Modal */}
+      <MFASetupModal 
+        isOpen={showMFASetupModal}
+        onClose={() => setShowMFASetupModal(false)}
+        onSuccess={() => {
+          // Optionally refresh user data to reflect MFA status
+          console.log('MFA enabled successfully');
+        }}
+      />
     </>
   );
 };

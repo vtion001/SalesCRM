@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Toaster, toast } from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sidebar } from './components/Sidebar';
@@ -6,6 +6,7 @@ import { Header } from './components/Header';
 import { LeadList } from './components/LeadList';
 import { LeadDetail } from './components/LeadDetail';
 import { LeadForm } from './components/LeadForm';
+import { CommandPalette } from './components/CommandPalette';
 import { Dialer } from './components/Dialer';
 import DialerSound from './components/DialerSound';
 import { Dashboard } from './components/Dashboard';
@@ -26,6 +27,7 @@ export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [currentView, setCurrentView] = useState('dashboard');
   const [authLoading, setAuthLoading] = useState(true);
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   
   // Supabase Hooks
   const { leads, addLead, deleteLead, updateLead } = useLeads();
@@ -74,10 +76,30 @@ export default function App() {
     [allPipelineItems, selectedLeadId]
   );
 
-  const isSelectedContact = useMemo(() => 
-    contacts.some(c => c.id === selectedLeadId),
-    [contacts, selectedLeadId]
-  );
+  // Global Keyboard Shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setIsCommandPaletteOpen(prev => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  const handleCommandAction = useCallback((actionId: string) => {
+    switch(actionId) {
+      case 'add-lead': setIsLeadModalOpen(true); break;
+      case 'add-contact': setIsContactModalOpen(true); break;
+      case 'view-analytics': setCurrentView('analytics'); break;
+    }
+  }, []);
+
+  const handleSelectItem = useCallback((id: string) => {
+    setSelectedLeadId(id);
+    setCurrentView('leads');
+  }, []);
 
   const handleUpdateItem = async (id: string, updates: Partial<Lead>) => {
     const isContact = contacts.some(c => c.id === id);
@@ -213,12 +235,6 @@ export default function App() {
 
   if (!isAuthenticated) return <Auth />;
 
-  const pageVariants = {
-    initial: { opacity: 0, x: 10 },
-    animate: { opacity: 1, x: 0 },
-    exit: { opacity: 0, x: -10 }
-  };
-
   return (
     <div className="flex h-screen w-full bg-white text-slate-900 font-sans selection:bg-indigo-100 selection:text-indigo-900">
       <Toaster position="top-right" toastOptions={{
@@ -226,6 +242,14 @@ export default function App() {
         duration: 3000,
       }} />
       
+      <CommandPalette 
+        isOpen={isCommandPaletteOpen} 
+        onClose={() => setIsCommandPaletteOpen(false)} 
+        items={allPipelineItems}
+        onSelectItem={handleSelectItem}
+        onAction={handleCommandAction}
+      />
+
       <Sidebar currentView={currentView} onNavigate={setCurrentView} />
       
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden bg-white">
@@ -235,14 +259,23 @@ export default function App() {
           <AnimatePresence mode="wait">
             <motion.div
               key={currentView}
-              variants={pageVariants}
-              initial="initial"
-              animate="animate"
-              exit="exit"
-              transition={{ duration: 0.2, ease: "easeOut" }}
+              initial={{ opacity: 0, x: 10 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -10 }}
+              transition={{ duration: 0.2 }}
               className="h-full w-full"
             >
-              {currentView === 'dashboard' && <Dashboard leads={leads} deals={deals} />}
+              {currentView === 'dashboard' && (
+            <Dashboard 
+              leads={leads} 
+              deals={allPipelineItems} 
+              onNavigate={setCurrentView}
+              onSelectLead={(id) => {
+                setSelectedLeadId(id);
+                setCurrentView('leads');
+              }}
+            />
+          )}
 
               {currentView === 'leads' && (
                 <div className="grid grid-cols-12 h-full">
@@ -258,7 +291,7 @@ export default function App() {
                       onUpdate={handleUpdateItem} 
                       onAddNote={async (n) => {
                         const p = addNote(n);
-                        toast.promise(p, { loading: 'Saving note...', success: 'Note saved', error: 'Failed to save' });
+                        toast.promise(p, { loading: 'Saving note...', success: 'Note saved', error: 'Failed' });
                         await p;
                       }} 
                       onAddActivity={async (a) => {
@@ -288,7 +321,6 @@ export default function App() {
           </AnimatePresence>
         </div>
         
-        {/* Modals with AnimatePresence */}
         <AnimatePresence>
           {isContactModalOpen && (
             <ModalWrapper onClose={() => setIsContactModalOpen(false)}>
@@ -307,21 +339,7 @@ export default function App() {
 }
 
 const ModalWrapper = ({ children, onClose }: any) => (
-  <motion.div
-    initial={{ opacity: 0 }}
-    animate={{ opacity: 1 }}
-    exit={{ opacity: 0 }}
-    className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm"
-    onClick={onClose}
-  >
-    <motion.div
-      initial={{ scale: 0.95, opacity: 0, y: 20 }}
-      animate={{ scale: 1, opacity: 1, y: 0 }}
-      exit={{ scale: 0.95, opacity: 0, y: 20 }}
-      onClick={e => e.stopPropagation()}
-      className="w-full max-w-md"
-    >
-      {children}
-    </motion.div>
+  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm" onClick={onClose}>
+    <motion.div initial={{ scale: 0.95, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0, y: 20 }} onClick={e => e.stopPropagation()} className="w-full max-w-md">{children}</motion.div>
   </motion.div>
 );
