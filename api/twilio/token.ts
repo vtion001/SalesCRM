@@ -1,19 +1,5 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import crypto from 'crypto';
-
-function base64url(str: string): string {
-  return Buffer.from(str).toString('base64').replace(/[=+/]/g, (c) => ({
-    '=': '', '+': '-', '/': '_'
-  }[c] || ''));
-}
-
-function signJWT(header: any, payload: any, secret: string): string {
-  const msg = base64url(JSON.stringify(header)) + '.' + base64url(JSON.stringify(payload));
-  const sig = crypto.createHmac('sha256', secret).update(msg).digest('base64').replace(/[=+/]/g, (c) => ({
-    '=': '', '+': '-', '/': '_'
-  }[c] || ''));
-  return msg + '.' + sig;
-}
+import jwt from 'jsonwebtoken';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -30,25 +16,50 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const appSid = process.env.TWILIO_TWIML_APP_SID;
 
     if (!accountSid || !apiKey || !apiSecret || !appSid) {
+      console.error('Missing env vars:', { accountSid: !!accountSid, apiKey: !!apiKey, apiSecret: !!apiSecret, appSid: !!appSid });
       return res.status(500).json({ error: 'Missing Twilio configuration' });
     }
 
     const identity = String(req.query?.identity || 'user').replace(/[^a-zA-Z0-9_]/g, '_');
-    const now = Math.floor(Date.now() / 1000);
     const ttl = 3600;
 
-    const header = { alg: 'HS256', typ: 'JWT', cty: 'twilio-fpa;v=1' };
+    // Create JWT payload with Twilio Voice grants
     const payload = {
-      jti: apiKey + '-' + Date.now(),
-      grants: { identity, voice: { incoming: { allow: true }, outgoing: { application_sid: appSid } } },
-      iat: now, exp: now + ttl, iss: apiKey, sub: accountSid
+      grants: {
+        identity: identity,
+        voice: {
+          outgoing: {
+            application_sid: appSid
+          },
+          incoming: {
+            allow: true
+          }
+        }
+      }
     };
 
-    const token = signJWT(header, payload, apiSecret);
-    return res.status(200).json({ token, identity, expiresIn: ttl });
+    // Sign the JWT using jsonwebtoken library (proper implementation)
+    const token = jwt.sign(payload, apiSecret, {
+      algorithm: 'HS256',
+      issuer: apiKey,
+      subject: accountSid,
+      expiresIn: ttl,
+      jwtid: `${apiKey}-${Date.now()}`
+    });
+
+    console.log(`✅ Token generated for identity: ${identity}`);
+
+    return res.status(200).json({ 
+      token, 
+      identity, 
+      expiresIn: ttl 
+    });
 
   } catch (error: any) {
-    console.error('Token error:', error);
-    return res.status(500).json({ error: error.message || 'Token generation failed' });
+    console.error('❌ Token error:', error);
+    return res.status(500).json({ 
+      error: error.message || 'Token generation failed',
+      details: 'Failed to generate Twilio access token'
+    });
   }
 }
