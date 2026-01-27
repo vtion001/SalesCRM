@@ -57,6 +57,10 @@ app.use(express.urlencoded({ extended: true }));
 
 // Initialize Twilio client
 const client = twilio(accountSid, authToken);
+// Enable debug logging for Twilio REST client if requested
+if (process.env.TWILIO_LOG_LEVEL === 'debug') {
+  client.logLevel = 'debug';
+}
 
 // Health check
 app.get('/health', (req, res) => {

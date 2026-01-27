@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { MicOff, Pause, PhoneForwarded, Headphones, Phone, PhoneOff, Clock, MessageSquare, Send, ArrowDownLeft, ArrowUpRight, Ban, AlertCircle, Volume2 } from 'lucide-react';
 import { DIALER_KEYS } from '../constants';
-import { Lead } from '../types';
+import { Lead, Activity } from '../types';
 import { sendSMS, initializeTwilioDevice, getAccessToken } from '../services/twilioService';
 
 interface DialerProps {
   targetLead: Lead | undefined;
+  onLogActivity?: (activity: Omit<Activity, 'id'>) => void;
 }
 
 interface IncomingCall {
@@ -15,7 +16,7 @@ interface IncomingCall {
   accepted?: boolean;
 }
 
-export const Dialer: React.FC<DialerProps> = ({ targetLead }) => {
+export const Dialer: React.FC<DialerProps> = ({ targetLead, onLogActivity }) => {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [activeTab, setActiveTab] = useState('Dialer');
   const [twilioDevice, setTwilioDevice] = useState<any>(null);
@@ -37,34 +38,22 @@ export const Dialer: React.FC<DialerProps> = ({ targetLead }) => {
   const callTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Initialize Twilio Device on component mount
-  // Async initialization wrapped in useEffect callback
   useEffect(() => {
     const initDevice = async () => {
       try {
         setDeviceError(null);
         setIsDeviceReady(false);
         
-        // Identity can only contain alphanumeric and underscore characters
-        // Remove hyphens and special characters
-        const userId = targetLead?.id || 'user_' + Date.now().toString();
-        console.log('🎯 Initializing Twilio Device with userId:', userId);
-        
+        const userId = 'user_' + Date.now().toString();
         const token = await getAccessToken(userId);
-        console.log('🔑 Got token from backend, initializing Device...');
-        
         const device = await initializeTwilioDevice(token, handleIncomingCall);
-        console.log('✅ initializeTwilioDevice returned Device instance');
         
-        // Wait for the Device to be ready (registered)
         const readyPromise = new Promise<void>((resolve, reject) => {
           let hasResolved = false;
-          
-          // 10 second timeout for ready event
           const readyTimeout = setTimeout(() => {
             if (!hasResolved) {
-              console.warn('⚠️  Device registration timeout - proceeding anyway (may try to connect)');
               hasResolved = true;
-              resolve(); // Resolve anyway after timeout to unblock UI
+              resolve();
             }
           }, 10000);
 
@@ -72,8 +61,6 @@ export const Dialer: React.FC<DialerProps> = ({ targetLead }) => {
             if (!hasResolved) {
               clearTimeout(readyTimeout);
               hasResolved = true;
-              // Cleanup listeners not strictly necessary if we unmount, but good practice
-              console.log('✅ Device registered event received!');
               resolve();
             }
           };
@@ -82,48 +69,24 @@ export const Dialer: React.FC<DialerProps> = ({ targetLead }) => {
              if (!hasResolved) {
                clearTimeout(readyTimeout);
                hasResolved = true;
-               // Ensure we have a valid error message even if the error object is non-standard
                const errorMsg = error?.message || (typeof error === 'string' ? error : 'Unknown device error');
-               const errorCode = error?.code || 'N/A';
-               
-               console.error('❌ Device error during initialization:', {
-                 message: errorMsg,
-                 code: errorCode,
-                 originalError: error,
-                 isAccessTokenInvalid: errorCode === 20101
-               });
-               
-               // Special handling for AccessTokenInvalid errors
-               if (errorCode === 20101) {
-                 reject(new Error(`Access Token validation failed. This may indicate incorrect Twilio credentials. (Code: ${errorCode})`));
-               } else {
-                 reject(new Error(`${errorMsg} (Code: ${errorCode})`));
-               }
+               reject(new Error(errorMsg));
              }
            };
 
-          // v2 uses 'registered' instead of 'ready'
           device.on('registered', onReady);
           device.on('error', onError);
           
-          // Check if already registered (in case event fired before we listened)
           if (device.state === 'registered') {
             onReady();
           }
         });
 
         await readyPromise;
-        console.log('✅ Device initialization ready phase complete');
-        
         setTwilioDevice(device);
         setIsDeviceReady(true);
       } catch (err: any) {
-        const errorMsg = err?.message || (typeof err === 'string' ? err : 'Failed to initialize Twilio Device');
-        console.error('❌ Device initialization failed:', {
-          message: errorMsg,
-          error: err
-        });
-        setDeviceError(errorMsg);
+        setDeviceError(err?.message || 'Failed to initialize Twilio Device');
       }
     };
 
@@ -132,7 +95,6 @@ export const Dialer: React.FC<DialerProps> = ({ targetLead }) => {
     return () => {
       if (twilioDevice) {
         try {
-          console.log('Cleaning up Twilio Device...');
           twilioDevice.disconnectAll?.();
           twilioDevice.destroy?.();
         } catch (err) {
@@ -146,9 +108,6 @@ export const Dialer: React.FC<DialerProps> = ({ targetLead }) => {
   useEffect(() => {
     if (targetLead) {
       setPhoneNumber(targetLead.phone);
-      setMessages([]);
-    } else {
-      setPhoneNumber('');
       setMessages([]);
     }
   }, [targetLead]);
@@ -166,12 +125,10 @@ export const Dialer: React.FC<DialerProps> = ({ targetLead }) => {
       timestamp: new Date(),
     };
     
-    // Store the call object so we can answer it later
     setCurrentCall(call);
     setIncomingCall(callData);
     setCallStatus(`Incoming call from ${callData.from}`);
     
-    // Listen for call ending remotely before we answer
     call.on('disconnect', () => {
       handleEndCall();
     });
@@ -192,7 +149,6 @@ export const Dialer: React.FC<DialerProps> = ({ targetLead }) => {
         setCallDuration((prev) => prev + 1);
       }, 1000);
 
-      // v2: call.accept()
       await currentCall.accept();
     } catch (err: any) {
       setError(err.message || 'Failed to answer call');
@@ -218,6 +174,18 @@ export const Dialer: React.FC<DialerProps> = ({ targetLead }) => {
     if (callTimerRef.current) {
       clearInterval(callTimerRef.current);
     }
+
+    // Log the activity if we have a lead and duration > 0
+    if (targetLead && callDuration > 0 && onLogActivity) {
+      onLogActivity({
+        type: 'call',
+        title: 'Outgoing Call',
+        description: `Completed call to ${phoneNumber}`,
+        duration: formatDuration(callDuration),
+        timestamp: 'Just now'
+      });
+    }
+
     setIsCallInProgress(false);
     setCallDuration(0);
     setCallStatus(null);
@@ -255,12 +223,6 @@ export const Dialer: React.FC<DialerProps> = ({ targetLead }) => {
     setCallStatus('Initiating call...');
 
     try {
-      // For outgoing calls in v2, we use device.connect() which returns a Promise<Call>
-      // We need to pass params if using TwiML app, typically 'To' number is passed via params 
-      // which the backend uses to dial.
-      // NOTE: The previous code called a backend endpoint /call. 
-      // If using Client-to-Client or Client-to-PSTN via TwiML App, we use device.connect({ params: { To: ... } })
-      
       const params = { To: phoneNumber };
       const call = await twilioDevice.connect({ params });
       
@@ -307,6 +269,17 @@ export const Dialer: React.FC<DialerProps> = ({ targetLead }) => {
         text: smsMessage, 
         time: 'Just now' 
       }]);
+      
+      // Log SMS activity
+      if (targetLead && onLogActivity) {
+        onLogActivity({
+          type: 'email', // Using email icon for text for now or could add SMS type
+          title: 'SMS Sent',
+          description: smsMessage,
+          timestamp: 'Just now'
+        });
+      }
+      
       setSmsMessage('');
     } catch (err: any) {
       setError(err.message || 'Failed to send SMS');
@@ -614,40 +587,3 @@ const EmptyState = ({ icon, text }: EmptyStateProps) => (
     <p className="text-sm font-medium">{text}</p>
   </div>
 );
-
-interface HistoryItemProps {
-  type: 'missed' | 'outgoing' | 'incoming';
-  number: string;
-  time: string;
-  duration: string;
-}
-
-const HistoryItem = ({ type, number, time, duration }: HistoryItemProps) => {
-  const getIcon = () => {
-    switch (type) {
-      case 'missed': return <Ban size={14} className="text-red-500" />;
-      case 'outgoing': return <ArrowUpRight size={14} className="text-green-500" />;
-      case 'incoming': return <ArrowDownLeft size={14} className="text-blue-500" />;
-      default: return null;
-    }
-  };
-
-  return (
-    <div className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors">
-      <div className="flex items-center gap-3">
-        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-           type === 'missed' ? 'bg-red-50' : type === 'outgoing' ? 'bg-green-50' : 'bg-blue-50'
-        }`}>
-          {getIcon()}
-        </div>
-        <div>
-           <p className={`text-sm font-semibold ${type === 'missed' ? 'text-red-600' : 'text-gray-900'}`}>
-             {type === 'missed' ? 'Missed Call' : number}
-           </p>
-           <p className="text-xs text-gray-400">{time}</p>
-        </div>
-      </div>
-      <span className="text-xs font-mono text-gray-500">{duration}</span>
-    </div>
-  );
-};

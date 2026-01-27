@@ -176,6 +176,8 @@ export const initializeTwilioDevice = async (
 
     // Initialize Device instance (v2 style)
     const options = {
+      // Enable SDK debug logs for repro and debugging
+      logLevel: 'debug' as const,
       codecPreferences: [Call.Codec.Opus, Call.Codec.PCMU],
       fakeLocalDTMF: true,
       enableRingingState: true,

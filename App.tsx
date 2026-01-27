@@ -11,15 +11,40 @@ import { Deals } from './components/Deals';
 import { Analytics } from './components/Analytics';
 import { ContactForm } from './components/ContactForm';
 import { Auth } from './pages/Auth';
-import { Lead, Activity, Note, Contact, Deal, CurrentUser } from './types';
+import { Lead, Contact, Deal, CurrentUser } from './types';
 import { supabase } from './services/supabaseClient';
+import { useLeads } from './hooks/useLeads';
+import { useContacts } from './hooks/useContacts';
+import { useDeals } from './hooks/useDeals';
+import { useActivities } from './hooks/useActivities';
+import { useNotes } from './hooks/useNotes';
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [currentView, setCurrentView] = useState('dashboard');
   const [authLoading, setAuthLoading] = useState(true);
+  
+  // Supabase Hooks
+  const { leads, addLead, deleteLead, updateLead } = useLeads();
+  const { contacts, addContact, deleteContact } = useContacts();
+  const { deals, addDeal, deleteDeal } = useDeals();
+  
+  // Selection States
+  const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
+  const { activities, addActivity } = useActivities(selectedLeadId);
+  const { notes, addNote } = useNotes(selectedLeadId);
+  
+  const [isContactModalOpen, setIsContactModalOpen] = useState(false);
 
-  // Check authentication status on mount
+  // User State
+  const [currentUser, setCurrentUser] = useState<CurrentUser>({
+    name: 'Alex Rivers',
+    email: 'alex.rivers@salescrm.com',
+    role: 'Sales Lead',
+    avatar: 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80'
+  });
+
+  // Check authentication status on mount and load profile
   useEffect(() => {
     const checkAuth = async () => {
       try {
@@ -28,6 +53,13 @@ export default function App() {
         
         if (data?.session?.user) {
           setIsAuthenticated(true);
+          const user = data.session.user;
+          setCurrentUser({
+            name: user.user_metadata?.full_name || user.user_metadata?.name || 'Alex Rivers',
+            email: user.email || 'alex.rivers@salescrm.com',
+            role: user.user_metadata?.role || 'Sales Lead',
+            avatar: user.user_metadata?.avatar_url || user.user_metadata?.avatar || 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80'
+          });
         } else {
           setIsAuthenticated(false);
         }
@@ -46,6 +78,13 @@ export default function App() {
       (event, session) => {
         if (session?.user) {
           setIsAuthenticated(true);
+          const user = session.user;
+          setCurrentUser({
+            name: user.user_metadata?.full_name || user.user_metadata?.name || 'Alex Rivers',
+            email: user.email || 'alex.rivers@salescrm.com',
+            role: user.user_metadata?.role || 'Sales Lead',
+            avatar: user.user_metadata?.avatar_url || user.user_metadata?.avatar || 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80'
+          });
         } else {
           setIsAuthenticated(false);
         }
@@ -54,25 +93,6 @@ export default function App() {
 
     return () => subscription?.unsubscribe();
   }, []);
-  
-  // User State
-  const [currentUser, setCurrentUser] = useState<CurrentUser>({
-    name: 'Alex Rivers',
-    email: 'alex.rivers@salescrm.com',
-    role: 'Sales Lead',
-    avatar: 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80'
-  });
-
-  // Data States
-  const [leads, setLeads] = useState<Lead[]>([]);
-  const [contacts, setContacts] = useState<Contact[]>([]);
-  const [deals, setDeals] = useState<Deal[]>([]);
-  
-  // Selection States
-  const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
-  const [activities, setActivities] = useState<Activity[]>([]);
-  const [currentNote, setCurrentNote] = useState<Note | undefined>(undefined);
-  const [isContactModalOpen, setIsContactModalOpen] = useState(false);
 
   const selectedLead = leads.find(l => l.id === selectedLeadId);
 
@@ -86,13 +106,29 @@ export default function App() {
     }
   };
 
-  const handleUpdateProfile = (updates: Partial<CurrentUser>) => {
-    setCurrentUser(prev => ({ ...prev, ...updates }));
+  const handleUpdateProfile = async (updates: Partial<CurrentUser>) => {
+    try {
+      // Update Supabase Auth metadata
+      const { error } = await supabase.auth.updateUser({
+        data: {
+          full_name: updates.name || currentUser.name,
+          role: updates.role || currentUser.role,
+          avatar_url: updates.avatar || currentUser.avatar
+        }
+      });
+
+      if (error) throw error;
+
+      // Update local state
+      setCurrentUser(prev => ({ ...prev, ...updates }));
+      console.log('✅ Profile updated in Supabase');
+    } catch (err) {
+      console.error('❌ Failed to update profile:', err);
+    }
   };
 
-  const handleAddLead = (leadData?: Partial<Lead>) => {
-    const newLead: Lead = {
-      id: Date.now().toString(),
+  const handleAddLeadAction = async (leadData?: Partial<Lead>) => {
+    const newLeadData: Omit<Lead, 'id'> = {
       name: leadData?.name || '',
       role: leadData?.role || '',
       company: leadData?.company || '',
@@ -107,28 +143,24 @@ export default function App() {
       lastContactDate: leadData?.lastContactDate || 'Never'
     };
 
-    setLeads([newLead, ...leads]);
-    setSelectedLeadId(newLead.id);
+    const added = await addLead(newLeadData);
+    if (added) {
+      setSelectedLeadId(added.id);
+    }
   };
 
-  const handleSaveContact = (contactData: Omit<Contact, 'id' | 'lastContacted' | 'status'>) => {
-    const newContact: Contact = {
+  const handleSaveContactAction = async (contactData: Omit<Contact, 'id' | 'lastContacted' | 'status'>) => {
+    const newContactData: Omit<Contact, 'id'> = {
       ...contactData,
-      id: Date.now().toString(),
       lastContacted: 'Never',
       status: 'Active'
     };
-    setContacts([newContact, ...contacts]);
+    await addContact(newContactData);
     setIsContactModalOpen(false);
   };
 
-  const handleDeleteContact = (id: string) => {
-    setContacts(contacts.filter(c => c.id !== id));
-  };
-
-  const handleAddDeal = (company: string, value: number, dealData?: Partial<Deal>) => {
-    const newDeal: Deal = {
-      id: Date.now().toString(),
+  const handleAddDealAction = async (company: string, value: number, dealData?: Partial<Deal>) => {
+    const newDealData: Omit<Deal, 'id'> = {
       title: dealData?.title || '',
       value: value,
       company: company,
@@ -136,18 +168,7 @@ export default function App() {
       owner: dealData?.owner || currentUser.name,
       closingDate: dealData?.closingDate || ''
     };
-    setDeals([newDeal, ...deals]);
-  };
-
-  const handleDeleteDeal = (id: string) => {
-    setDeals(deals.filter(d => d.id !== id));
-  };
-
-  const handleDeleteLead = (id: string) => {
-    setLeads(leads.filter(l => l.id !== id));
-    if (selectedLeadId === id) {
-      setSelectedLeadId(null);
-    }
+    await addDeal(newDealData);
   };
 
   // Show loading screen while checking authentication
@@ -198,13 +219,19 @@ export default function App() {
               <div className="col-span-12 md:col-span-8 lg:col-span-5 border-r border-gray-200 h-full overflow-hidden bg-white">
                 <LeadDetail 
                   lead={selectedLead} 
-                  activities={selectedLead ? activities : []}
-                  note={selectedLead ? currentNote : undefined}
-                  onDelete={handleDeleteLead}
+                  activities={activities}
+                  note={notes.length > 0 ? notes[0] : undefined}
+                  onDelete={deleteLead}
+                  onUpdate={updateLead}
+                  onAddNote={addNote}
+                  onAddActivity={addActivity}
                 />
               </div>
               <div className="hidden lg:block lg:col-span-4 h-full overflow-hidden bg-white">
-                 <Dialer targetLead={selectedLead} />
+                 <Dialer 
+                   targetLead={selectedLead} 
+                   onLogActivity={addActivity}
+                 />
                  <DialerSound />
               </div>
             </div>
@@ -214,15 +241,15 @@ export default function App() {
             <Contacts 
               contacts={contacts} 
               onAddContact={() => setIsContactModalOpen(true)}
-              onDeleteContact={handleDeleteContact}
+              onDeleteContact={deleteContact}
             />
           )}
 
           {currentView === 'deals' && (
             <Deals 
               deals={deals} 
-              onAddDeal={() => handleAddDeal('', 0)} 
-              onDeleteDeal={handleDeleteDeal}
+              onAddDeal={(company, value) => handleAddDealAction(company, value)} 
+              onDeleteDeal={deleteDeal}
             />
           )}
 
@@ -234,7 +261,7 @@ export default function App() {
         
         {isContactModalOpen && (
           <ContactForm 
-            onSave={handleSaveContact} 
+            onSave={handleSaveContactAction} 
             onCancel={() => setIsContactModalOpen(false)} 
           />
         )}
