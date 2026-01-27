@@ -1,0 +1,5 @@
+{
+  "name": "SalesCRM",
+  "description": "A modern sales CRM dashboard featuring lead management, activity timelines, and an integrated dialer interface.",
+  "requestFramePermissions": []
+}
