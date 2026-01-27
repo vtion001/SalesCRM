@@ -14,6 +14,7 @@ import { Contacts } from './components/Contacts';
 import { Deals } from './components/Deals';
 import { Analytics } from './components/Analytics';
 import { ContactForm } from './components/ContactForm';
+import { SupabaseHealthIndicator } from './components/SupabaseHealthIndicator';
 import { Auth } from './pages/Auth';
 import { Lead, Contact, Deal, CurrentUser } from './types';
 import { supabase } from './services/supabaseClient';
@@ -366,6 +367,9 @@ export default function App() {
           )}
         </AnimatePresence>
       </main>
+      
+      <SupabaseHealthIndicator />
+      <Toaster position="top-right" />
     </div>
   );
 }
