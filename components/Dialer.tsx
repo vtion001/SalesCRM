@@ -45,7 +45,9 @@ export const Dialer: React.FC<DialerProps> = ({ targetLead, onLogActivity }) => 
         setDeviceError(null);
         setIsDeviceReady(false);
         
-        const userId = 'user_' + Date.now().toString();
+        // Use a consistent identity for this client session
+        // In production, this should be a unique user ID
+        const userId = 'user_default'; // Match with incoming-call.ts
         const token = await getAccessToken(userId);
         const device = await initializeTwilioDevice(token, handleIncomingCall);
         
