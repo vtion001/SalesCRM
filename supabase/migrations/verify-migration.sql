@@ -76,7 +76,7 @@ ORDER BY event_object_table;
 
 -- 5. Verify audit_logs table was created
 SELECT EXISTS (
-    SELECT FROM information_schema.tables 
+    SELECT 1 FROM information_schema.tables 
     WHERE table_schema = 'public' 
     AND table_name = 'audit_logs'
 ) as audit_logs_exists;
@@ -149,7 +149,7 @@ SELECT
         ELSE '❌' 
     END as triggers,
     CASE 
-        WHEN EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'audit_logs') 
+        WHEN EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'audit_logs') 
         THEN '✅' 
         ELSE '❌' 
     END as audit_table,
