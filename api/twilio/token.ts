@@ -29,8 +29,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Use Twilio SDK to generate access token
     // This ensures the token format is exactly what Twilio Client SDK expects
-    const AccessToken = twilio.jwt.AccessToken;
-    const VoiceGrant = AccessToken.VoiceGrant;
+    let AccessToken, VoiceGrant;
+    try {
+      AccessToken = twilio.jwt.AccessToken;
+      VoiceGrant = AccessToken.VoiceGrant;
+      console.log(`✅ Successfully loaded AccessToken and VoiceGrant from twilio.jwt`);
+    } catch (importError: any) {
+      console.error('❌ Failed to load AccessToken/VoiceGrant from twilio.jwt:', importError.message);
+      // Try alternative import
+      try {
+        const jwt = twilio.jwt;
+        AccessToken = jwt.AccessToken;
+        VoiceGrant = AccessToken.VoiceGrant;
+        console.log(`✅ Successfully loaded via alternative path`);
+      } catch (altError: any) {
+        console.error('❌ Alternative import also failed:', altError.message);
+        return res.status(500).json({ 
+          error: 'Failed to load Twilio JWT classes',
+          details: `Primary: ${importError.message}, Alternative: ${altError.message}`
+        });
+      }
+    }
 
     console.log(`🔧 Creating token for identity: ${identity}`);
     console.log(`📋 Using Account SID: ${accountSid.substring(0, 10)}...`);
@@ -38,28 +57,39 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.log(`📱 Using TwiML App SID: ${twimlAppSid.substring(0, 10)}...`);
 
     // Create the access token
-    const token = new AccessToken(accountSid, apiKey, apiSecret, { 
-      identity: identity,
-      ttl: 3600 // 1 hour
-    });
+    let token;
+    try {
+      const tokenObj = new AccessToken(accountSid, apiKey, apiSecret, { 
+        identity: identity,
+        ttl: 3600 // 1 hour
+      });
 
-    // Add voice grant for outgoing and incoming calls
-    const voiceGrant = new VoiceGrant({
-      outgoingApplicationSid: twimlAppSid,
-      incomingAllow: true
-    });
+      // Add voice grant for outgoing and incoming calls
+      const voiceGrant = new VoiceGrant({
+        outgoingApplicationSid: twimlAppSid,
+        incomingAllow: true
+      });
 
-    token.addGrant(voiceGrant);
+      tokenObj.addGrant(voiceGrant);
 
-    // Convert to JWT string
-    const jwt = token.toJwt();
+      // Convert to JWT string
+      token = tokenObj.toJwt();
+      console.log(`✅ Token created successfully using toJwt()`);
+    } catch (tokenError: any) {
+      console.error('❌ Error creating token:', tokenError.message);
+      console.error('Token creation stack:', tokenError.stack);
+      return res.status(500).json({ 
+        error: 'Failed to create access token',
+        details: tokenError.message
+      });
+    }
 
     console.log(`✅ Access token generated successfully`);
-    console.log(`📊 Token length: ${jwt.length} bytes`);
+    console.log(`📊 Token length: ${token.length} bytes`);
     console.log(`⏰ Token expires in: 3600 seconds (1 hour)`);
 
     return res.status(200).json({ 
-      token: jwt, 
+      token: token, 
       identity: identity,
       expiresIn: 3600
     });
