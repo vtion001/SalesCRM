@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, ChevronRight, ChevronLeft, Target, Clock, Trash2, Check, X, MoreHorizontal } from 'lucide-react';
+import { Plus, ChevronRight, ChevronLeft, Target, Clock, Trash2, Check, X, MoreHorizontal, Edit3 } from 'lucide-react';
 import { 
   DndContext, 
   DragOverlay, 
@@ -254,6 +254,8 @@ const SortableDealCard = (props: any) => {
 };
 
 const DealCard = ({ item, isEditing, editValue, editProb, setEditValue, setEditProb, startEditing, saveEdits, onDeleteItem, isOverlay }: any) => {
+  const [showOptions, setShowOptions] = useState(false);
+  
   return (
     <div className={`bg-white p-6 rounded-[32px] shadow-[0_4px_20px_rgba(0,0,0,0.03)] border-2 border-transparent hover:border-indigo-100 hover:shadow-[0_20px_40px_rgba(0,0,0,0.06)] transition-all group relative ${isOverlay ? 'shadow-2xl border-indigo-200' : ''}`}>
       <div className="flex justify-between items-start mb-4">
@@ -335,8 +337,41 @@ const DealCard = ({ item, isEditing, editValue, editProb, setEditValue, setEditP
           <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{item.lastContactDate}</span>
         </div>
         {!isOverlay && (
-          <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-            <MoreHorizontal size={12} className="text-slate-400" />
+          <div className="relative">
+            <button 
+              onClick={() => setShowOptions(!showOptions)}
+              onPointerDown={(e) => e.stopPropagation()}
+              className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-slate-200"
+            >
+              <MoreHorizontal size={12} className="text-slate-400" />
+            </button>
+            {showOptions && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setShowOptions(false)}></div>
+                <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-slate-100 z-50 py-2 overflow-hidden">
+                  <button 
+                    onClick={() => { 
+                      startEditing(item); 
+                      setShowOptions(false); 
+                    }} 
+                    onPointerDown={(e) => e.stopPropagation()}
+                    className="w-full text-left px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2 transition-colors"
+                  >
+                    <Edit3 size={14} className="text-slate-400" /> Edit Deal
+                  </button>
+                  <button 
+                    onClick={() => { 
+                      onDeleteItem(item.id); 
+                      setShowOptions(false); 
+                    }} 
+                    onPointerDown={(e) => e.stopPropagation()}
+                    className="w-full text-left px-4 py-2.5 text-xs font-bold text-rose-600 hover:bg-rose-50 flex items-center gap-2 transition-colors"
+                  >
+                    <Trash2 size={14} className="text-rose-500" /> Delete Deal
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         )}
       </div>

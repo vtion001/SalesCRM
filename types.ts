@@ -28,6 +28,9 @@ export interface Note {
   content: string;
   isPinned: boolean;
   author: string;
+  leadId?: string;
+  userId?: string;
+  createdAt?: string;
 }
 
 export interface Contact {

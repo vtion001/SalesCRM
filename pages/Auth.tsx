@@ -118,62 +118,73 @@ export const Auth: React.FC = () => {
       </div>
 
       {/* Right Side: Visual Side */}
-      <div className="hidden lg:block lg:w-1/2 relative bg-slate-900 overflow-hidden">
-        {/* Background Image */}
+      <div className="hidden lg:block lg:w-1/2 relative overflow-hidden">
+        {/* Background Image - Full visibility */}
         <div className="absolute inset-0">
           <img 
-            src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=2600" 
-            alt="Sales Analytics" 
-            className="w-full h-full object-cover opacity-30 mix-blend-overlay"
+            src="https://res.cloudinary.com/dbviya1rj/image/upload/v1769524634/j4onrzilnfx79zjdemxx.png" 
+            alt="Sales Team Collaboration" 
+            className="w-full h-full object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-slate-900/80"></div>
+          {/* Subtle gradient overlay only at edges */}
+          <div className="absolute inset-0 bg-gradient-to-br from-slate-900/20 via-transparent to-indigo-900/30"></div>
         </div>
         
-        {/* Ambient Glows */}
-        <div className="absolute -top-24 -right-24 w-96 h-96 bg-indigo-600 rounded-full blur-[128px] opacity-20"></div>
-        <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-fuchsia-600 rounded-full blur-[128px] opacity-20"></div>
-
-        <div className="relative h-full flex flex-col items-center justify-center p-12 text-white">
-          <div className="max-w-xl">
-            <div className="relative mb-8">
-              <div className="bg-white/10 backdrop-blur-xl rounded-3xl p-8 border border-white/20 shadow-2xl">
-                <div className="aspect-video bg-gradient-to-br from-yellow-400/20 to-orange-500/20 rounded-2xl flex items-center justify-center">
-                  <div className="text-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="w-24 h-24 mx-auto mb-4 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
-                    </svg>
-                    <h3 className="text-2xl font-black tracking-tight">Welcome to SalesCRM</h3>
-                    <p className="text-sm text-slate-300 mt-2 font-medium">Manage your sales pipeline efficiently</p>
-                  </div>
-                </div>
-              </div>
-              <div className="absolute -top-4 -left-4 bg-yellow-400 text-slate-900 px-4 py-2 rounded-xl shadow-2xl font-bold text-sm">🎉 Welcome back!</div>
+        {/* Minimal content overlay - bottom left */}
+        <div className="absolute bottom-0 left-0 right-0 p-12">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="max-w-lg"
+          >
+            {/* Floating badge */}
+            <div className="inline-flex items-center gap-2 bg-white/95 backdrop-blur-sm px-4 py-2 rounded-full shadow-2xl mb-6">
+              <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+              <span className="text-xs font-bold text-slate-900 tracking-wide">LIVE DASHBOARD</span>
             </div>
             
-            <div className="space-y-4">
-              <div className="flex items-center gap-4 bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
-                <div className="w-10 h-10 bg-yellow-400/20 rounded-lg flex items-center justify-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                  </svg>
+            {/* Main card */}
+            <div className="bg-white/95 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border border-white/50">
+              <div className="flex items-start gap-4">
+                <div className="w-14 h-14 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center shrink-0 shadow-lg">
+                  <TrendingUp className="text-white" size={28} strokeWidth={2.5} />
                 </div>
-                <div>
-                  <p className="font-bold text-sm">Lead Management</p>
-                  <p className="text-xs text-slate-400">Track and convert prospects</p>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-2xl font-black text-slate-900 mb-2 tracking-tight">Drive Revenue Growth</h3>
+                  <p className="text-sm text-slate-600 leading-relaxed font-medium">
+                    Streamline your sales process with intelligent automation and real-time insights
+                  </p>
                 </div>
               </div>
               
-              <div className="flex items-center gap-4 bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
-                <div className="w-10 h-10 bg-yellow-400/20 rounded-lg flex items-center justify-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                  </svg>
+              {/* Stats row */}
+              <div className="grid grid-cols-3 gap-4 mt-6 pt-6 border-t border-slate-100">
+                <div>
+                  <div className="text-2xl font-black text-slate-900">24/7</div>
+                  <div className="text-xs text-slate-500 font-bold uppercase tracking-wider">Uptime</div>
                 </div>
                 <div>
-                  <p className="font-bold text-sm">Analytics Dashboard</p>
-                  <p className="text-xs text-slate-400">Real-time insights</p>
+                  <div className="text-2xl font-black text-slate-900">2.5x</div>
+                  <div className="text-xs text-slate-500 font-bold uppercase tracking-wider">Efficiency</div>
+                </div>
+                <div>
+                  <div className="text-2xl font-black text-slate-900">98%</div>
+                  <div className="text-xs text-slate-500 font-bold uppercase tracking-wider">Win Rate</div>
                 </div>
               </div>
+            </div>
+          </motion.div>
+        </div>
+        
+        {/* Top right minimal branding */}
+        <div className="absolute top-8 right-8">
+          <div className="bg-white/90 backdrop-blur-sm px-5 py-3 rounded-2xl shadow-xl">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
+                <Zap className="text-white" size={18} fill="currentColor" />
+              </div>
+              <span className="text-sm font-black text-slate-900 tracking-tight">SalesCRM</span>
             </div>
           </div>
         </div>
