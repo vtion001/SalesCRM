@@ -3,6 +3,7 @@ import { MicOff, Pause, PhoneForwarded, Headphones, Phone, PhoneOff, Clock, Mess
 import { DIALER_KEYS } from '../constants';
 import { Lead, Activity } from '../types';
 import { sendSMS, initializeTwilioDevice, getAccessToken } from '../services/twilioService';
+import { CallHistoryList } from './CallHistoryList';
 
 interface DialerProps {
   targetLead: Lead | undefined;
@@ -468,12 +469,8 @@ export const Dialer: React.FC<DialerProps> = ({ targetLead, onLogActivity }) => 
         )}
 
         {activeTab === 'History' && (
-          <div className="flex-1 overflow-y-auto p-0 animate-fade-in">
-             {!targetLead ? (
-               <EmptyState icon={<Clock size={24} />} text="Select a lead to view call history" />
-             ) : (
-               <EmptyState icon={<Clock size={24} />} text="No call history yet" />
-             )}
+          <div className="flex-1 overflow-hidden animate-fade-in flex flex-col">
+            <CallHistoryList targetLead={targetLead} />
           </div>
         )}
 

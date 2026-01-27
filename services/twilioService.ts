@@ -155,6 +155,34 @@ export const sendSMS = async (phoneNumber: string, message: string): Promise<SMS
 };
 
 /**
+ * Fetch call logs from Twilio REST API
+ */
+export const getCallLogs = async (params: { to?: string, from?: string, limit?: number } = {}): Promise<any[]> => {
+  try {
+    const query = new URLSearchParams();
+    if (params.to) query.append('to', params.to);
+    if (params.from) query.append('from', params.from);
+    if (params.limit) query.append('limit', params.limit.toString());
+
+    const response = await fetch(`${API_BASE}/api/twilio/list-calls?${query.toString()}`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' }
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to fetch call logs');
+    }
+
+    const data = await response.json();
+    return data.calls || [];
+  } catch (error) {
+    console.error('Error getting call logs:', error);
+    throw error;
+  }
+};
+
+/**
  * Initialize Twilio Device with token
  * Follows Twilio Voice JS SDK v2 best practices from official documentation
  * Returns the Twilio Device instance

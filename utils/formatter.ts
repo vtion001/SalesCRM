@@ -46,3 +46,14 @@ export const isValidPhoneNumber = (phone: string): boolean => {
   const phoneRegex = /^\+?[1-9]\d{1,14}$/;
   return phoneRegex.test(phone);
 };
+
+/**
+ * Format duration in seconds to MM:SS
+ */
+export const formatDuration = (seconds: number | string): string => {
+  const secs = typeof seconds === 'string' ? parseInt(seconds, 10) : seconds;
+  if (isNaN(secs)) return '0:00';
+  const mins = Math.floor(secs / 60);
+  const remainingSecs = Math.floor(secs % 60);
+  return `${mins}:${remainingSecs.toString().padStart(2, '0')}`;
+};
