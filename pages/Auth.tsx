@@ -62,12 +62,13 @@ export const Auth: React.FC = () => {
     try {
       const API_BASE = import.meta.env.VITE_API_BASE || 'https://sales-crm-sigma-eosin.vercel.app';
       
-      const response = await fetch(`${API_BASE}/api/mfa/challenge`, {
+      const response = await fetch(`${API_BASE}/api/mfa`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
+          action: 'challenge',
           email,
           password,
           mfaCode,

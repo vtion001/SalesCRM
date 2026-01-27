@@ -43,12 +43,13 @@ export const MFASetupModal: React.FC<MFASetupModalProps> = ({ isOpen, onClose, o
         return;
       }
 
-      const response = await fetch(`${API_BASE}/api/mfa/enroll-totp`, {
+      const response = await fetch(`${API_BASE}/api/mfa`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
           'Content-Type': 'application/json'
-        }
+        },
+        body: JSON.stringify({ action: 'enroll' })
       });
 
       const data = await response.json();
@@ -84,13 +85,13 @@ export const MFASetupModal: React.FC<MFASetupModalProps> = ({ isOpen, onClose, o
         return;
       }
 
-      const response = await fetch(`${API_BASE}/api/mfa/verify-totp`, {
+      const response = await fetch(`${API_BASE}/api/mfa`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ code: verificationCode })
+        body: JSON.stringify({ action: 'verify', code: verificationCode })
       });
 
       const data = await response.json();
