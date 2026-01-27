@@ -105,6 +105,7 @@ export default function App() {
   const handleSelectItem = useCallback((id: string) => {
     setSelectedLeadId(id);
     setCurrentView('leads');
+    toast.success('Viewing profile details', { duration: 2000 });
   }, []);
 
   const handleUpdateItem = async (id: string, updates: Partial<Lead>) => {
@@ -200,9 +201,15 @@ export default function App() {
     const leadPromise = (async () => {
       const addedLead = await addLead(leadData);
       if (addedLead) {
+        // Automatically create a contact for this lead
         await addContact({
-          name: leadData.name, role: leadData.role, company: leadData.company,
-          email: leadData.email, phone: leadData.phone, lastContacted: 'Never', status: 'Active'
+          name: leadData.name, 
+          role: leadData.role, 
+          company: leadData.company,
+          email: leadData.email, 
+          phone: leadData.phone, 
+          lastContacted: 'Just now', 
+          status: 'Active'
         });
         setSelectedLeadId(addedLead.id);
         setIsLeadModalOpen(false);
@@ -213,7 +220,7 @@ export default function App() {
 
     toast.promise(leadPromise, {
       loading: 'Creating lead opportunity...',
-      success: 'Lead and Contact created',
+      success: '✅ Lead created & added to Contacts',
       error: 'Failed to create lead',
     });
   };
