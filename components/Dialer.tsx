@@ -36,19 +36,77 @@ export const Dialer: React.FC<DialerProps> = ({ targetLead }) => {
   const callTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Initialize Twilio Device on component mount
+  // Async initialization wrapped in useEffect callback
   useEffect(() => {
     const initDevice = async () => {
       try {
         setDeviceError(null);
-        const userId = targetLead?.id || 'user-' + Date.now().toString();
+        setIsDeviceReady(false);
+        
+        // Identity can only contain alphanumeric and underscore characters
+        // Remove hyphens and special characters
+        const userId = targetLead?.id || 'user_' + Date.now().toString();
+        console.log('🎯 Initializing Twilio Device with userId:', userId);
+        
         const token = await getAccessToken(userId);
+        console.log('🔑 Got token from backend, initializing Device...');
+        
         const device = await initializeTwilioDevice(token, handleIncomingCall);
+        console.log('✅ initializeTwilioDevice returned Device instance');
+        
+        // Wait for the Device to be ready
+        // The ready event is triggered when Device.setup() completes and device is online
+        const readyPromise = new Promise<void>((resolve, reject) => {
+          let hasResolved = false;
+          
+          // 10 second timeout for ready event
+          const readyTimeout = setTimeout(() => {
+            if (!hasResolved) {
+              console.warn('⚠️  Device ready timeout - proceeding anyway (may try to connect)');
+              hasResolved = true;
+              resolve(); // Resolve anyway after timeout to unblock UI
+            }
+          }, 10000);
+
+          const onReady = () => {
+            if (!hasResolved) {
+              clearTimeout(readyTimeout);
+              hasResolved = true;
+              device.removeListener?.('ready', onReady);
+              device.removeListener?.('error', onError);
+              console.log('✅ Device ready event received!');
+              resolve();
+            }
+          };
+
+          const onError = (error: any) => {
+            if (!hasResolved) {
+              clearTimeout(readyTimeout);
+              hasResolved = true;
+              device.removeListener?.('ready', onReady);
+              device.removeListener?.('error', onError);
+              const errorMsg = error?.message || 'Unknown device error';
+              console.error('❌ Device error during initialization:', errorMsg);
+              reject(new Error(errorMsg));
+            }
+          };
+
+          device.on('ready', onReady);
+          device.on('error', onError);
+        });
+
+        await readyPromise;
+        console.log('✅ Device initialization ready phase complete');
+        
         setTwilioDevice(device);
         setIsDeviceReady(true);
       } catch (err: any) {
         const errorMsg = err.message || 'Failed to initialize Twilio Device';
+        console.error('❌ Device initialization failed:', {
+          message: errorMsg,
+          error: err
+        });
         setDeviceError(errorMsg);
-        console.error('Device initialization error:', err);
       }
     };
 
@@ -57,9 +115,11 @@ export const Dialer: React.FC<DialerProps> = ({ targetLead }) => {
     return () => {
       if (twilioDevice) {
         try {
+          console.log('Cleaning up Twilio Device...');
           twilioDevice.disconnectAll?.();
+          twilioDevice.destroy?.();
         } catch (err) {
-          console.error('Error disconnecting device:', err);
+          console.error('Error cleaning up device:', err);
         }
       }
     };

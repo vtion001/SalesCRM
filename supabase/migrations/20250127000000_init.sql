@@ -66,65 +66,43 @@ CREATE TABLE IF NOT EXISTS notes (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Create Admin User in auth.users
--- Password is 'password123'
-INSERT INTO auth.users (
-    instance_id,
-    id,
-    aud,
-    role,
-    email,
-    encrypted_password,
-    email_confirmed_at,
-    recovery_sent_at,
-    last_sign_in_at,
-    raw_app_meta_data,
-    raw_user_meta_data,
-    created_at,
-    updated_at,
-    confirmation_token,
-    email_change,
-    email_change_token_new,
-    recovery_token
-) VALUES (
-    '00000000-0000-0000-0000-000000000000',
-    'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
-    'authenticated',
-    'authenticated',
-    'admin@salescrm.com',
-    crypt('password123', gen_salt('bf')),
-    NOW(),
-    NOW(),
-    NOW(),
-    '{"provider":"email","providers":["email"]}',
-    '{"name":"Admin User"}',
-    NOW(),
-    NOW(),
-    '',
-    '',
-    '',
-    ''
-) ON CONFLICT (id) DO NOTHING;
-
-INSERT INTO auth.identities (
-    id,
-    user_id,
-    identity_data,
-    provider,
-    provider_id,
-    last_sign_in_at,
-    created_at,
-    updated_at
-) VALUES (
-    uuid_generate_v4(),
-    'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
-    '{"sub":"a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11","email":"admin@salescrm.com"}',
-    'email',
-    'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
-    NOW(),
-    NOW(),
-    NOW()
+CREATE TABLE IF NOT EXISTS call_history (
+    id TEXT PRIMARY KEY DEFAULT uuid_generate_v4()::text,
+    lead_id TEXT REFERENCES leads(id) ON DELETE CASCADE,
+    phone_number TEXT NOT NULL,
+    call_type TEXT CHECK (call_type IN ('incoming', 'outgoing', 'missed')) DEFAULT 'outgoing',
+    duration_seconds INTEGER DEFAULT 0,
+    call_sid TEXT UNIQUE,
+    recording_url TEXT,
+    notes TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+CREATE TABLE IF NOT EXISTS sms_messages (
+    id TEXT PRIMARY KEY DEFAULT uuid_generate_v4()::text,
+    lead_id TEXT REFERENCES leads(id) ON DELETE CASCADE,
+    phone_number TEXT NOT NULL,
+    message_text TEXT NOT NULL,
+    message_type TEXT CHECK (message_type IN ('sent', 'received')) DEFAULT 'sent',
+    message_sid TEXT UNIQUE,
+    status TEXT CHECK (status IN ('pending', 'sent', 'delivered', 'failed')) DEFAULT 'pending',
+    error_message TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Note: Create admin user via Supabase Dashboard instead
+-- Dashboard Method:
+-- 1. Go to Authentication > Users
+-- 2. Click "Add user"
+-- 3. Email: admin@salescrm.com
+-- 4. Password: password123
+-- 5. Click Save
+
+-- Alternative SQL (run in Supabase SQL Editor if Dashboard method doesn't work):
+-- SELECT auth.uid() as user_id; -- First, get a valid instance_id from Supabase
+-- Then uncomment and run the queries below with your actual instance_id
 
 -- Enable Row Level Security (RLS)
 ALTER TABLE leads ENABLE ROW LEVEL SECURITY;
@@ -132,10 +110,27 @@ ALTER TABLE contacts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE deals ENABLE ROW LEVEL SECURITY;
 ALTER TABLE activities ENABLE ROW LEVEL SECURITY;
 ALTER TABLE notes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE call_history ENABLE ROW LEVEL SECURITY;
+ALTER TABLE sms_messages ENABLE ROW LEVEL SECURITY;
 
 -- Create basic policies (Allow all for authenticated users for now)
+DROP POLICY IF EXISTS "Enable all for authenticated users" ON leads;
 CREATE POLICY "Enable all for authenticated users" ON leads FOR ALL USING (auth.role() = 'authenticated');
+
+DROP POLICY IF EXISTS "Enable all for authenticated users" ON contacts;
 CREATE POLICY "Enable all for authenticated users" ON contacts FOR ALL USING (auth.role() = 'authenticated');
+
+DROP POLICY IF EXISTS "Enable all for authenticated users" ON deals;
 CREATE POLICY "Enable all for authenticated users" ON deals FOR ALL USING (auth.role() = 'authenticated');
+
+DROP POLICY IF EXISTS "Enable all for authenticated users" ON activities;
 CREATE POLICY "Enable all for authenticated users" ON activities FOR ALL USING (auth.role() = 'authenticated');
+
+DROP POLICY IF EXISTS "Enable all for authenticated users" ON notes;
 CREATE POLICY "Enable all for authenticated users" ON notes FOR ALL USING (auth.role() = 'authenticated');
+
+DROP POLICY IF EXISTS "Enable all for authenticated users" ON call_history;
+CREATE POLICY "Enable all for authenticated users" ON call_history FOR ALL USING (auth.role() = 'authenticated');
+
+DROP POLICY IF EXISTS "Enable all for authenticated users" ON sms_messages;
+CREATE POLICY "Enable all for authenticated users" ON sms_messages FOR ALL USING (auth.role() = 'authenticated');

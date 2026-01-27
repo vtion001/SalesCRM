@@ -16,8 +16,10 @@ export const Header: React.FC<HeaderProps> = ({ user, onLogout, onUpdateProfile 
   // Edit Profile State
   const [editName, setEditName] = useState(user.name);
   const [editRole, setEditRole] = useState(user.role);
+  const [editAvatar, setEditAvatar] = useState(user.avatar);
 
   const headerRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -35,6 +37,7 @@ export const Header: React.FC<HeaderProps> = ({ user, onLogout, onUpdateProfile 
     if (showAccountModal) {
       setEditName(user.name);
       setEditRole(user.role);
+      setEditAvatar(user.avatar);
     }
   }, [showAccountModal, user]);
 
@@ -53,8 +56,23 @@ export const Header: React.FC<HeaderProps> = ({ user, onLogout, onUpdateProfile 
   };
 
   const handleSaveProfile = () => {
-    onUpdateProfile({ name: editName, role: editRole });
+    onUpdateProfile({ 
+      name: editName, 
+      role: editRole,
+      avatar: editAvatar 
+    });
     setShowAccountModal(false);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setEditAvatar(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   return (
@@ -188,12 +206,29 @@ export const Header: React.FC<HeaderProps> = ({ user, onLogout, onUpdateProfile 
             </div>
             <div className="p-6 space-y-4">
               <div className="flex flex-col items-center mb-6">
-                <img
-                  src={user.avatar}
-                  alt="Profile"
-                  className="w-20 h-20 rounded-full border-4 border-gray-50 shadow-sm mb-2 object-cover"
+                <div className="relative group">
+                  <img
+                    src={editAvatar}
+                    alt="Profile"
+                    className="w-20 h-20 rounded-full border-4 border-gray-50 shadow-sm mb-2 object-cover"
+                  />
+                  <div className="absolute inset-0 bg-black/20 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer pointer-events-none">
+                    <span className="text-white text-[10px] font-bold uppercase">Change</span>
+                  </div>
+                </div>
+                <input 
+                  type="file" 
+                  ref={fileInputRef} 
+                  onChange={handleFileChange} 
+                  className="hidden" 
+                  accept="image/*"
                 />
-                <button className="text-sm text-blue-600 font-semibold hover:text-blue-700">Change Photo</button>
+                <button 
+                  onClick={() => fileInputRef.current?.click()}
+                  className="text-sm text-blue-600 font-semibold hover:text-blue-700"
+                >
+                  Change Photo
+                </button>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>

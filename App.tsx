@@ -1,20 +1,58 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
 import { LeadList } from './components/LeadList';
 import { LeadDetail } from './components/LeadDetail';
 import { Dialer } from './components/Dialer';
-import { Login } from './components/Login';
 import { Dashboard } from './components/Dashboard';
 import { Contacts } from './components/Contacts';
 import { Deals } from './components/Deals';
 import { Analytics } from './components/Analytics';
 import { ContactForm } from './components/ContactForm';
+import { Auth } from './pages/Auth';
 import { Lead, Activity, Note, Contact, Deal, CurrentUser } from './types';
+import { supabase } from './services/supabaseClient';
 
 export default function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [currentView, setCurrentView] = useState('dashboard');
+  const [authLoading, setAuthLoading] = useState(true);
+
+  // Check authentication status on mount
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        if (error) throw error;
+        
+        if (data?.session?.user) {
+          setIsAuthenticated(true);
+        } else {
+          setIsAuthenticated(false);
+        }
+      } catch (err) {
+        console.error('Auth check failed:', err);
+        setIsAuthenticated(false);
+      } finally {
+        setAuthLoading(false);
+      }
+    };
+
+    checkAuth();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        if (session?.user) {
+          setIsAuthenticated(true);
+        } else {
+          setIsAuthenticated(false);
+        }
+      }
+    );
+
+    return () => subscription?.unsubscribe();
+  }, []);
   
   // User State
   const [currentUser, setCurrentUser] = useState<CurrentUser>({
@@ -37,13 +75,14 @@ export default function App() {
 
   const selectedLead = leads.find(l => l.id === selectedLeadId);
 
-  const handleLogin = () => {
-    setIsAuthenticated(true);
-  };
-
-  const handleLogout = () => {
-    setIsAuthenticated(false);
-    setCurrentView('dashboard');
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      setIsAuthenticated(false);
+      setCurrentView('dashboard');
+    } catch (err) {
+      console.error('Logout failed:', err);
+    }
   };
 
   const handleUpdateProfile = (updates: Partial<CurrentUser>) => {
@@ -110,8 +149,21 @@ export default function App() {
     }
   };
 
+  // Show loading screen while checking authentication
+  if (authLoading === true) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show login page if not authenticated
   if (!isAuthenticated) {
-    return <Login onLogin={handleLogin} />;
+    return <Auth />;
   }
 
   return (
