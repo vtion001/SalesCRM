@@ -261,7 +261,7 @@ export const Dialer: React.FC<DialerProps> = ({ targetLead }) => {
       // NOTE: The previous code called a backend endpoint /call. 
       // If using Client-to-Client or Client-to-PSTN via TwiML App, we use device.connect({ params: { To: ... } })
       
-      const params = { to: phoneNumber };
+      const params = { To: phoneNumber };
       const call = await twilioDevice.connect({ params });
       
       setCurrentCall(call);

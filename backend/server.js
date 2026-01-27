@@ -20,8 +20,9 @@ const PORT = process.env.PORT || 4000;
 const accountSid = process.env.TWILIO_ACCOUNT_SID;
 const authToken = process.env.TWILIO_AUTH_TOKEN;
 const twilioPhoneNumber = process.env.TWILIO_PHONE_NUMBER;
-const apiKey = process.env.TWILIO_API_KEY;
-const apiSecret = process.env.TWILIO_API_SECRET;
+// Accept either TWILIO_API_KEY (+ TWILIO_API_SECRET) or TWILIO_API_KEY_SID (+ TWILIO_API_KEY_SECRET)
+const apiKey = process.env.TWILIO_API_KEY || process.env.TWILIO_API_KEY_SID;
+const apiSecret = process.env.TWILIO_API_SECRET || process.env.TWILIO_API_KEY_SECRET;
 
 console.log('Backend Configuration:');
 console.log('  - PORT:', PORT);
