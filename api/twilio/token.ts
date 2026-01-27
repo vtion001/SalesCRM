@@ -24,10 +24,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(500).json({ error: 'Missing Twilio configuration' });
     }
 
-    // Identity handling
-    let identity = req.query?.identity || req.body?.identity || 'user';
+    // Identity handling: Ensure string and fallback
+    let identity = req.query?.identity || req.body?.identity;
+    
+    // Explicitly check for valid identity
+    if (!identity || identity === 'undefined' || identity === 'null') {
+      identity = 'user_' + Math.random().toString(36).substring(7);
+      console.warn('⚠️ No identity provided, using random fallback:', identity);
+    }
+    
     identity = String(identity).replace(/[^a-zA-Z0-9_]/g, '_');
-    console.log('Identity:', identity);
+    console.log('Final Identity:', identity);
 
     // Explicitly check for imported module
     if (!twilio || !twilio.jwt || !twilio.jwt.AccessToken) {
