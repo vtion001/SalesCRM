@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { MicOff, Pause, PhoneForwarded, Headphones, Phone, PhoneOff, Clock, MessageSquare, Send, ArrowDownLeft, ArrowUpRight, Ban, AlertCircle, Volume2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { DIALER_KEYS } from '../constants';
 import { Lead, Activity } from '../types';
 import { sendSMS, initializeTwilioDevice, getAccessToken } from '../services/twilioService';
@@ -38,58 +39,29 @@ export const Dialer: React.FC<DialerProps> = ({ targetLead, onLogActivity }) => 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const callTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Reset messages when target lead changes
   useEffect(() => {
     if (!targetLead) {
       setMessages([]);
     }
   }, [targetLead?.id]);
 
-  // Initialize Twilio Device on component mount
   useEffect(() => {
     const initDevice = async () => {
       try {
         setDeviceError(null);
         setIsDeviceReady(false);
-        
-        // Use a consistent identity for this client session
-        // In production, this should be a unique user ID
-        const userId = 'user_default'; // Match with incoming-call.ts
+        const userId = 'user_default'; 
         const token = await getAccessToken(userId);
         const device = await initializeTwilioDevice(token, handleIncomingCall);
         
         const readyPromise = new Promise<void>((resolve, reject) => {
           let hasResolved = false;
-          const readyTimeout = setTimeout(() => {
-            if (!hasResolved) {
-              hasResolved = true;
-              resolve();
-            }
-          }, 10000);
-
-          const onReady = () => {
-            if (!hasResolved) {
-              clearTimeout(readyTimeout);
-              hasResolved = true;
-              resolve();
-            }
-          };
-
-           const onError = (error: any) => {
-             if (!hasResolved) {
-               clearTimeout(readyTimeout);
-               hasResolved = true;
-               const errorMsg = error?.message || (typeof error === 'string' ? error : 'Unknown device error');
-               reject(new Error(errorMsg));
-             }
-           };
-
+          const readyTimeout = setTimeout(() => { if (!hasResolved) { hasResolved = true; resolve(); } }, 10000);
+          const onReady = () => { if (!hasResolved) { clearTimeout(readyTimeout); hasResolved = true; resolve(); } };
+          const onError = (error: any) => { if (!hasResolved) { clearTimeout(readyTimeout); hasResolved = true; reject(new Error(error?.message || 'Device error')); } };
           device.on('registered', onReady);
           device.on('error', onError);
-          
-          if (device.state === 'registered') {
-            onReady();
-          }
+          if (device.state === 'registered') onReady();
         });
 
         await readyPromise;
@@ -99,66 +71,43 @@ export const Dialer: React.FC<DialerProps> = ({ targetLead, onLogActivity }) => 
         setDeviceError(err?.message || 'Failed to initialize Twilio Device');
       }
     };
-
     initDevice();
-
     return () => {
       if (twilioDevice) {
-        try {
-          twilioDevice.disconnectAll?.();
-          twilioDevice.destroy?.();
-        } catch (err) {
-          console.error('Error cleaning up device:', err);
-        }
+        try { twilioDevice.disconnectAll?.(); twilioDevice.destroy?.(); } catch (err) { console.error(err); }
       }
     };
   }, []);
 
-  // Update phone number when target lead changes
   useEffect(() => {
-    if (targetLead) {
-      setPhoneNumber(targetLead.phone);
-      setMessages([]);
-    }
+    if (targetLead) setPhoneNumber(targetLead.phone);
   }, [targetLead]);
 
-  // Auto-scroll messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, activeTab]);
 
-  // Handle incoming calls
   const handleIncomingCall = (call: any) => {
     const callData: IncomingCall = {
       id: call.parameters.CallSid || Date.now().toString(),
       from: call.parameters.From || 'Unknown',
       timestamp: new Date(),
     };
-    
     setCurrentCall(call);
     setIncomingCall(callData);
     setCallStatus(`Incoming call from ${callData.from}`);
-    
-    call.on('disconnect', () => {
-      handleEndCall();
-    });
+    call.on('disconnect', () => handleEndCall());
   };
 
-  // Answer incoming call
   const handleAnswerCall = async () => {
     if (!incomingCall || !currentCall) return;
-
     try {
       setError(null);
-      setCallStatus(`Connected to ${incomingCall.from}`);
+      setCallStatus(`Connected`);
       setIsCallInProgress(true);
       setCallDuration(0);
       setIncomingCall({ ...incomingCall, accepted: true });
-
-      callTimerRef.current = setInterval(() => {
-        setCallDuration((prev) => prev + 1);
-      }, 1000);
-
+      callTimerRef.current = setInterval(() => setCallDuration((prev) => prev + 1), 1000);
       await currentCall.accept();
     } catch (err: any) {
       setError(err.message || 'Failed to answer call');
@@ -166,96 +115,53 @@ export const Dialer: React.FC<DialerProps> = ({ targetLead, onLogActivity }) => 
     }
   };
 
-  // Reject incoming call
   const handleRejectCall = () => {
     if (!currentCall) return;
     setIncomingCall(null);
     setCallStatus(null);
-    try {
-      currentCall.reject();
-    } catch (err) {
-      console.error('Error rejecting call:', err);
-    }
+    try { currentCall.reject(); } catch (err) { console.error(err); }
     setCurrentCall(null);
   };
 
-  // End active call
   const handleEndCall = () => {
-    if (callTimerRef.current) {
-      clearInterval(callTimerRef.current);
-    }
-
-    // Log the activity if we have a lead and duration > 0
+    if (callTimerRef.current) clearInterval(callTimerRef.current);
     if (targetLead && callDuration > 0 && onLogActivity) {
-      onLogActivity({
-        type: 'call',
-        title: 'Outgoing Call',
-        description: `Completed call to ${phoneNumber}`,
-        duration: formatDuration(callDuration),
-        timestamp: 'Just now'
-      });
+      onLogActivity({ type: 'call', title: 'Outgoing Call', description: `Completed call to ${phoneNumber}`, duration: formatDuration(callDuration), timestamp: 'Just now' });
     }
-
     setIsCallInProgress(false);
     setCallDuration(0);
     setCallStatus(null);
     setIncomingCall(null);
     setIsMuted(false);
     setIsHold(false);
-    
-    try {
-      if (currentCall) {
-        currentCall.disconnect();
-      }
-    } catch (err) {
-      console.error('Error ending call:', err);
-    }
+    try { if (currentCall) currentCall.disconnect(); } catch (err) { console.error(err); }
     setCurrentCall(null);
   };
 
-  // Format call duration
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const handleKeyPress = (num: string) => {
-    setPhoneNumber(prev => prev + num);
-  };
+  const handleKeyPress = (num: string) => setPhoneNumber(prev => prev + num);
 
   const handleMakeCall = async () => {
     if (!phoneNumber || isCallInProgress || !isDeviceReady || !twilioDevice) return;
-
     setError(null);
     setIsCallInProgress(true);
     setCallDuration(0);
-    setCallStatus('Initiating call...');
-
+    setCallStatus('Connecting...');
     try {
       const params = { To: phoneNumber };
       const call = await twilioDevice.connect({ params });
-      
       setCurrentCall(call);
-      setCallStatus(`Connected to ${phoneNumber}`);
-      
       call.on('accept', () => {
-         setCallStatus(`Call accepted`);
-         callTimerRef.current = setInterval(() => {
-            setCallDuration((prev) => prev + 1);
-          }, 1000);
+         setCallStatus(`In call`);
+         callTimerRef.current = setInterval(() => setCallDuration((prev) => prev + 1), 1000);
       });
-      
-      call.on('disconnect', () => {
-        handleEndCall();
-      });
-
-      call.on('error', (error: any) => {
-        console.error('Call error:', error);
-        setError(error.message || 'Call failed');
-        handleEndCall();
-      });
-
+      call.on('disconnect', () => handleEndCall());
+      call.on('error', (error: any) => { setError(error.message || 'Call failed'); handleEndCall(); });
     } catch (err: any) {
       setError(err.message || 'Failed to initiate call');
       setCallStatus(null);
@@ -267,329 +173,228 @@ export const Dialer: React.FC<DialerProps> = ({ targetLead, onLogActivity }) => 
   const handleSendSms = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!smsMessage.trim() || !phoneNumber || isSending) return;
-
     setError(null);
     setIsSending(true);
-
     try {
       await sendSMS(phoneNumber, smsMessage);
-      setMessages([...messages, { 
-        id: Date.now(), 
-        sender: 'me', 
-        text: smsMessage, 
-        time: 'Just now' 
-      }]);
-      
-      // Log SMS activity
+      setMessages([...messages, { id: Date.now(), sender: 'me', text: smsMessage, time: 'Just now' }]);
       if (targetLead && onLogActivity) {
-        onLogActivity({
-          type: 'email', // Using email icon for text for now or could add SMS type
-          title: 'SMS Sent',
-          description: smsMessage,
-          timestamp: 'Just now'
-        });
+        onLogActivity({ type: 'email', title: 'SMS Sent', description: smsMessage, timestamp: 'Just now' });
       }
-      
       setSmsMessage('');
     } catch (err: any) {
       setError(err.message || 'Failed to send SMS');
-    } finally {
-      setIsSending(false);
-    }
+    } finally { setIsSending(false); }
   };
 
   return (
-    <div className="h-full flex flex-col bg-white">
-      {deviceError && (
-        <div className="px-4 py-3 bg-red-50 border-b border-red-200">
-          <div className="flex items-start gap-2">
-            <AlertCircle size={16} className="text-red-500 mt-0.5 flex-shrink-0" />
-            <div>
-              <p className="text-xs font-semibold text-red-700">Device Connection Error</p>
-              <p className="text-xs text-red-600 mt-0.5">{deviceError}</p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {incomingCall && !incomingCall.accepted && (
-        <div className="px-4 py-4 bg-blue-50 border-b-2 border-blue-500 animate-pulse">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Volume2 size={20} className="text-blue-600 animate-bounce" />
+    <div className="h-full flex flex-col bg-white overflow-hidden">
+      <AnimatePresence>
+        {deviceError && (
+          <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} className="bg-rose-50 overflow-hidden border-b border-rose-100">
+            <div className="px-6 py-3 flex items-start gap-3">
+              <AlertCircle size={16} className="text-rose-500 mt-0.5 flex-shrink-0" />
               <div>
-                <p className="text-sm font-bold text-blue-900">Incoming Call</p>
-                <p className="text-xs text-blue-700">{incomingCall.from}</p>
+                <p className="text-[10px] font-black text-rose-700 uppercase tracking-widest">Device Offline</p>
+                <p className="text-[11px] text-rose-600 font-bold leading-tight">{deviceError}</p>
               </div>
             </div>
-            <div className="flex gap-2">
-              <button
-                onClick={handleAnswerCall}
-                className="px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white text-xs font-semibold rounded-lg transition-colors"
-              >
-                <Phone size={14} className="inline mr-1" />
-                Answer
-              </button>
-              <button
-                onClick={handleRejectCall}
-                className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white text-xs font-semibold rounded-lg transition-colors"
-              >
-                <PhoneOff size={14} className="inline mr-1" />
-                Reject
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      <div className="flex border-b border-gray-200">
+      <AnimatePresence>
+        {incomingCall && !incomingCall.accepted && (
+          <motion.div initial={{ y: -50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: -50, opacity: 0 }} className="px-6 py-6 bg-indigo-600 shadow-2xl relative z-20">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center">
+                  <Volume2 size={24} className="text-white animate-pulse" />
+                </div>
+                <div>
+                  <p className="text-xs font-black text-indigo-100 uppercase tracking-widest">Incoming Call</p>
+                  <p className="text-xl font-black text-white">{incomingCall.from}</p>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button onClick={handleAnswerCall} className="w-12 h-12 bg-emerald-500 text-white rounded-2xl flex items-center justify-center shadow-lg active:scale-95 transition-transform"><Phone size={20} /></button>
+                <button onClick={handleRejectCall} className="w-12 h-12 bg-rose-500 text-white rounded-2xl flex items-center justify-center shadow-lg active:scale-95 transition-transform"><PhoneOff size={20} /></button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div className="flex border-b border-slate-100 p-2 bg-slate-50/50">
         {['Dialer', 'History', 'SMS'].map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`flex-1 py-4 text-xs font-bold uppercase tracking-wider text-center transition-colors relative ${
-              activeTab === tab ? 'text-blue-600' : 'text-gray-400 hover:text-gray-600'
+            className={`flex-1 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-center transition-all relative rounded-xl ${
+              activeTab === tab ? 'text-indigo-600 bg-white shadow-sm' : 'text-slate-400 hover:text-slate-600'
             }`}
           >
             {tab}
-            {activeTab === tab && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600"></div>
-            )}
           </button>
         ))}
       </div>
 
       <div className="flex-1 overflow-hidden relative flex flex-col">
-        {activeTab === 'Dialer' && (
-          <div className="flex-1 flex flex-col items-center justify-between p-8 animate-fade-in">
-            <div className="w-full flex flex-col items-center mt-4">
-              {isCallInProgress && (
-                <div className="bg-green-100 text-green-700 px-3 py-2 rounded-full text-[10px] font-bold uppercase tracking-wide flex items-center gap-2 mb-6 animate-pulse">
-                  <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                  Call in Progress • {formatDuration(callDuration)}
-                </div>
-              )}
-
-              {!isCallInProgress && (
-                <div className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide flex items-center gap-1.5 mb-6 ${
-                  isDeviceReady && targetLead
-                    ? 'bg-green-100 text-green-700'
-                    : isDeviceReady
-                    ? 'bg-yellow-100 text-yellow-700'
-                    : 'bg-red-100 text-red-700'
-                }`}>
-                  <span className={`w-1.5 h-1.5 rounded-full ${
-                    isDeviceReady && targetLead
-                      ? 'bg-green-500'
-                      : isDeviceReady
-                      ? 'bg-yellow-500'
-                      : 'bg-red-500'
-                  }`}></span>
-                  {isDeviceReady && targetLead ? 'Ready to call' : isDeviceReady ? 'No lead selected' : 'Connecting...'}
-                </div>
-              )}
-
-              <input
-                type="text"
-                value={phoneNumber}
-                onChange={(e) => setPhoneNumber(e.target.value)}
-                className="text-3xl font-bold text-gray-900 text-center w-full bg-transparent outline-none mb-2"
-                placeholder="Dial Number..."
-              />
-              <p className="text-sm text-gray-500 font-medium min-h-[20px]">
-                {targetLead ? `${targetLead.name} • ${targetLead.company}` : 'Enter number or select lead'}
-              </p>
-            </div>
-
-            <div className="grid grid-cols-3 gap-x-6 gap-y-5 my-8">
-              {DIALER_KEYS.map(({ num, sub }) => (
-                <button
-                  key={num}
-                  onClick={() => handleKeyPress(num)}
-                  className="w-16 h-16 rounded-2xl bg-gray-50 hover:bg-gray-100 transition-colors flex flex-col items-center justify-center group active:scale-95 duration-100"
-                >
-                  <span className="text-2xl font-medium text-gray-900 leading-none mb-0.5">{num}</span>
-                  <span className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">{sub}</span>
-                </button>
-              ))}
-            </div>
-
-            <div className="mb-8 flex gap-4 items-center">
-              {isCallInProgress && (
-                <button 
-                  onClick={handleEndCall}
-                  className="w-16 h-16 rounded-full flex items-center justify-center shadow-lg bg-red-500 hover:bg-red-600 text-white transition-all active:scale-95"
-                >
-                  <PhoneOff size={28} fill="currentColor" />
-                </button>
-              )}
-
-              {!isCallInProgress && (
-                <button 
-                  onClick={handleMakeCall}
-                  disabled={!phoneNumber || isCallInProgress || !isDeviceReady}
-                  className={`w-16 h-16 rounded-full flex items-center justify-center shadow-lg transition-all active:scale-95 ${
-                    phoneNumber && !isCallInProgress && isDeviceReady
-                      ? 'bg-green-500 hover:bg-green-600 text-white shadow-green-200' 
-                      : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                  }`}
-                >
-                  <Phone size={28} fill="currentColor" />
-                </button>
-              )}
-            </div>
-
-            {error && (
-              <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
-                <AlertCircle size={16} className="text-red-500 mt-0.5 flex-shrink-0" />
-                <span className="text-xs text-red-600">{error}</span>
-              </div>
-            )}
-            {callStatus && !error && (
-              <div className="mb-4 px-4 py-3 bg-blue-50 border border-blue-200 rounded-lg">
-                <span className="text-xs text-blue-600">{callStatus}</span>
-              </div>
-            )}
-
-            {isCallInProgress && (
-              <div className="w-full flex justify-between px-8 mb-4">
-                <ControlButton 
-                  icon={<MicOff size={20} />} 
-                  label="Mute" 
-                  active={isMuted}
-                  onClick={() => setIsMuted(!isMuted)}
-                  disabled={false}
-                />
-                <ControlButton 
-                  icon={<Pause size={20} fill="currentColor" />} 
-                  label="Hold" 
-                  active={isHold}
-                  onClick={() => setIsHold(!isHold)}
-                  disabled={false}
-                />
-                <ControlButton 
-                  icon={<PhoneForwarded size={20} />} 
-                  label="Transfer" 
-                  disabled={true}
-                />
-              </div>
-            )}
-          </div>
-        )}
-
-        {activeTab === 'History' && (
-          <div className="flex-1 overflow-hidden animate-fade-in flex flex-col">
-            <CallHistoryList targetLead={targetLead} />
-          </div>
-        )}
-
-        {activeTab === 'SMS' && (
-          <div className="flex-1 flex flex-col h-full animate-fade-in">
-            {!targetLead ? (
-              <EmptyState icon={<MessageSquare size={24} />} text="Select a lead to view messages" />
-            ) : (
-              <>
-                <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50/50">
-                  <div className="text-center text-xs text-gray-400 my-4">Today</div>
-                  {(messages || []).map((msg) => (
-                    <div key={msg.id} className={`flex ${msg.sender === 'me' ? 'justify-end' : 'justify-start'}`}>
-                      <div className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm shadow-sm ${
-                        msg.sender === 'me' 
-                          ? 'bg-blue-600 text-white rounded-br-none' 
-                          : 'bg-white border border-gray-100 text-gray-800 rounded-bl-none'
-                      }`}>
-                        <p>{msg.text}</p>
-                        <p className={`text-[10px] mt-1 ${msg.sender === 'me' ? 'text-blue-100' : 'text-gray-400'}`}>
-                          {msg.time}
-                        </p>
-                      </div>
+        <AnimatePresence mode="wait">
+          {activeTab === 'Dialer' && (
+            <motion.div 
+              key="dialer" 
+              initial={{ opacity: 0, x: 20 }} 
+              animate={{ opacity: 1, x: 0 }} 
+              exit={{ opacity: 0, x: -20 }}
+              className="flex-1 flex flex-col items-center justify-between p-10"
+            >
+              <div className="w-full flex flex-col items-center">
+                {isCallInProgress && (
+                  <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="bg-indigo-50 text-indigo-600 px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-3 mb-8 border border-indigo-100">
+                    <div className="relative flex">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-600"></span>
                     </div>
-                  ))}
-                  <div ref={messagesEndRef} />
-                </div>
-                
-                <form onSubmit={handleSendSms} className="p-4 bg-white border-t border-gray-200">
-                  <div className="relative">
-                    <input
-                      type="text"
-                      value={smsMessage}
-                      onChange={(e) => setSmsMessage(e.target.value)}
-                      placeholder="Type a message..."
-                      className="w-full pl-4 pr-12 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm"
-                    />
-                    <button 
-                      type="submit"
-                      disabled={!smsMessage.trim()}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                    >
-                      <Send size={18} />
-                    </button>
+                    In Call • {formatDuration(callDuration)}
+                  </motion.div>
+                )}
+
+                <motion.div layoutId="phone-input" className="w-full text-center">
+                  <input
+                    type="text"
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
+                    className="text-4xl font-black text-slate-900 text-center w-full bg-transparent outline-none mb-2 tracking-tight"
+                    placeholder="000-000-0000"
+                  />
+                  <p className="text-[10px] font-black text-indigo-500 uppercase tracking-widest bg-indigo-50 inline-block px-3 py-1 rounded-lg">
+                    {targetLead ? `${targetLead.name} • ${targetLead.company}` : 'Awaiting Selection'}
+                  </p>
+                </motion.div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-x-8 gap-y-6 my-10">
+                {DIALER_KEYS.map(({ num, sub }) => (
+                  <motion.button
+                    key={num}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={() => handleKeyPress(num)}
+                    className="w-16 h-16 rounded-[24px] bg-slate-50 hover:bg-slate-100 hover:shadow-lg hover:shadow-slate-200 transition-all flex flex-col items-center justify-center group active:bg-indigo-50"
+                  >
+                    <span className="text-2xl font-black text-slate-900 leading-none mb-1 group-active:text-indigo-600">{num}</span>
+                    <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest group-active:text-indigo-400">{sub}</span>
+                  </motion.button>
+                ))}
+              </div>
+
+              <div className="mb-4">
+                {isCallInProgress ? (
+                  <motion.button 
+                    initial={{ scale: 0 }} animate={{ scale: 1 }}
+                    onClick={handleEndCall}
+                    className="w-20 h-20 rounded-[32px] flex items-center justify-center shadow-2xl shadow-rose-200 bg-rose-500 hover:bg-rose-600 text-white transition-all active:scale-90"
+                  >
+                    <PhoneOff size={32} />
+                  </motion.button>
+                ) : (
+                  <motion.button 
+                    initial={{ scale: 0 }} animate={{ scale: 1 }}
+                    onClick={handleMakeCall}
+                    disabled={!phoneNumber || !isDeviceReady}
+                    className={`w-20 h-20 rounded-[32px] flex items-center justify-center shadow-2xl transition-all active:scale-90 ${
+                      phoneNumber && isDeviceReady
+                        ? 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-200' 
+                        : 'bg-slate-100 text-slate-300 cursor-not-allowed shadow-none'
+                    }`}
+                  >
+                    <Phone size={32} />
+                  </motion.button>
+                )}
+              </div>
+
+              {error && (
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-4 px-4 py-2 bg-rose-50 text-rose-600 text-[10px] font-black uppercase tracking-widest rounded-lg border border-rose-100">
+                  {error}
+                </motion.div>
+              )}
+            </motion.div>
+          )}
+
+          {activeTab === 'History' && (
+            <motion.div key="history" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="flex-1 overflow-hidden flex flex-col">
+              <CallHistoryList targetLead={targetLead} />
+            </motion.div>
+          )}
+
+          {activeTab === 'SMS' && (
+            <motion.div key="sms" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="flex-1 flex flex-col h-full">
+              {!targetLead ? (
+                <EmptyState icon={<MessageSquare size={24} />} text="Select a lead to view messages" />
+              ) : (
+                <>
+                  <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-slate-50/30 custom-scrollbar">
+                    <div className="text-center text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] my-4">Today</div>
+                    {(messages || []).map((msg, idx) => (
+                      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }} key={msg.id} className={`flex ${msg.sender === 'me' ? 'justify-end' : 'justify-start'}`}>
+                        <div className={`max-w-[85%] rounded-3xl px-5 py-4 text-sm font-medium shadow-sm ${
+                          msg.sender === 'me' 
+                            ? 'bg-indigo-600 text-white rounded-br-none' 
+                            : 'bg-white border border-slate-100 text-slate-800 rounded-bl-none'
+                        }`}>
+                          <p className="leading-relaxed">{msg.text}</p>
+                          <p className={`text-[9px] font-black uppercase tracking-widest mt-2 ${msg.sender === 'me' ? 'text-indigo-200' : 'text-slate-400'}`}>
+                            {msg.time}
+                          </p>
+                        </div>
+                      </motion.div>
+                    ))}
+                    <div ref={messagesEndRef} />
                   </div>
-                </form>
-              </>
-            )}
-          </div>
-        )}
+                  
+                  <form onSubmit={handleSendSms} className="p-6 bg-white border-t border-slate-100">
+                    <div className="relative flex gap-3">
+                      <input type="text" value={smsMessage} onChange={(e) => setSmsMessage(e.target.value)} placeholder="Type a message..." className="flex-1 px-6 py-4 bg-slate-50 border-2 border-transparent focus:bg-white focus:border-indigo-500/20 rounded-[20px] outline-none text-sm font-medium transition-all" />
+                      <button type="submit" disabled={!smsMessage.trim()} className="w-14 h-14 bg-indigo-600 text-white rounded-[20px] flex items-center justify-center shadow-lg shadow-indigo-600/20 disabled:opacity-30 transition-all active:scale-90"><Send size={20} /></button>
+                    </div>
+                  </form>
+                </>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
-      <div className="h-14 border-t border-gray-100 flex items-center justify-between px-6 bg-gray-50/50 flex-shrink-0 z-10">
+      <div className="h-16 border-t border-slate-50 flex items-center justify-between px-8 bg-slate-50/30 flex-shrink-0">
         <div className="flex items-center gap-3">
-          <div className={`w-2 h-2 rounded-full ${isDeviceReady ? 'bg-green-500' : 'bg-gray-300'}`}></div>
-          <span className="text-xs font-medium text-gray-600">
-            {isDeviceReady ? 'Device Ready' : 'Device Connecting...'}
+          <div className={`w-2.5 h-2.5 rounded-full border-2 border-white shadow-sm ${isDeviceReady ? 'bg-emerald-500' : 'bg-slate-300'}`}></div>
+          <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+            {isDeviceReady ? 'Client Ready' : 'Connecting...'}
           </span>
         </div>
-        <span className="text-[10px] font-mono text-gray-500">
-          {isCallInProgress ? `Duration: ${formatDuration(callDuration)}` : 'Idle'}
-        </span>
+        <div className="flex items-center gap-4">
+           <Headphones size={14} className="text-slate-300" />
+           <Volume2 size={14} className="text-slate-300" />
+        </div>
       </div>
     </div>
   );
 };
 
-interface ControlButtonProps {
-  icon: React.ReactNode;
-  label: string;
-  disabled?: boolean;
-  active?: boolean;
-  onClick?: () => void;
-}
-
-const ControlButton = ({ 
-  icon, 
-  label, 
-  disabled, 
-  active, 
-  onClick 
-}: ControlButtonProps) => (
-  <button 
-    disabled={disabled}
-    onClick={onClick}
-    className={`flex flex-col items-center gap-2 transition-colors group ${
-      disabled ? 'opacity-50 cursor-not-allowed' : 'text-gray-400 hover:text-gray-600 cursor-pointer'
-    }`}
-  >
-    <div className={`w-12 h-12 rounded-full border-2 flex items-center justify-center ${
-      active
-        ? 'border-red-500 bg-red-50 text-red-600'
-        : `border-gray-200 bg-white ${!disabled && 'group-hover:border-gray-300 group-hover:bg-gray-50'}`
-    }`}>
+const ControlButton = ({ icon, label, disabled, active, onClick }: any) => (
+  <button disabled={disabled} onClick={onClick} className={`flex flex-col items-center gap-2 transition-all group ${disabled ? 'opacity-30 cursor-not-allowed' : 'text-slate-400 hover:text-slate-600 active:scale-90'}`}>
+    <div className={`w-14 h-14 rounded-[20px] border-2 flex items-center justify-center transition-all ${active ? 'border-rose-500 bg-rose-50 text-rose-600' : `border-slate-100 bg-white group-hover:border-slate-200 group-hover:shadow-lg`}`}>
       {icon}
     </div>
-    <span className="text-[10px] uppercase font-bold tracking-wide">{label}</span>
+    <span className="text-[9px] uppercase font-black tracking-widest">{label}</span>
   </button>
 );
 
-interface EmptyStateProps {
-  icon: React.ReactNode;
-  text: string;
-}
-
-const EmptyState = ({ icon, text }: EmptyStateProps) => (
-  <div className="h-full flex flex-col items-center justify-center text-center p-8 text-gray-400">
-    <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mb-3">
-      {icon}
+const EmptyState = ({ icon, text }: any) => (
+  <div className="h-full flex flex-col items-center justify-center text-center p-12 text-slate-300">
+    <div className="w-20 h-20 bg-slate-50 rounded-[32px] flex items-center justify-center mb-6 border border-slate-100">
+      {React.cloneElement(icon as React.ReactElement, { size: 32 })}
     </div>
-    <p className="text-sm font-medium">{text}</p>
+    <p className="text-xs font-black uppercase tracking-widest">{text}</p>
   </div>
 );

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Mail, Phone, Clock, Pin, FolderOpen, Trash2, MoreHorizontal, Send, Plus, MessageSquare, Check, X, Target, DollarSign } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Lead, Activity, Note } from '../types';
 
 interface LeadDetailProps {
@@ -31,13 +32,22 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
 
   if (!lead) {
     return (
-      <div className="h-full flex flex-col items-center justify-center bg-white/50 backdrop-blur-sm p-12 text-center">
-        <div className="w-24 h-24 bg-white rounded-[32px] shadow-[0_20px_50px_rgba(0,0,0,0.05)] flex items-center justify-center mb-8 border border-slate-50 rotate-3">
+      <motion.div 
+        initial={{ opacity: 0 }} 
+        animate={{ opacity: 1 }} 
+        className="h-full flex flex-col items-center justify-center bg-white/50 backdrop-blur-sm p-12 text-center"
+      >
+        <motion.div 
+          initial={{ scale: 0.8, rotate: -10 }}
+          animate={{ scale: 1, rotate: 3 }}
+          transition={{ type: "spring", stiffness: 200, damping: 15 }}
+          className="w-24 h-24 bg-white rounded-[32px] shadow-[0_20px_50px_rgba(0,0,0,0.05)] flex items-center justify-center mb-8 border border-slate-50"
+        >
           <FolderOpen className="text-indigo-500" size={40} />
-        </div>
+        </motion.div>
         <h3 className="text-2xl font-black text-slate-900 tracking-tight">Select an Entity</h3>
         <p className="text-slate-400 max-w-xs mt-3 font-medium">Choose a lead or contact from the pipeline to view their detailed activity feed and metrics.</p>
-      </div>
+      </motion.div>
     );
   }
 
@@ -86,60 +96,89 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
   return (
     <div className="h-full overflow-y-auto bg-white p-10 custom-scrollbar">
       {/* Header Profile */}
-      <div className="flex items-start justify-between mb-12">
+      <motion.div 
+        layout
+        className="flex items-start justify-between mb-12"
+      >
         <div className="flex items-start gap-8">
-          <img src={lead.avatar} alt={lead.name} className="w-24 h-24 rounded-[32px] object-cover shadow-2xl shadow-slate-200 border-4 border-white bg-slate-50" />
+          <motion.img 
+            layoutId={`avatar-${lead.id}`}
+            src={lead.avatar} 
+            alt={lead.name} 
+            className="w-24 h-24 rounded-[32px] object-cover shadow-2xl shadow-slate-200 border-4 border-white bg-slate-50" 
+          />
           
-          {isEditingProfile ? (
-            <div className="space-y-4 pt-2">
-              <input className="text-3xl font-black text-slate-900 border-b-2 border-indigo-500 focus:outline-none w-full bg-transparent" value={editData.name} onChange={e => setEditData({...editData, name: e.target.value})} />
-              <div className="flex items-center gap-2">
-                <input className="text-slate-500 font-bold border-b border-slate-200 focus:outline-none bg-transparent" value={editData.role} onChange={e => setEditData({...editData, role: e.target.value})} />
-                <span className="text-slate-300">@</span>
-                <input className="text-indigo-600 font-black border-b border-slate-200 focus:outline-none bg-transparent uppercase text-sm tracking-wider" value={editData.company} onChange={e => setEditData({...editData, company: e.target.value})} />
-              </div>
-              <div className="flex gap-3 pt-2">
-                <button onClick={handleSaveProfile} className="px-6 py-2 bg-indigo-600 text-white text-xs font-black uppercase tracking-widest rounded-xl shadow-lg shadow-indigo-600/20 active:scale-95 transition-all">Save</button>
-                <button onClick={() => setIsEditingProfile(false)} className="px-6 py-2 bg-slate-50 text-slate-500 text-xs font-black uppercase tracking-widest rounded-xl transition-all hover:bg-slate-100">Cancel</button>
-              </div>
-            </div>
-          ) : (
-            <div className="pt-2">
-              <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-1">{lead.name}</h1>
-              <p className="text-slate-500 font-bold mb-6 flex items-center gap-2">
-                {lead.role} <span className="w-1.5 h-1.5 rounded-full bg-slate-200"></span> <span className="text-indigo-600 uppercase tracking-widest text-xs font-black">{lead.company}</span>
-              </p>
-              
-              <div className="flex flex-wrap gap-6 text-sm">
-                <div className="flex items-center gap-3 px-4 py-2 bg-slate-50 rounded-2xl text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 transition-all cursor-pointer group border border-transparent hover:border-indigo-100">
-                  <Mail size={16} className="text-slate-400 group-hover:text-indigo-500" />
-                  <span className="font-bold">{lead.email}</span>
+          <AnimatePresence mode="wait">
+            {isEditingProfile ? (
+              <motion.div 
+                key="edit"
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 10 }}
+                className="space-y-4 pt-2"
+              >
+                <input className="text-3xl font-black text-slate-900 border-b-2 border-indigo-500 focus:outline-none w-full bg-transparent" value={editData.name} onChange={e => setEditData({...editData, name: e.target.value})} />
+                <div className="flex items-center gap-2">
+                  <input className="text-slate-500 font-bold border-b border-slate-200 focus:outline-none bg-transparent" value={editData.role} onChange={e => setEditData({...editData, role: e.target.value})} />
+                  <span className="text-slate-300">@</span>
+                  <input className="text-indigo-600 font-black border-b border-slate-200 focus:outline-none bg-transparent uppercase text-sm tracking-wider" value={editData.company} onChange={e => setEditData({...editData, company: e.target.value})} />
                 </div>
-                <div className="flex items-center gap-3 px-4 py-2 bg-slate-50 rounded-2xl text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 transition-all cursor-pointer group border border-transparent hover:border-indigo-100">
-                  <Phone size={16} className="text-slate-400 group-hover:text-indigo-500" />
-                  <span className="font-bold">{lead.phone}</span>
+                <div className="flex gap-3 pt-2">
+                  <button onClick={handleSaveProfile} className="px-6 py-2 bg-indigo-600 text-white text-xs font-black uppercase tracking-widest rounded-xl shadow-lg shadow-indigo-600/20 active:scale-95 transition-all">Save</button>
+                  <button onClick={() => setIsEditingProfile(false)} className="px-6 py-2 bg-slate-50 text-slate-500 text-xs font-black uppercase tracking-widest rounded-xl transition-all hover:bg-slate-100">Cancel</button>
                 </div>
-              </div>
-            </div>
-          )}
+              </motion.div>
+            ) : (
+              <motion.div 
+                key="view"
+                initial={{ opacity: 0, x: 10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -10 }}
+                className="pt-2"
+              >
+                <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-1">{lead.name}</h1>
+                <p className="text-slate-500 font-bold mb-6 flex items-center gap-2">
+                  {lead.role} <span className="w-1.5 h-1.5 rounded-full bg-slate-200"></span> <span className="text-indigo-600 uppercase tracking-widest text-xs font-black">{lead.company}</span>
+                </p>
+                
+                <div className="flex flex-wrap gap-6 text-sm">
+                  <div className="flex items-center gap-3 px-4 py-2 bg-slate-50 rounded-2xl text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 transition-all cursor-pointer group border border-transparent hover:border-indigo-100">
+                    <Mail size={16} className="text-slate-400 group-hover:text-indigo-500" />
+                    <span className="font-bold">{lead.email}</span>
+                  </div>
+                  <div className="flex items-center gap-3 px-4 py-2 bg-slate-50 rounded-2xl text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 transition-all cursor-pointer group border border-transparent hover:border-indigo-100">
+                    <Phone size={16} className="text-slate-400 group-hover:text-indigo-500" />
+                    <span className="font-bold">{lead.phone}</span>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
         
         <div className="flex items-center gap-3">
            <button onClick={() => setShowOptions(!showOptions)} className="p-3 text-slate-400 hover:bg-slate-50 rounded-2xl transition-all">
              <MoreHorizontal size={24} />
            </button>
-           {showOptions && (
-             <div className="absolute right-10 mt-12 w-56 bg-white rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.1)] border border-slate-50 z-50 py-3 overflow-hidden animate-fade-in">
-               <button onClick={handleStartEdit} className="w-full text-left px-6 py-3 text-sm font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition-colors">
-                 <Edit2 size={18} className="text-slate-400" /> Edit Profile
-               </button>
-               <button onClick={() => {onDelete?.(lead.id); setShowOptions(false)}} className="w-full text-left px-6 py-3 text-sm font-bold text-rose-600 hover:bg-rose-50 flex items-center gap-3 transition-colors mt-1 border-t border-slate-50 pt-4">
-                 <Trash2 size={18} /> Delete Record
-               </button>
-             </div>
-           )}
+           <AnimatePresence>
+             {showOptions && (
+               <motion.div 
+                 initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                 animate={{ opacity: 1, y: 0, scale: 1 }}
+                 exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                 className="absolute right-10 mt-12 w-56 bg-white rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.1)] border border-slate-50 z-50 py-3 overflow-hidden"
+               >
+                 <button onClick={handleStartEdit} className="w-full text-left px-6 py-3 text-sm font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition-colors">
+                   <Edit2 size={18} className="text-slate-400" /> Edit Profile
+                 </button>
+                 <button onClick={() => {onDelete?.(lead.id); setShowOptions(false)}} className="w-full text-left px-6 py-3 text-sm font-bold text-rose-600 hover:bg-rose-50 flex items-center gap-3 transition-colors mt-1 border-t border-slate-50 pt-4">
+                   <Trash2 size={18} /> Delete Record
+                 </button>
+               </motion.div>
+             )}
+           </AnimatePresence>
         </div>
-      </div>
+      </motion.div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-3 gap-6 mb-12">
@@ -194,8 +233,14 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
         
         {(activities || []).length > 0 ? (
           <div className="relative pl-4 space-y-8 before:absolute before:left-4 before:top-4 before:bottom-4 before:w-px before:bg-slate-100">
-            {(activities || []).map((activity) => (
-              <div key={activity.id} className="relative pl-10">
+            {(activities || []).map((activity, idx) => (
+              <motion.div 
+                key={activity.id} 
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: idx * 0.1 }}
+                className="relative pl-10"
+              >
                 <div className={`absolute left-0 top-0 w-8 h-8 rounded-2xl flex items-center justify-center shadow-lg border-2 border-white translate-x-[-16px] z-10 ${
                   activity.type === 'call' ? 'bg-indigo-600 text-white' : 'bg-fuchsia-600 text-white'
                 }`}>
@@ -214,7 +259,7 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
                      </div>
                   )}
                 </div>
-              </div>
+              </motion.div>
             ))}
           </div>
         ) : (
@@ -228,30 +273,45 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
       </div>
 
       {/* Notes */}
-      <div className="bg-slate-900 rounded-[40px] p-10 text-white shadow-2xl shadow-indigo-900/20">
+      <motion.div 
+        layout
+        className="bg-slate-900 rounded-[40px] p-10 text-white shadow-2xl shadow-indigo-900/20"
+      >
         <div className="flex items-center justify-between mb-8">
           <h3 className="text-lg font-black uppercase tracking-widest flex items-center gap-3">
             <div className="w-2 h-2 bg-indigo-400 rounded-full animate-pulse"></div>
             Private Notes
           </h3>
-          <button onClick={() => setIsAddingNote(!isAddingNote)} className="text-xs font-black text-indigo-400 hover:text-indigo-300 uppercase tracking-widest flex items-center gap-2">
+          <button onClick={() => setIsAddingNote(!isAddingNote)} className="text-xs font-black text-indigo-400 hover:text-indigo-300 uppercase tracking-widest flex items-center gap-2 transition-colors">
             {isAddingNote ? 'Discard' : <><Plus size={16} /> Add Note</>}
           </button>
         </div>
 
-        {isAddingNote && (
-          <div className="mb-8 animate-fade-in">
-            <textarea className="w-full bg-slate-800/50 border-2 border-slate-700 rounded-3xl p-6 text-sm font-medium focus:border-indigo-500 outline-none min-h-[120px] transition-all" placeholder="Capture your thoughts..." autoFocus value={newNoteContent} onChange={e => setNewNoteContent(e.target.value)} />
-            <div className="flex justify-end mt-4">
-              <button onClick={handleSaveNote} disabled={!newNoteContent.trim()} className="bg-indigo-500 text-white px-8 py-3 rounded-2xl text-xs font-black uppercase tracking-widest disabled:opacity-30 hover:bg-indigo-400 transition-all active:scale-95 shadow-xl shadow-indigo-500/20 flex items-center gap-3">
-                <Send size={14} /> Commit Note
-              </button>
-            </div>
-          </div>
-        )}
+        <AnimatePresence>
+          {isAddingNote && (
+            <motion.div 
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="mb-8 overflow-hidden"
+            >
+              <textarea className="w-full bg-slate-800/50 border-2 border-slate-700 rounded-3xl p-6 text-sm font-medium focus:border-indigo-500 outline-none min-h-[120px] transition-all" placeholder="Capture your thoughts..." autoFocus value={newNoteContent} onChange={e => setNewNoteContent(e.target.value)} />
+              <div className="flex justify-end mt-4">
+                <button onClick={handleSaveNote} disabled={!newNoteContent.trim()} className="bg-indigo-500 text-white px-8 py-3 rounded-2xl text-xs font-black uppercase tracking-widest disabled:opacity-30 hover:bg-indigo-400 transition-all active:scale-95 shadow-xl shadow-indigo-500/20 flex items-center gap-3">
+                  <Send size={14} /> Commit Note
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {note ? (
-          <div className="bg-slate-800/50 border border-slate-700 rounded-3xl p-8 relative group hover:border-slate-600 transition-all">
+          <motion.div 
+            layout
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-slate-800/50 border border-slate-700 rounded-3xl p-8 relative group hover:border-slate-600 transition-all"
+          >
             <p className="text-slate-300 leading-relaxed font-medium whitespace-pre-wrap mb-8 text-lg italic">"{note.content}"</p>
             <div className="flex items-center justify-between opacity-60">
               <div className="flex items-center gap-3">
@@ -260,33 +320,53 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
               </div>
               <Pin size={16} className="text-indigo-400" fill="currentColor" />
             </div>
-          </div>
+          </motion.div>
         ) : (
           <div className="text-center py-12 border-2 border-dashed border-slate-800 rounded-3xl text-slate-600">
             <p className="text-xs font-black uppercase tracking-widest">Workspace is clear</p>
           </div>
         )}
-      </div>
+      </motion.div>
     </div>
   );
 };
 
 const StatCard = ({ label, value, icon, color, isEditing, onEdit, onSave, onCancel, inputValue, onInputChange }: any) => (
-  <div className={`bg-slate-50/50 rounded-[32px] p-6 border border-transparent transition-all ${!isEditing && onEdit ? 'hover:bg-white hover:border-indigo-100 hover:shadow-2xl hover:shadow-slate-200/50 cursor-pointer' : ''}`} onClick={!isEditing && onEdit ? onEdit : undefined}>
+  <motion.div 
+    layout
+    whileHover={{ y: -4 }}
+    className={`bg-slate-50/50 rounded-[32px] p-6 border border-transparent transition-all ${!isEditing && onEdit ? 'hover:bg-white hover:border-indigo-100 hover:shadow-2xl hover:shadow-slate-200/50 cursor-pointer' : ''}`} onClick={!isEditing && onEdit ? onEdit : undefined}
+  >
     <div className="flex items-center gap-2 mb-2">
       <span className="text-slate-400">{icon}</span>
       <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{label}</span>
     </div>
-    {isEditing ? (
-      <div className="flex flex-col gap-3" onClick={e => e.stopPropagation()}>
-        <input type="number" autoFocus className="w-full text-xl font-black border-b-2 border-indigo-500 focus:outline-none bg-transparent" value={inputValue} onChange={e => onInputChange(Number(e.target.value))} />
-        <div className="flex gap-2">
-          <button onClick={onSave} className="p-1.5 bg-indigo-600 text-white rounded-lg active:scale-90 transition-all"><Check size={14} /></button>
-          <button onClick={onCancel} className="p-1.5 bg-slate-200 text-slate-600 rounded-lg active:scale-90 transition-all"><X size={14} /></button>
-        </div>
-      </div>
-    ) : (
-      <span className={`text-2xl font-black tracking-tighter ${color}`}>{value}</span>
-    )}
-  </div>
+    <AnimatePresence mode="wait">
+      {isEditing ? (
+        <motion.div 
+          key="edit"
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.95 }}
+          className="flex flex-col gap-3" 
+          onClick={e => e.stopPropagation()}
+        >
+          <input type="number" autoFocus className="w-full text-xl font-black border-b-2 border-indigo-500 focus:outline-none bg-transparent" value={inputValue} onChange={e => onInputChange(Number(e.target.value))} />
+          <div className="flex gap-2">
+            <button onClick={onSave} className="p-1.5 bg-indigo-600 text-white rounded-lg active:scale-90 transition-all"><Check size={14} /></button>
+            <button onClick={onCancel} className="p-1.5 bg-slate-200 text-slate-600 rounded-lg active:scale-90 transition-all"><X size={14} /></button>
+          </div>
+        </motion.div>
+      ) : (
+        <motion.span 
+          key="view"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className={`text-2xl font-black tracking-tighter ${color}`}
+        >
+          {value}
+        </motion.span>
+      )}
+    </AnimatePresence>
+  </motion.div>
 );

@@ -60,45 +60,58 @@ DROP POLICY IF EXISTS "Enable all for authenticated users" ON call_history;
 DROP POLICY IF EXISTS "Enable all for authenticated users" ON sms_messages;
 
 -- Step 6: Create secure user-specific policies for leads
+DROP POLICY IF EXISTS "Users can view their own leads" ON leads;
 CREATE POLICY "Users can view their own leads" ON leads
     FOR SELECT USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can insert their own leads" ON leads;
 CREATE POLICY "Users can insert their own leads" ON leads
     FOR INSERT WITH CHECK (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can update their own leads" ON leads;
 CREATE POLICY "Users can update their own leads" ON leads
     FOR UPDATE USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can delete their own leads" ON leads;
 CREATE POLICY "Users can delete their own leads" ON leads
     FOR DELETE USING (auth.uid() = user_id);
 
 -- Step 7: Create secure user-specific policies for contacts
+DROP POLICY IF EXISTS "Users can view their own contacts" ON contacts;
 CREATE POLICY "Users can view their own contacts" ON contacts
     FOR SELECT USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can insert their own contacts" ON contacts;
 CREATE POLICY "Users can insert their own contacts" ON contacts
     FOR INSERT WITH CHECK (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can update their own contacts" ON contacts;
 CREATE POLICY "Users can update their own contacts" ON contacts
     FOR UPDATE USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can delete their own contacts" ON contacts;
 CREATE POLICY "Users can delete their own contacts" ON contacts
     FOR DELETE USING (auth.uid() = user_id);
 
 -- Step 8: Create secure user-specific policies for deals
+DROP POLICY IF EXISTS "Users can view their own deals" ON deals;
 CREATE POLICY "Users can view their own deals" ON deals
     FOR SELECT USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can insert their own deals" ON deals;
 CREATE POLICY "Users can insert their own deals" ON deals
     FOR INSERT WITH CHECK (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can update their own deals" ON deals;
 CREATE POLICY "Users can update their own deals" ON deals
     FOR UPDATE USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can delete their own deals" ON deals;
 CREATE POLICY "Users can delete their own deals" ON deals
     FOR DELETE USING (auth.uid() = user_id);
 
 -- Step 9: Create secure policies for activities (via lead relationship)
+DROP POLICY IF EXISTS "Users can view activities for their leads" ON activities;
 CREATE POLICY "Users can view activities for their leads" ON activities
     FOR SELECT USING (
         EXISTS (
@@ -108,6 +121,7 @@ CREATE POLICY "Users can view activities for their leads" ON activities
         )
     );
 
+DROP POLICY IF EXISTS "Users can insert activities for their leads" ON activities;
 CREATE POLICY "Users can insert activities for their leads" ON activities
     FOR INSERT WITH CHECK (
         EXISTS (
@@ -117,6 +131,7 @@ CREATE POLICY "Users can insert activities for their leads" ON activities
         )
     );
 
+DROP POLICY IF EXISTS "Users can update activities for their leads" ON activities;
 CREATE POLICY "Users can update activities for their leads" ON activities
     FOR UPDATE USING (
         EXISTS (
@@ -126,6 +141,7 @@ CREATE POLICY "Users can update activities for their leads" ON activities
         )
     );
 
+DROP POLICY IF EXISTS "Users can delete activities for their leads" ON activities;
 CREATE POLICY "Users can delete activities for their leads" ON activities
     FOR DELETE USING (
         EXISTS (
@@ -136,6 +152,7 @@ CREATE POLICY "Users can delete activities for their leads" ON activities
     );
 
 -- Step 10: Create secure policies for notes (via lead relationship)
+DROP POLICY IF EXISTS "Users can view notes for their leads" ON notes;
 CREATE POLICY "Users can view notes for their leads" ON notes
     FOR SELECT USING (
         EXISTS (
@@ -145,6 +162,7 @@ CREATE POLICY "Users can view notes for their leads" ON notes
         )
     );
 
+DROP POLICY IF EXISTS "Users can insert notes for their leads" ON notes;
 CREATE POLICY "Users can insert notes for their leads" ON notes
     FOR INSERT WITH CHECK (
         EXISTS (
@@ -154,6 +172,7 @@ CREATE POLICY "Users can insert notes for their leads" ON notes
         )
     );
 
+DROP POLICY IF EXISTS "Users can update notes for their leads" ON notes;
 CREATE POLICY "Users can update notes for their leads" ON notes
     FOR UPDATE USING (
         EXISTS (
@@ -163,6 +182,7 @@ CREATE POLICY "Users can update notes for their leads" ON notes
         )
     );
 
+DROP POLICY IF EXISTS "Users can delete notes for their leads" ON notes;
 CREATE POLICY "Users can delete notes for their leads" ON notes
     FOR DELETE USING (
         EXISTS (
@@ -173,28 +193,36 @@ CREATE POLICY "Users can delete notes for their leads" ON notes
     );
 
 -- Step 11: Create secure user-specific policies for call_history
+DROP POLICY IF EXISTS "Users can view their own call history" ON call_history;
 CREATE POLICY "Users can view their own call history" ON call_history
     FOR SELECT USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can insert their own call history" ON call_history;
 CREATE POLICY "Users can insert their own call history" ON call_history
     FOR INSERT WITH CHECK (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can update their own call history" ON call_history;
 CREATE POLICY "Users can update their own call history" ON call_history
     FOR UPDATE USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can delete their own call history" ON call_history;
 CREATE POLICY "Users can delete their own call history" ON call_history
     FOR DELETE USING (auth.uid() = user_id);
 
 -- Step 12: Create secure user-specific policies for sms_messages
+DROP POLICY IF EXISTS "Users can view their own SMS messages" ON sms_messages;
 CREATE POLICY "Users can view their own SMS messages" ON sms_messages
     FOR SELECT USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can insert their own SMS messages" ON sms_messages;
 CREATE POLICY "Users can insert their own SMS messages" ON sms_messages
     FOR INSERT WITH CHECK (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can update their own SMS messages" ON sms_messages;
 CREATE POLICY "Users can update their own SMS messages" ON sms_messages
     FOR UPDATE USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can delete their own SMS messages" ON sms_messages;
 CREATE POLICY "Users can delete their own SMS messages" ON sms_messages
     FOR DELETE USING (auth.uid() = user_id);
 
@@ -216,6 +244,7 @@ CREATE TABLE IF NOT EXISTS audit_logs (
 ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
 
 -- Only allow viewing own audit logs (admins would need a separate policy)
+DROP POLICY IF EXISTS "Users can view their own audit logs" ON audit_logs;
 CREATE POLICY "Users can view their own audit logs" ON audit_logs
     FOR SELECT USING (auth.uid() = user_id);
 
