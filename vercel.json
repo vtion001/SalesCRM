@@ -5,7 +5,7 @@
   "outputDirectory": "dist",
   "framework": "vite",
   "functions": {
-    "api/**/*.{ts,js}": {
+    "api/**/*.ts": {
       "maxDuration": 30,
       "memory": 512
     }
