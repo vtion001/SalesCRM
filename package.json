@@ -25,9 +25,11 @@
     "@vitejs/plugin-react": "^5.0.0",
     "typescript": "~5.8.2",
     "vite": "^6.2.0",
-    "vite-plugin-node-polyfills": "^0.2.0"
+    "vite-plugin-node-polyfills": "^0.25.0"
   },
   "overrides": {
-    "ws": "^7.5.10"
+    "ws": "^7.5.10",
+    "undici": "^6.23.0",
+    "path-to-regexp": "^6.3.0"
   }
 }
