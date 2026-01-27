@@ -44,7 +44,45 @@ export default function App() {
     avatar: 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80'
   });
 
-  // Check authentication status on mount and load profile
+  // Fetch or Create Profile
+  const fetchProfile = async (userId: string, email: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (error && error.code === 'PGRST116') {
+        // Profile doesn't exist, create it
+        const newProfile = {
+          id: userId,
+          full_name: 'Alex Rivers',
+          email: email,
+          role: 'Sales Lead',
+          avatar_url: 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80'
+        };
+        await supabase.from('profiles').insert([newProfile]);
+        setCurrentUser({
+          name: newProfile.full_name,
+          email: newProfile.email,
+          role: newProfile.role,
+          avatar: newProfile.avatar_url
+        });
+      } else if (data) {
+        setCurrentUser({
+          name: data.full_name,
+          email: data.email,
+          role: data.role,
+          avatar: data.avatar_url
+        });
+      }
+    } catch (err) {
+      console.error('Error fetching profile:', err);
+    }
+  };
+
+  // Check authentication status on mount
   useEffect(() => {
     const checkAuth = async () => {
       try {
@@ -53,13 +91,7 @@ export default function App() {
         
         if (data?.session?.user) {
           setIsAuthenticated(true);
-          const user = data.session.user;
-          setCurrentUser({
-            name: user.user_metadata?.full_name || user.user_metadata?.name || 'Alex Rivers',
-            email: user.email || 'alex.rivers@salescrm.com',
-            role: user.user_metadata?.role || 'Sales Lead',
-            avatar: user.user_metadata?.avatar_url || user.user_metadata?.avatar || 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80'
-          });
+          await fetchProfile(data.session.user.id, data.session.user.email || '');
         } else {
           setIsAuthenticated(false);
         }
@@ -78,13 +110,7 @@ export default function App() {
       (event, session) => {
         if (session?.user) {
           setIsAuthenticated(true);
-          const user = session.user;
-          setCurrentUser({
-            name: user.user_metadata?.full_name || user.user_metadata?.name || 'Alex Rivers',
-            email: user.email || 'alex.rivers@salescrm.com',
-            role: user.user_metadata?.role || 'Sales Lead',
-            avatar: user.user_metadata?.avatar_url || user.user_metadata?.avatar || 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80'
-          });
+          fetchProfile(session.user.id, session.user.email || '');
         } else {
           setIsAuthenticated(false);
         }
@@ -108,20 +134,27 @@ export default function App() {
 
   const handleUpdateProfile = async (updates: Partial<CurrentUser>) => {
     try {
-      // Update Supabase Auth metadata
-      const { error } = await supabase.auth.updateUser({
-        data: {
-          full_name: updates.name || currentUser.name,
-          role: updates.role || currentUser.role,
-          avatar_url: updates.avatar || currentUser.avatar
-        }
-      });
+      const { data: sessionData } = await supabase.auth.getSession();
+      const userId = sessionData?.session?.user?.id;
+      
+      if (!userId) return;
+
+      // Update dedicated profiles table
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          full_name: updates.name,
+          role: updates.role,
+          avatar_url: updates.avatar,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', userId);
 
       if (error) throw error;
 
       // Update local state
       setCurrentUser(prev => ({ ...prev, ...updates }));
-      console.log('✅ Profile updated in Supabase');
+      console.log('✅ Profile saved to Supabase profiles table');
     } catch (err) {
       console.error('❌ Failed to update profile:', err);
     }

@@ -2,6 +2,25 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../services/supabaseClient';
 import { Deal } from '../types';
 
+const mapDealFromDB = (data: any): Deal => ({
+  id: data.id,
+  title: data.title,
+  value: Number(data.value),
+  company: data.company,
+  stage: data.stage,
+  owner: data.owner,
+  closingDate: data.closing_date
+});
+
+const mapDealToDB = (deal: Partial<Deal>) => ({
+  title: deal.title,
+  value: deal.value,
+  company: deal.company,
+  stage: deal.stage,
+  owner: deal.owner,
+  closing_date: deal.closingDate
+});
+
 export const useDeals = () => {
   const [deals, setDeals] = useState<Deal[]>([]);
   const [loading, setLoading] = useState(true);
@@ -20,7 +39,7 @@ export const useDeals = () => {
         .order('created_at', { ascending: false });
 
       if (fetchError) throw fetchError;
-      setDeals(data || []);
+      setDeals((data || []).map(mapDealFromDB));
       setError(null);
     } catch (err: any) {
       setError(err.message);
@@ -30,17 +49,19 @@ export const useDeals = () => {
     }
   };
 
-  const addDeal = async (deal: Omit<Deal, 'id' | 'created_at'>) => {
+  const addDeal = async (deal: Omit<Deal, 'id'>) => {
     try {
+      const dbData = mapDealToDB(deal);
       const { data, error: insertError } = await supabase
         .from('deals')
-        .insert([deal])
+        .insert([dbData])
         .select()
         .single();
 
       if (insertError) throw insertError;
-      setDeals([data, ...deals]);
-      return data;
+      const newDeal = mapDealFromDB(data);
+      setDeals([newDeal, ...deals]);
+      return newDeal;
     } catch (err: any) {
       setError(err.message);
       console.error('Error adding deal:', err);
@@ -49,16 +70,18 @@ export const useDeals = () => {
 
   const updateDeal = async (id: string, updates: Partial<Deal>) => {
     try {
+      const dbData = mapDealToDB(updates);
       const { data, error: updateError } = await supabase
         .from('deals')
-        .update(updates)
+        .update(dbData)
         .eq('id', id)
         .select()
         .single();
 
       if (updateError) throw updateError;
-      setDeals(deals.map(d => d.id === id ? data : d));
-      return data;
+      const updatedDeal = mapDealFromDB(data);
+      setDeals(deals.map(d => d.id === id ? updatedDeal : d));
+      return updatedDeal;
     } catch (err: any) {
       setError(err.message);
       console.error('Error updating deal:', err);

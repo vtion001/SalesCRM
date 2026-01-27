@@ -2,6 +2,27 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../services/supabaseClient';
 import { Contact } from '../types';
 
+const mapContactFromDB = (data: any): Contact => ({
+  id: data.id,
+  name: data.name,
+  role: data.role,
+  company: data.company,
+  email: data.email,
+  phone: data.phone,
+  lastContacted: data.last_contact_contacted || data.last_contacted,
+  status: data.status
+});
+
+const mapContactToDB = (contact: Partial<Contact>) => ({
+  name: contact.name,
+  role: contact.role,
+  company: contact.company,
+  email: contact.email,
+  phone: contact.phone,
+  last_contacted: contact.lastContacted,
+  status: contact.status
+});
+
 export const useContacts = () => {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
@@ -20,7 +41,7 @@ export const useContacts = () => {
         .order('created_at', { ascending: false });
 
       if (fetchError) throw fetchError;
-      setContacts(data || []);
+      setContacts((data || []).map(mapContactFromDB));
       setError(null);
     } catch (err: any) {
       setError(err.message);
@@ -30,17 +51,19 @@ export const useContacts = () => {
     }
   };
 
-  const addContact = async (contact: Omit<Contact, 'id' | 'created_at'>) => {
+  const addContact = async (contact: Omit<Contact, 'id'>) => {
     try {
+      const dbData = mapContactToDB(contact);
       const { data, error: insertError } = await supabase
         .from('contacts')
-        .insert([contact])
+        .insert([dbData])
         .select()
         .single();
 
       if (insertError) throw insertError;
-      setContacts([data, ...contacts]);
-      return data;
+      const newContact = mapContactFromDB(data);
+      setContacts([newContact, ...contacts]);
+      return newContact;
     } catch (err: any) {
       setError(err.message);
       console.error('Error adding contact:', err);
@@ -49,16 +72,18 @@ export const useContacts = () => {
 
   const updateContact = async (id: string, updates: Partial<Contact>) => {
     try {
+      const dbData = mapContactToDB(updates);
       const { data, error: updateError } = await supabase
         .from('contacts')
-        .update(updates)
+        .update(dbData)
         .eq('id', id)
         .select()
         .single();
 
       if (updateError) throw updateError;
-      setContacts(contacts.map(c => c.id === id ? data : c));
-      return data;
+      const updatedContact = mapContactFromDB(data);
+      setContacts(contacts.map(c => c.id === id ? updatedContact : c));
+      return updatedContact;
     } catch (err: any) {
       setError(err.message);
       console.error('Error updating contact:', err);
