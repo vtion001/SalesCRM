@@ -28,7 +28,7 @@ function signJWT(header, payload, secret) {
   return message + '.' + signature;
 }
 
-module.exports = async (req, res) => {
+async function handler(req, res) {
   // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -136,4 +136,6 @@ module.exports = async (req, res) => {
       error: error?.message || 'Failed to generate access token'
     });
   }
-};
+}
+
+module.exports = handler;
