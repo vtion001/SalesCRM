@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, ChevronRight, ChevronLeft, Target, Clock, Trash2, Check, X } from 'lucide-react';
+import { Plus, ChevronRight, ChevronLeft, Target, Clock, Trash2, Check, X, MoreHorizontal } from 'lucide-react';
 import { 
   DndContext, 
   DragOverlay, 

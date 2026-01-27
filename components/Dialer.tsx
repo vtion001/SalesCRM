@@ -9,6 +9,8 @@ import { CallHistoryList } from './CallHistoryList';
 interface DialerProps {
   targetLead: Lead | undefined;
   onLogActivity?: (activity: Omit<Activity, 'id'>) => void;
+  activeTab?: string;
+  onTabChange?: (tab: string) => void;
 }
 
 interface IncomingCall {
@@ -18,9 +20,9 @@ interface IncomingCall {
   accepted?: boolean;
 }
 
-export const Dialer: React.FC<DialerProps> = ({ targetLead, onLogActivity }) => {
+export const Dialer: React.FC<DialerProps> = ({ targetLead, onLogActivity, activeTab: propsActiveTab, onTabChange }) => {
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [activeTab, setActiveTab] = useState('Dialer');
+  const [internalActiveTab, setInternalActiveTab] = useState('Dialer');
   const [twilioDevice, setTwilioDevice] = useState<any>(null);
   const [isDeviceReady, setIsDeviceReady] = useState(false);
   const [deviceError, setDeviceError] = useState<string | null>(null);
@@ -36,6 +38,9 @@ export const Dialer: React.FC<DialerProps> = ({ targetLead, onLogActivity }) => 
   const [isSending, setIsSending] = useState(false);
   const [currentCall, setCurrentCall] = useState<any>(null);
   
+  const activeTab = propsActiveTab || internalActiveTab;
+  const setActiveTab = onTabChange || setInternalActiveTab;
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const callTimerRef = useRef<NodeJS.Timeout | null>(null);
 
