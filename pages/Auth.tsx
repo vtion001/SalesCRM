@@ -117,97 +117,63 @@ export const Auth: React.FC = () => {
         </motion.div>
       </div>
 
-      {/* Right Side: Banana Pro Visual Side */}
+      {/* Right Side: Visual Side */}
       <div className="hidden lg:block lg:w-1/2 relative bg-slate-900 overflow-hidden">
-        {/* Abstract Background Pattern */}
-        <div className="absolute inset-0 opacity-20">
-          <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, #6366f1 1px, transparent 0px)', backgroundSize: '48px 48px' }}></div>
+        {/* Background Image */}
+        <div className="absolute inset-0">
+          <img 
+            src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=2600" 
+            alt="Sales Analytics" 
+            className="w-full h-full object-cover opacity-30 mix-blend-overlay"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-slate-900/80"></div>
         </div>
         
         {/* Ambient Glows */}
         <div className="absolute -top-24 -right-24 w-96 h-96 bg-indigo-600 rounded-full blur-[128px] opacity-20"></div>
         <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-fuchsia-600 rounded-full blur-[128px] opacity-20"></div>
 
-        <div className="relative h-full flex flex-col items-center justify-center p-16 text-white">
-          <div className="max-w-xl w-full">
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="relative mb-12"
-            >
-              {/* Main Visual Image Container */}
-              <div className="bg-white/10 backdrop-blur-3xl rounded-[48px] p-3 border border-white/10 shadow-[0_32px_64px_rgba(0,0,0,0.4)]">
-                <div className="relative aspect-[4/3] rounded-[40px] overflow-hidden group">
-                  {/* High Quality "Banana Pro" Style Sales Visual */}
-                  <img 
-                    src="https://images.unsplash.com/photo-1611224923853-80b023f02d71?auto=format&fit=crop&q=80&w=1600" 
-                    alt="Sales Pipeline" 
-                    className="w-full h-full object-cover scale-110 group-hover:scale-100 transition-transform duration-1000"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent opacity-60"></div>
-                  
-                  {/* Floating Metric Card */}
-                  <motion.div 
-                    animate={{ y: [0, -10, 0] }}
-                    transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                    className="absolute bottom-8 left-8 right-8 bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-3xl"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-[10px] font-black uppercase tracking-widest text-indigo-300">Revenue Growth</p>
-                        <p className="text-2xl font-black mt-1">+$428,500.00</p>
-                      </div>
-                      <div className="w-12 h-12 bg-emerald-500 rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/20">
-                        <TrendingUp size={24} strokeWidth={3} />
-                      </div>
-                    </div>
-                  </motion.div>
+        <div className="relative h-full flex flex-col items-center justify-center p-12 text-white">
+          <div className="max-w-xl">
+            <div className="relative mb-8">
+              <div className="bg-white/10 backdrop-blur-xl rounded-3xl p-8 border border-white/20 shadow-2xl">
+                <div className="aspect-video bg-gradient-to-br from-yellow-400/20 to-orange-500/20 rounded-2xl flex items-center justify-center">
+                  <div className="text-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-24 h-24 mx-auto mb-4 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                    </svg>
+                    <h3 className="text-2xl font-black tracking-tight">Welcome to SalesCRM</h3>
+                    <p className="text-sm text-slate-300 mt-2 font-medium">Manage your sales pipeline efficiently</p>
+                  </div>
                 </div>
               </div>
-
-              {/* Floating Badge */}
-              <motion.div 
-                initial={{ x: 20, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                transition={{ delay: 0.5 }}
-                className="absolute -top-6 -right-6 bg-yellow-400 text-slate-900 px-6 py-3 rounded-2xl shadow-2xl font-black text-xs uppercase tracking-widest rotate-6 group-hover:rotate-0 transition-transform"
-              >
-                PRO EDITION v2.0
-              </motion.div>
-            </motion.div>
-
-            {/* Feature Highlights */}
-            <div className="grid grid-cols-2 gap-6">
-              <motion.div 
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.4 }}
-                className="flex items-center gap-4 bg-white/5 backdrop-blur-sm rounded-[24px] p-5 border border-white/10 hover:bg-white/10 transition-colors cursor-default"
-              >
-                <div className="w-12 h-12 bg-yellow-400/20 rounded-xl flex items-center justify-center">
-                  <CheckCircle2 className="text-yellow-400" size={24} />
+              <div className="absolute -top-4 -left-4 bg-yellow-400 text-slate-900 px-4 py-2 rounded-xl shadow-2xl font-bold text-sm">🎉 Welcome back!</div>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="flex items-center gap-4 bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
+                <div className="w-10 h-10 bg-yellow-400/20 rounded-lg flex items-center justify-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                  </svg>
                 </div>
                 <div>
-                  <p className="font-black text-sm uppercase tracking-tight text-white">Automated</p>
-                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Lead Capture</p>
+                  <p className="font-bold text-sm">Lead Management</p>
+                  <p className="text-xs text-slate-400">Track and convert prospects</p>
                 </div>
-              </motion.div>
-
-              <motion.div 
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.6 }}
-                className="flex items-center gap-4 bg-white/5 backdrop-blur-sm rounded-[24px] p-5 border border-white/10 hover:bg-white/10 transition-colors cursor-default"
-              >
-                <div className="w-12 h-12 bg-indigo-400/20 rounded-xl flex items-center justify-center">
-                  <Users className="text-indigo-400" size={24} />
+              </div>
+              
+              <div className="flex items-center gap-4 bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
+                <div className="w-10 h-10 bg-yellow-400/20 rounded-lg flex items-center justify-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                  </svg>
                 </div>
                 <div>
-                  <p className="font-black text-sm uppercase tracking-tight text-white">Unified</p>
-                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Contact Feed</p>
+                  <p className="font-bold text-sm">Analytics Dashboard</p>
+                  <p className="text-xs text-slate-400">Real-time insights</p>
                 </div>
-              </motion.div>
+              </div>
             </div>
           </div>
         </div>
