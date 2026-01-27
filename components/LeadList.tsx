@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Plus, Search, Filter, X } from 'lucide-react';
+import { Plus, Search, Filter, X, ChevronRight } from 'lucide-react';
 import { Lead } from '../types';
 import { motion, AnimatePresence } from 'framer-motion';
 
