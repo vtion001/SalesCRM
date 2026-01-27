@@ -57,9 +57,11 @@ app.use(express.urlencoded({ extended: true }));
 
 // Initialize Twilio client
 const client = twilio(accountSid, authToken);
-// Enable debug logging for Twilio REST client if requested
-if (process.env.TWILIO_LOG_LEVEL === 'debug') {
-  client.logLevel = 'debug';
+// Force debug logging for Twilio REST client to capture detailed REST logs (temporary)
+client.logLevel = 'debug';
+// Also respect TWILIO_LOG_LEVEL if explicitly set to a different value
+if (process.env.TWILIO_LOG_LEVEL && process.env.TWILIO_LOG_LEVEL !== 'debug') {
+  client.logLevel = process.env.TWILIO_LOG_LEVEL;
 }
 
 // Health check
