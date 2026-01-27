@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { Lead } from '../types';
-import { DollarSign, Users, Briefcase, TrendingUp, ArrowUpRight, ArrowDownRight, CheckCircle2, Clock } from 'lucide-react';
+import { DollarSign, Users, Briefcase, TrendingUp, ArrowUpRight, ArrowDownRight, CheckCircle2, Clock, Phone } from 'lucide-react';
 import { AreaChart, Area, ResponsiveContainer, XAxis, Tooltip } from 'recharts';
 import { motion } from 'framer-motion';
 import { toast } from 'react-hot-toast';
