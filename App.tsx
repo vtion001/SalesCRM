@@ -3,6 +3,7 @@ import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
 import { LeadList } from './components/LeadList';
 import { LeadDetail } from './components/LeadDetail';
+import { LeadForm } from './components/LeadForm';
 import { Dialer } from './components/Dialer';
 import DialerSound from './components/DialerSound';
 import { Dashboard } from './components/Dashboard';
@@ -35,6 +36,7 @@ export default function App() {
   const { notes, addNote } = useNotes(selectedLeadId);
   
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
+  const [isLeadModalOpen, setIsLeadModalOpen] = useState(false);
 
   // User State
   const [currentUser, setCurrentUser] = useState<CurrentUser>({
@@ -54,7 +56,6 @@ export default function App() {
         .single();
 
       if (error && error.code === 'PGRST116') {
-        // Profile doesn't exist, create it
         const newProfile = {
           id: userId,
           full_name: 'Alex Rivers',
@@ -105,7 +106,6 @@ export default function App() {
 
     checkAuth();
 
-    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         if (session?.user) {
@@ -139,7 +139,6 @@ export default function App() {
       
       if (!userId) return;
 
-      // Update dedicated profiles table
       const { error } = await supabase
         .from('profiles')
         .update({
@@ -151,34 +150,17 @@ export default function App() {
         .eq('id', userId);
 
       if (error) throw error;
-
-      // Update local state
       setCurrentUser(prev => ({ ...prev, ...updates }));
-      console.log('✅ Profile saved to Supabase profiles table');
     } catch (err) {
       console.error('❌ Failed to update profile:', err);
     }
   };
 
-  const handleAddLeadAction = async (leadData?: Partial<Lead>) => {
-    const newLeadData: Omit<Lead, 'id'> = {
-      name: leadData?.name || '',
-      role: leadData?.role || '',
-      company: leadData?.company || '',
-      avatar: leadData?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(leadData?.name || 'User')}&background=random`,
-      status: leadData?.status || 'New Lead',
-      lastActivityTime: leadData?.lastActivityTime || 'Just now',
-      email: leadData?.email || '',
-      phone: leadData?.phone || '',
-      isOnline: leadData?.isOnline ?? false,
-      dealValue: leadData?.dealValue || 0,
-      probability: leadData?.probability || 0,
-      lastContactDate: leadData?.lastContactDate || 'Never'
-    };
-
-    const added = await addLead(newLeadData);
+  const handleAddLeadAction = async (leadData: Omit<Lead, 'id'>) => {
+    const added = await addLead(leadData);
     if (added) {
       setSelectedLeadId(added.id);
+      setIsLeadModalOpen(false);
     }
   };
 
@@ -204,7 +186,6 @@ export default function App() {
     await addDeal(newDealData);
   };
 
-  // Show loading screen while checking authentication
   if (authLoading === true) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -216,7 +197,6 @@ export default function App() {
     );
   }
 
-  // Show login page if not authenticated
   if (!isAuthenticated) {
     return <Auth />;
   }
@@ -232,12 +212,8 @@ export default function App() {
           onUpdateProfile={handleUpdateProfile}
         />
         
-        {/* Router Render Logic */}
         <div className="flex-1 overflow-hidden relative">
-          
-          {currentView === 'dashboard' && (
-            <Dashboard leads={leads} deals={deals} />
-          )}
+          {currentView === 'dashboard' && <Dashboard leads={leads} deals={deals} />}
 
           {currentView === 'leads' && (
             <div className="grid grid-cols-12 h-full">
@@ -246,7 +222,7 @@ export default function App() {
                   leads={leads} 
                   selectedId={selectedLeadId} 
                   onSelect={setSelectedLeadId}
-                  onAddContact={() => setIsContactModalOpen(true)}
+                  onAddLead={() => setIsLeadModalOpen(true)}
                 />
               </div>
               <div className="col-span-12 md:col-span-8 lg:col-span-5 border-r border-gray-200 h-full overflow-hidden bg-white">
@@ -261,10 +237,7 @@ export default function App() {
                 />
               </div>
               <div className="hidden lg:block lg:col-span-4 h-full overflow-hidden bg-white">
-                 <Dialer 
-                   targetLead={selectedLead} 
-                   onLogActivity={addActivity}
-                 />
+                 <Dialer targetLead={selectedLead} onLogActivity={addActivity} />
                  <DialerSound />
               </div>
             </div>
@@ -279,23 +252,23 @@ export default function App() {
           )}
 
           {currentView === 'deals' && (
-            <Deals 
-              deals={deals} 
-              onAddDeal={(company, value) => handleAddDealAction(company, value)} 
-              onDeleteDeal={deleteDeal}
-            />
+            <Deals deals={deals} onAddDeal={handleAddDealAction} onDeleteDeal={deleteDeal} />
           )}
 
-          {currentView === 'analytics' && (
-            <Analytics leads={leads} deals={deals} />
-          )}
-
+          {currentView === 'analytics' && <Analytics leads={leads} deals={deals} />}
         </div>
         
         {isContactModalOpen && (
           <ContactForm 
             onSave={handleSaveContactAction} 
             onCancel={() => setIsContactModalOpen(false)} 
+          />
+        )}
+
+        {isLeadModalOpen && (
+          <LeadForm 
+            onSave={handleAddLeadAction} 
+            onCancel={() => setIsLeadModalOpen(false)} 
           />
         )}
       </main>

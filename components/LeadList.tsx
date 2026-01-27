@@ -6,19 +6,19 @@ interface LeadListProps {
   leads: Lead[];
   selectedId: string | null;
   onSelect: (id: string) => void;
-  onAddContact: () => void;
+  onAddLead: () => void; // Renamed from onAddContact
 }
 
-export const LeadList: React.FC<LeadListProps> = ({ leads, selectedId, onSelect, onAddContact }) => {
+export const LeadList: React.FC<LeadListProps> = ({ leads, selectedId, onSelect, onAddLead }) => {
   return (
     <div className="h-full flex flex-col bg-white">
       <div className="p-5 border-b border-gray-100">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-bold text-gray-900">Lead Pipeline</h2>
           <button 
-            onClick={onAddContact}
+            onClick={onAddLead}
             className="w-8 h-8 flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white rounded-full transition-colors shadow-sm"
-            title="Add Contact"
+            title="Add Lead"
           >
             <Plus size={18} />
           </button>
@@ -39,10 +39,10 @@ export const LeadList: React.FC<LeadListProps> = ({ leads, selectedId, onSelect,
             <h3 className="text-sm font-semibold text-gray-900">No leads found</h3>
             <p className="text-xs text-gray-500 mt-1 mb-4">Get started by adding your first lead to the pipeline.</p>
             <button 
-              onClick={onAddContact}
+              onClick={onAddLead}
               className="text-xs font-semibold text-blue-600 hover:text-blue-700 border border-blue-200 px-3 py-1.5 rounded-lg hover:bg-blue-50 transition-colors"
             >
-              + Add Contact
+              + Add First Lead
             </button>
           </div>
         ) : (
