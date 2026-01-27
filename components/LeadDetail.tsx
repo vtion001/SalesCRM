@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Mail, Phone, Clock, Pin, FolderOpen, Trash2, MoreHorizontal, Send, Plus, MessageSquare } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Mail, Phone, Clock, Pin, FolderOpen, Trash2, MoreHorizontal, Send, Plus, MessageSquare, Check, X } from 'lucide-react';
 import { Lead, Activity, Note } from '../types';
 
 interface LeadDetailProps {
@@ -25,8 +25,17 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
   const [isAddingNote, setIsAddingNote] = useState(false);
   const [newNoteContent, setNewNoteContent] = useState('');
   const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [editingStat, setEditingStat] = useState<'dealValue' | 'probability' | null>(null);
+  const [tempStatValue, setTempStatValue] = useState<number>(0);
   
   const [editData, setEditData] = useState<Partial<Lead>>({});
+
+  // Reset editing states when lead changes
+  useEffect(() => {
+    setEditingStat(null);
+    setIsEditingProfile(false);
+    setIsAddingNote(false);
+  }, [lead?.id]);
 
   if (!lead) {
     return (
@@ -54,15 +63,25 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
 
   const handleSaveProfile = async () => {
     if (onUpdate) {
-      console.log('💾 Updating profile in Supabase:', editData);
       await onUpdate(lead.id, editData);
     }
     setIsEditingProfile(false);
   };
 
+  const handleSaveStat = async () => {
+    if (onUpdate && editingStat) {
+      await onUpdate(lead.id, { [editingStat]: tempStatValue });
+      setEditingStat(null);
+    }
+  };
+
+  const startEditingStat = (stat: 'dealValue' | 'probability') => {
+    setTempStatValue(lead[stat] || 0);
+    setEditingStat(stat);
+  };
+
   const handleSaveNote = async () => {
     if (onAddNote && newNoteContent.trim()) {
-      console.log('💾 Saving note to Supabase for lead:', lead.id);
       await onAddNote({
         content: newNoteContent,
         isPinned: false,
@@ -75,7 +94,6 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
 
   const handleManualLog = async (type: 'call' | 'email') => {
     if (onAddActivity) {
-      console.log(`💾 Manually logging ${type} to Supabase...`);
       await onAddActivity({
         type,
         title: type === 'call' ? 'Manual Call Log' : 'Manual SMS Log',
@@ -191,9 +209,29 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
 
       {/* Stats Cards */}
       <div className="grid grid-cols-3 gap-4 mb-10">
-        <StatCard label="Deal Value" value={`$${lead.dealValue.toLocaleString()}`} color="text-blue-600" />
-        <StatCard label="Probability" value={`${lead.probability}%`} color="text-gray-900" />
-        <StatCard label="Last Contact" value={lead.lastContactDate} color="text-gray-900" />
+        <StatCard 
+          label="Deal Value" 
+          value={`$${(lead.dealValue || 0).toLocaleString()}`} 
+          color="text-blue-600"
+          isEditing={editingStat === 'dealValue'}
+          onEdit={() => startEditingStat('dealValue')}
+          onSave={handleSaveStat}
+          onCancel={() => setEditingStat(null)}
+          inputValue={tempStatValue}
+          onInputChange={(val) => setTempStatValue(val)}
+        />
+        <StatCard 
+          label="Probability" 
+          value={`${lead.probability || 0}%`} 
+          color="text-gray-900"
+          isEditing={editingStat === 'probability'}
+          onEdit={() => startEditingStat('probability')}
+          onSave={handleSaveStat}
+          onCancel={() => setEditingStat(null)}
+          inputValue={tempStatValue}
+          onInputChange={(val) => setTempStatValue(val)}
+        />
+        <StatCard label="Last Contact" value={lead.lastContactDate || 'Never'} color="text-gray-900" />
       </div>
 
       {/* Activity Timeline */}
@@ -312,11 +350,33 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
   );
 };
 
-const StatCard = ({ label, value, color }: { label: string; value: string; color: string }) => (
-  <div className="border border-gray-200 rounded-xl p-4 flex flex-col items-center text-center bg-white hover:border-gray-300 transition-colors shadow-sm shadow-gray-50">
+const StatCard = ({ 
+  label, value, color, isEditing, onEdit, onSave, onCancel, inputValue, onInputChange 
+}: any) => (
+  <div 
+    className={`border border-gray-200 rounded-xl p-4 flex flex-col items-center text-center bg-white transition-all shadow-sm ${!isEditing && onEdit ? 'hover:border-blue-200 hover:shadow-md cursor-pointer' : ''}`}
+    onClick={!isEditing && onEdit ? onEdit : undefined}
+  >
     <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1 block h-8 flex items-center justify-center leading-tight">
-        {label.split(' ').map((word, i) => <span key={i} className="block">{word}</span>)}
+        {label.split(' ').map((word: string, i: number) => <span key={i} className="block">{word}</span>)}
     </span>
-    <span className={`text-2xl font-bold ${color}`}>{value}</span>
+    
+    {isEditing ? (
+      <div className="flex flex-col items-center gap-2 w-full" onClick={e => e.stopPropagation()}>
+        <input 
+          type="number"
+          autoFocus
+          className="w-full text-center text-lg font-bold border-b-2 border-blue-500 focus:outline-none"
+          value={inputValue}
+          onChange={e => onInputChange(Number(e.target.value))}
+        />
+        <div className="flex gap-2">
+          <button onClick={onSave} className="p-1 text-green-600 hover:bg-green-50 rounded-full"><Check size={16} /></button>
+          <button onClick={onCancel} className="p-1 text-red-600 hover:bg-red-50 rounded-full"><X size={16} /></button>
+        </div>
+      </div>
+    ) : (
+      <span className={`text-2xl font-bold ${color}`}>{value}</span>
+    )}
   </div>
 );

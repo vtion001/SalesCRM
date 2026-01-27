@@ -4,7 +4,7 @@ import { supabase } from '../services/supabaseClient';
 
 export const Auth: React.FC = () => {
   const [email, setEmail] = useState('admin@salescrm.com');
-  const [password, setPassword] = useState('password123');
+  const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 

@@ -28,7 +28,7 @@ export default function App() {
   // Supabase Hooks
   const { leads, addLead, deleteLead, updateLead } = useLeads();
   const { contacts, addContact, deleteContact, updateContact } = useContacts();
-  const { deals, deleteDeal } = useDeals(); // We will use Leads view for pipeline now
+  const { deals, deleteDeal } = useDeals();
   
   // Selection States
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
@@ -64,7 +64,11 @@ export default function App() {
       lastContactDate: c.lastContacted || 'Never'
     }));
 
-    return [...leads, ...normalizedContacts];
+    // Avoid duplicates if a contact was promoted to a lead (by ID)
+    const leadIds = new Set(leads.map(l => l.id));
+    const filteredContacts = normalizedContacts.filter(c => !leadIds.has(c.id));
+
+    return [...leads, ...filteredContacts];
   }, [leads, contacts]);
 
   const selectedItem = useMemo(() => 
@@ -72,10 +76,14 @@ export default function App() {
     [allPipelineItems, selectedLeadId]
   );
 
+  const isSelectedContact = useMemo(() => 
+    contacts.some(c => c.id === selectedLeadId),
+    [contacts, selectedLeadId]
+  );
+
   // Generic Update Handler for LeadDetail & Deals
   const handleUpdateItem = async (id: string, updates: Partial<Lead>) => {
-    const isContact = contacts.some(c => c.id === id);
-    if (isContact) {
+    if (isSelectedContact) {
       await updateContact(id, {
         name: updates.name,
         role: updates.role,
@@ -91,8 +99,7 @@ export default function App() {
 
   // Generic Delete Handler
   const handleDeleteItem = async (id: string) => {
-    const isContact = contacts.some(c => c.id === id);
-    if (isContact) {
+    if (isSelectedContact) {
       await deleteContact(id);
     } else {
       await deleteLead(id);
@@ -187,10 +194,24 @@ export default function App() {
   };
 
   const handleAddLeadAction = async (leadData: Omit<Lead, 'id'>) => {
-    const added = await addLead(leadData);
-    if (added) {
-      setSelectedLeadId(added.id);
+    // 1. Create Lead in leads table
+    const addedLead = await addLead(leadData);
+    
+    if (addedLead) {
+      // 2. Automatically create Contact in contacts table
+      await addContact({
+        name: leadData.name,
+        role: leadData.role,
+        company: leadData.company,
+        email: leadData.email,
+        phone: leadData.phone,
+        lastContacted: 'Never',
+        status: 'Active'
+      });
+
+      setSelectedLeadId(addedLead.id);
       setIsLeadModalOpen(false);
+      console.log('✅ Lead created and mirrored to Contacts');
     }
   };
 
@@ -232,7 +253,15 @@ export default function App() {
                 <LeadList leads={allPipelineItems} selectedId={selectedLeadId} onSelect={setSelectedLeadId} onAddLead={() => setIsLeadModalOpen(true)} />
               </div>
               <div className="col-span-12 md:col-span-8 lg:col-span-5 border-r border-gray-200 h-full overflow-hidden bg-white">
-                <LeadDetail lead={selectedItem} activities={activities} note={notes.length > 0 ? notes[0] : undefined} onDelete={handleDeleteItem} onUpdate={handleUpdateItem} onAddNote={addNote} onAddActivity={addActivity} />
+                <LeadDetail 
+                  lead={selectedItem} 
+                  activities={activities} 
+                  note={notes.length > 0 ? notes[0] : undefined} 
+                  onDelete={handleDeleteItem} 
+                  onUpdate={handleUpdateItem} 
+                  onAddNote={addNote} 
+                  onAddActivity={addActivity} 
+                />
               </div>
               <div className="hidden lg:block lg:col-span-4 h-full overflow-hidden bg-white">
                  <Dialer targetLead={selectedItem} onLogActivity={addActivity} />
@@ -254,9 +283,7 @@ export default function App() {
             />
           )}
 
-          {currentView === 'analytics' && (
-            <Analytics items={allPipelineItems} />
-          )}
+          {currentView === 'analytics' && <Analytics items={allPipelineItems} />}
         </div>
         
         {isContactModalOpen && <ContactForm onSave={handleSaveContactAction} onCancel={() => setIsContactModalOpen(false)} />}
