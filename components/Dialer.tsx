@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { MicOff, Pause, PhoneForwarded, Headphones, Phone, PhoneOff, Clock, MessageSquare, Send, ArrowDownLeft, ArrowUpRight, Ban, AlertCircle, Volume2 } from 'lucide-react';
 import { DIALER_KEYS } from '../constants';
 import { Lead } from '../types';
-import { initiateCall, sendSMS, initializeTwilioDevice, getAccessToken } from '../services/twilioService';
+import { sendSMS, initializeTwilioDevice, getAccessToken } from '../services/twilioService';
 
 interface DialerProps {
   targetLead: Lead | undefined;
