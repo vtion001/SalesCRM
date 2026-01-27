@@ -66,7 +66,7 @@ app.post('/token', async (req, res) => {
     const AccessToken = twilio.jwt.AccessToken;
     const VoiceGrant = AccessToken.VoiceGrant;
 
-    const token = new AccessToken(accountSid, apiKey, apiSecret);
+    const token = new AccessToken(accountSid, apiKey, apiSecret, { identity: identity });
     token.addGrant(new VoiceGrant({
       outgoingApplicationSid: process.env.TWILIO_TWIML_APP_SID,
       incomingAllow: true
