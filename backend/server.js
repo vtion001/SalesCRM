@@ -71,6 +71,11 @@ app.get('/api/twilio/token', async (req, res) => {
   let { identity } = req.query;
   console.log('Received GET /api/twilio/token request. Query:', req.query);
 
+  // 1. TRIM values to remove hidden whitespace (common cause of 20101)
+  const accountSid = process.env.TWILIO_ACCOUNT_SID?.trim();
+  const authToken = process.env.TWILIO_AUTH_TOKEN?.trim();
+  const twimlAppSid = process.env.TWILIO_TWIML_APP_SID?.trim();
+
   if (!identity) {
     console.error('Error: identity parameter missing in request query');
     return res.status(400).json({ error: 'identity parameter required' });
@@ -79,14 +84,10 @@ app.get('/api/twilio/token', async (req, res) => {
   // Sanitize identity
   const sanitizedIdentity = String(identity).replace(/[^a-zA-Z0-9_]/g, '_');
   
-  if (sanitizedIdentity.length === 0) {
-    return res.status(400).json({ error: 'identity must contain at least one valid character' });
-  }
-
-  if (!apiKey || !apiSecret) {
-    console.error('Error: Twilio API Key/Secret missing');
+  if (!accountSid || !authToken) {
+    console.error('Error: Twilio Account SID or Auth Token missing');
     return res.status(500).json({ 
-      error: 'TWILIO_API_KEY and TWILIO_API_SECRET not configured in .env.local' 
+      error: 'TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN not configured in .env.local' 
     });
   }
 
@@ -97,13 +98,17 @@ app.get('/api/twilio/token', async (req, res) => {
     console.log(`Original identity: "${identity}"`);
     console.log(`Sanitized identity: "${sanitizedIdentity}"`);
 
-    const token = new AccessToken(accountSid, apiKey, apiSecret, {
-      identity: sanitizedIdentity,
-      ttl: 3600 // 1 hour
-    });
+    // 2. Create the token using AUTH TOKEN method (Account SID as Key SID)
+    const token = new AccessToken(
+      accountSid,                   // 1. Account SID
+      accountSid,                   // 2. Key SID (Account SID used as signing key)
+      authToken,                    // 3. Key Secret (Auth Token used as secret)
+      { identity: sanitizedIdentity, ttl: 3600 }
+    );
 
+    // 3. Add Voice Grant
     token.addGrant(new VoiceGrant({
-      outgoingApplicationSid: process.env.TWILIO_TWIML_APP_SID,
+      outgoingApplicationSid: twimlAppSid,
       incomingAllow: true
     }));
 
@@ -125,72 +130,51 @@ app.post('/token', async (req, res) => {
   let { identity } = req.body;
   console.log('Received /token request. Body:', req.body);
 
+  // 1. TRIM values
+  const accountSid = process.env.TWILIO_ACCOUNT_SID?.trim();
+  const authToken = process.env.TWILIO_AUTH_TOKEN?.trim();
+  const twimlAppSid = process.env.TWILIO_TWIML_APP_SID?.trim();
+
   if (!identity) {
     console.error('Error: identity parameter missing in request body');
     return res.status(400).json({ error: 'identity parameter required' });
   }
 
-  // Sanitize identity: remove any non-alphanumeric characters except underscore
-  // Twilio requires: alphanumeric and underscore only
+  // Sanitize identity
   const sanitizedIdentity = String(identity).replace(/[^a-zA-Z0-9_]/g, '_');
   
-  if (sanitizedIdentity.length === 0) {
-    return res.status(400).json({ error: 'identity must contain at least one valid character' });
-  }
-
-  if (sanitizedIdentity.length > 256) {
-    return res.status(400).json({ error: 'identity cannot exceed 256 characters' });
-  }
-
-  if (!apiKey || !apiSecret) {
-    console.error('Error: Twilio API Key/Secret missing');
-    return res.status(500).json({ 
-      error: 'TWILIO_API_KEY and TWILIO_API_SECRET not configured in .env.local' 
-    });
+  if (!accountSid || !authToken) {
+    return res.status(500).json({ error: 'Twilio credentials missing' });
   }
 
   try {
     const AccessToken = twilio.jwt.AccessToken;
     const VoiceGrant = AccessToken.VoiceGrant;
 
-    console.log(`Original identity: "${identity}"`);
-    console.log(`Sanitized identity: "${sanitizedIdentity}" (Type: ${typeof sanitizedIdentity})`);
+    // 2. Create token using AUTH TOKEN method
+    const token = new AccessToken(
+      accountSid,                   // 1. Account SID
+      accountSid,                   // 2. Key SID (Account SID used here)
+      authToken,                    // 3. Key Secret (Auth Token used here)
+      { identity: sanitizedIdentity, ttl: 3600 }
+    );
 
-    // Create AccessToken with sanitized identity in the options object
-    const token = new AccessToken(accountSid, apiKey, apiSecret, {
-      identity: sanitizedIdentity,
-      ttl: 3600 // 1 hour
-    });
-
-    // Add Voice grant for calling capabilities
+    // 3. Add Voice grant
     token.addGrant(new VoiceGrant({
-      outgoingApplicationSid: process.env.TWILIO_TWIML_APP_SID,
+      outgoingApplicationSid: twimlAppSid,
       incomingAllow: true
     }));
 
     const jwt = token.toJwt();
-    console.log(`✓ Token generated successfully for identity: "${sanitizedIdentity}"`);
-    console.log(`  Token length: ${jwt.length}`);
-
     res.json({ token: jwt });
   } catch (error) {
     console.error('Error generating token:', error.message);
-    console.error('Full error:', {
-      message: error.message,
-      name: error.name,
-      stack: error.stack,
-      code: error.code
-    });
     res.status(500).json({ 
       error: error.message,
       debug: {
         identityReceived: identity,
-        identityType: typeof identity,
-        apiKeyConfigured: !!apiKey,
-        apiSecretConfigured: !!apiSecret,
         accountSidConfigured: !!accountSid,
-        apiKeyFormat: apiKey ? `${apiKey.substring(0, 4)}...${apiKey.substring(apiKey.length - 4)}` : 'N/A',
-        apiSecretFormat: apiSecret ? `${apiSecret.substring(0, 4)}...${apiSecret.substring(apiSecret.length - 4)}` : 'N/A'
+        authTokenConfigured: !!authToken
       }
     });
   }
