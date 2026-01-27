@@ -11,13 +11,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const accountSid = process.env.TWILIO_ACCOUNT_SID;
-    const authToken = process.env.TWILIO_AUTH_TOKEN;
+    const apiKey = process.env.TWILIO_API_KEY;
+    const apiSecret = process.env.TWILIO_API_SECRET;
     const twimlAppSid = process.env.TWILIO_TWIML_APP_SID;
 
-    if (!accountSid || !authToken || !twimlAppSid) {
+    if (!accountSid || !apiKey || !apiSecret || !twimlAppSid) {
       console.error('❌ Missing Twilio env vars:', { 
         accountSid: !!accountSid, 
-        authToken: !!authToken,
+        apiKey: !!apiKey, 
+        apiSecret: !!apiSecret,
         twimlAppSid: !!twimlAppSid 
       });
       return res.status(500).json({ error: 'Missing Twilio configuration' });
@@ -25,12 +27,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const identity = String(req.query?.identity || 'user').replace(/[^a-zA-Z0-9_]/g, '_');
 
-    // Use Twilio SDK to generate access token
-    // Auth Token method (legacy but widely supported)
+    // Use Twilio SDK to generate access token with API Key method
+    // This is the correct and recommended method for Access Tokens in Twilio SDK v4
     const AccessToken = twilio.jwt.AccessToken;
     const VoiceGrant = AccessToken.VoiceGrant;
 
-    const tokenObj = new AccessToken(accountSid, accountSid, authToken, { 
+    const tokenObj = new AccessToken(accountSid, apiKey, apiSecret, { 
       identity: identity,
       ttl: 3600
     });
