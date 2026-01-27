@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Mail, Phone, Clock, Pin, FolderOpen, Trash2, MoreHorizontal, Send, Plus, MessageSquare, Check, X, Target, DollarSign, Edit3 } from 'lucide-react';
+import { Mail, Phone, Clock, Pin, FolderOpen, Trash2, MoreHorizontal, Send, Plus, MessageSquare, Check, X, Target, DollarSign, Edit3, Edit2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Lead, Activity, Note } from '../types';
 
