@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
 import { LeadList } from './components/LeadList';
@@ -27,7 +27,7 @@ export default function App() {
   
   // Supabase Hooks
   const { leads, addLead, deleteLead, updateLead } = useLeads();
-  const { contacts, addContact, deleteContact } = useContacts();
+  const { contacts, addContact, deleteContact, updateContact } = useContacts();
   const { deals, addDeal, deleteDeal } = useDeals();
   
   // Selection States
@@ -45,6 +45,36 @@ export default function App() {
     role: 'Sales Lead',
     avatar: 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80'
   });
+
+  // Combine and normalize Leads and Contacts for the Pipeline view
+  const allPipelineItems = useMemo(() => {
+    const normalizedContacts: Lead[] = contacts.map(c => ({
+      id: c.id,
+      name: c.name,
+      role: c.role,
+      company: c.company,
+      avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(c.name)}&background=random`,
+      status: 'New Lead', // Default status for contacts in pipeline
+      lastActivityTime: c.lastContacted || 'Just now',
+      email: c.email,
+      phone: c.phone,
+      isOnline: false,
+      dealValue: 0,
+      probability: 0,
+      lastContactDate: c.lastContacted || 'Never'
+    }));
+
+    return [...leads, ...normalizedContacts];
+  }, [leads, contacts]);
+
+  // Find selected item from the combined list
+  const selectedItem = useMemo(() => 
+    allPipelineItems.find(item => item.id === selectedLeadId),
+    [allPipelineItems, selectedLeadId]
+  );
+
+  // Helper to determine if selected item is a contact or lead for operations
+  const isSelectedContact = contacts.some(c => c.id === selectedLeadId);
 
   // Fetch or Create Profile
   const fetchProfile = async (userId: string, email: string) => {
@@ -120,8 +150,6 @@ export default function App() {
     return () => subscription?.unsubscribe();
   }, []);
 
-  const selectedLead = leads.find(l => l.id === selectedLeadId);
-
   const handleLogout = async () => {
     try {
       await supabase.auth.signOut();
@@ -170,7 +198,13 @@ export default function App() {
       lastContacted: 'Never',
       status: 'Active'
     };
-    await addContact(newContactData);
+    const added = await addContact(newContactData);
+    if (added) {
+      // If we are in leads view, select the newly added contact
+      if (currentView === 'leads') {
+        setSelectedLeadId(added.id);
+      }
+    }
     setIsContactModalOpen(false);
   };
 
@@ -181,9 +215,35 @@ export default function App() {
       company: company,
       stage: dealData?.stage || 'Qualified',
       owner: dealData?.owner || currentUser.name,
-      closingDate: dealData?.closingDate || ''
-    };
+      closing_date: dealData?.closingDate || '' // Fixed snake_case mapping for direct hook use if needed
+    } as any;
     await addDeal(newDealData);
+  };
+
+  // Generic Update Handler for LeadDetail
+  const handleUpdateItem = async (id: string, updates: Partial<Lead>) => {
+    if (isSelectedContact) {
+      // Map Lead updates back to Contact updates if needed
+      await updateContact(id, {
+        name: updates.name,
+        role: updates.role,
+        company: updates.company,
+        email: updates.email,
+        phone: updates.phone,
+      } as Partial<Contact>);
+    } else {
+      await updateLead(id, updates);
+    }
+  };
+
+  // Generic Delete Handler for LeadDetail
+  const handleDeleteItem = async (id: string) => {
+    if (isSelectedContact) {
+      await deleteContact(id);
+    } else {
+      await deleteLead(id);
+    }
+    setSelectedLeadId(null);
   };
 
   if (authLoading === true) {
@@ -219,7 +279,7 @@ export default function App() {
             <div className="grid grid-cols-12 h-full">
               <div className="col-span-12 md:col-span-4 lg:col-span-3 border-r border-gray-200 h-full overflow-hidden">
                 <LeadList 
-                  leads={leads} 
+                  leads={allPipelineItems} 
                   selectedId={selectedLeadId} 
                   onSelect={setSelectedLeadId}
                   onAddLead={() => setIsLeadModalOpen(true)}
@@ -227,17 +287,17 @@ export default function App() {
               </div>
               <div className="col-span-12 md:col-span-8 lg:col-span-5 border-r border-gray-200 h-full overflow-hidden bg-white">
                 <LeadDetail 
-                  lead={selectedLead} 
+                  lead={selectedItem} 
                   activities={activities}
                   note={notes.length > 0 ? notes[0] : undefined}
-                  onDelete={deleteLead}
-                  onUpdate={updateLead}
+                  onDelete={handleDeleteItem}
+                  onUpdate={handleUpdateItem}
                   onAddNote={addNote}
                   onAddActivity={addActivity}
                 />
               </div>
               <div className="hidden lg:block lg:col-span-4 h-full overflow-hidden bg-white">
-                 <Dialer targetLead={selectedLead} onLogActivity={addActivity} />
+                 <Dialer targetLead={selectedItem} onLogActivity={addActivity} />
                  <DialerSound />
               </div>
             </div>
