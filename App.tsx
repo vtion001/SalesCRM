@@ -28,7 +28,7 @@ export default function App() {
   // Supabase Hooks
   const { leads, addLead, deleteLead, updateLead } = useLeads();
   const { contacts, addContact, deleteContact, updateContact } = useContacts();
-  const { deals, addDeal, deleteDeal } = useDeals();
+  const { deals, deleteDeal } = useDeals(); // We will use Leads view for pipeline now
   
   // Selection States
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
@@ -54,7 +54,7 @@ export default function App() {
       role: c.role,
       company: c.company,
       avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(c.name)}&background=random`,
-      status: 'New Lead', // Default status for contacts in pipeline
+      status: 'New Lead', 
       lastActivityTime: c.lastContacted || 'Just now',
       email: c.email,
       phone: c.phone,
@@ -67,14 +67,38 @@ export default function App() {
     return [...leads, ...normalizedContacts];
   }, [leads, contacts]);
 
-  // Find selected item from the combined list
   const selectedItem = useMemo(() => 
     allPipelineItems.find(item => item.id === selectedLeadId),
     [allPipelineItems, selectedLeadId]
   );
 
-  // Helper to determine if selected item is a contact or lead for operations
-  const isSelectedContact = contacts.some(c => c.id === selectedLeadId);
+  // Generic Update Handler for LeadDetail & Deals
+  const handleUpdateItem = async (id: string, updates: Partial<Lead>) => {
+    const isContact = contacts.some(c => c.id === id);
+    if (isContact) {
+      await updateContact(id, {
+        name: updates.name,
+        role: updates.role,
+        company: updates.company,
+        email: updates.email,
+        phone: updates.phone,
+        status: updates.status === 'Closed' ? 'Inactive' : 'Active'
+      } as Partial<Contact>);
+    } else {
+      await updateLead(id, updates);
+    }
+  };
+
+  // Generic Delete Handler
+  const handleDeleteItem = async (id: string) => {
+    const isContact = contacts.some(c => c.id === id);
+    if (isContact) {
+      await deleteContact(id);
+    } else {
+      await deleteLead(id);
+    }
+    if (selectedLeadId === id) setSelectedLeadId(null);
+  };
 
   // Fetch or Create Profile
   const fetchProfile = async (userId: string, email: string) => {
@@ -94,32 +118,21 @@ export default function App() {
           avatar_url: 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80'
         };
         await supabase.from('profiles').insert([newProfile]);
-        setCurrentUser({
-          name: newProfile.full_name,
-          email: newProfile.email,
-          role: newProfile.role,
-          avatar: newProfile.avatar_url
-        });
+        setCurrentUser({ name: newProfile.full_name, email: newProfile.email, role: newProfile.role, avatar: newProfile.avatar_url });
       } else if (data) {
-        setCurrentUser({
-          name: data.full_name,
-          email: data.email,
-          role: data.role,
-          avatar: data.avatar_url
-        });
+        setCurrentUser({ name: data.full_name, email: data.email, role: data.role, avatar: data.avatar_url });
       }
     } catch (err) {
       console.error('Error fetching profile:', err);
     }
   };
 
-  // Check authentication status on mount
+  // Auth Effects
   useEffect(() => {
     const checkAuth = async () => {
       try {
         const { data, error } = await supabase.auth.getSession();
         if (error) throw error;
-        
         if (data?.session?.user) {
           setIsAuthenticated(true);
           await fetchProfile(data.session.user.id, data.session.user.email || '');
@@ -133,20 +146,15 @@ export default function App() {
         setAuthLoading(false);
       }
     };
-
     checkAuth();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        if (session?.user) {
-          setIsAuthenticated(true);
-          fetchProfile(session.user.id, session.user.email || '');
-        } else {
-          setIsAuthenticated(false);
-        }
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session?.user) {
+        setIsAuthenticated(true);
+        fetchProfile(session.user.id, session.user.email || '');
+      } else {
+        setIsAuthenticated(false);
       }
-    );
-
+    });
     return () => subscription?.unsubscribe();
   }, []);
 
@@ -164,19 +172,13 @@ export default function App() {
     try {
       const { data: sessionData } = await supabase.auth.getSession();
       const userId = sessionData?.session?.user?.id;
-      
       if (!userId) return;
-
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          full_name: updates.name,
-          role: updates.role,
-          avatar_url: updates.avatar,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', userId);
-
+      const { error } = await supabase.from('profiles').update({
+        full_name: updates.name,
+        role: updates.role,
+        avatar_url: updates.avatar,
+        updated_at: new Date().toISOString()
+      }).eq('id', userId);
       if (error) throw error;
       setCurrentUser(prev => ({ ...prev, ...updates }));
     } catch (err) {
@@ -199,78 +201,27 @@ export default function App() {
       status: 'Active'
     };
     const added = await addContact(newContactData);
-    if (added) {
-      // If we are in leads view, select the newly added contact
-      if (currentView === 'leads') {
-        setSelectedLeadId(added.id);
-      }
-    }
+    if (added && currentView === 'leads') setSelectedLeadId(added.id);
     setIsContactModalOpen(false);
   };
 
-  const handleAddDealAction = async (company: string, value: number, dealData?: Partial<Deal>) => {
-    const newDealData: Omit<Deal, 'id'> = {
-      title: dealData?.title || '',
-      value: value,
-      company: company,
-      stage: dealData?.stage || 'Qualified',
-      owner: dealData?.owner || currentUser.name,
-      closing_date: dealData?.closingDate || '' // Fixed snake_case mapping for direct hook use if needed
-    } as any;
-    await addDeal(newDealData);
-  };
-
-  // Generic Update Handler for LeadDetail
-  const handleUpdateItem = async (id: string, updates: Partial<Lead>) => {
-    if (isSelectedContact) {
-      // Map Lead updates back to Contact updates if needed
-      await updateContact(id, {
-        name: updates.name,
-        role: updates.role,
-        company: updates.company,
-        email: updates.email,
-        phone: updates.phone,
-      } as Partial<Contact>);
-    } else {
-      await updateLead(id, updates);
-    }
-  };
-
-  // Generic Delete Handler for LeadDetail
-  const handleDeleteItem = async (id: string) => {
-    if (isSelectedContact) {
-      await deleteContact(id);
-    } else {
-      await deleteLead(id);
-    }
-    setSelectedLeadId(null);
-  };
-
-  if (authLoading === true) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
-        </div>
+  if (authLoading) return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="text-center">
+        <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
+        <p className="text-gray-600">Loading...</p>
       </div>
-    );
-  }
+    </div>
+  );
 
-  if (!isAuthenticated) {
-    return <Auth />;
-  }
+  if (!isAuthenticated) return <Auth />;
 
   return (
     <div className="flex h-screen w-full bg-white text-gray-900 font-sans">
       <Sidebar currentView={currentView} onNavigate={setCurrentView} />
       
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <Header 
-          user={currentUser} 
-          onLogout={handleLogout} 
-          onUpdateProfile={handleUpdateProfile}
-        />
+        <Header user={currentUser} onLogout={handleLogout} onUpdateProfile={handleUpdateProfile} />
         
         <div className="flex-1 overflow-hidden relative">
           {currentView === 'dashboard' && <Dashboard leads={leads} deals={deals} />}
@@ -278,23 +229,10 @@ export default function App() {
           {currentView === 'leads' && (
             <div className="grid grid-cols-12 h-full">
               <div className="col-span-12 md:col-span-4 lg:col-span-3 border-r border-gray-200 h-full overflow-hidden">
-                <LeadList 
-                  leads={allPipelineItems} 
-                  selectedId={selectedLeadId} 
-                  onSelect={setSelectedLeadId}
-                  onAddLead={() => setIsLeadModalOpen(true)}
-                />
+                <LeadList leads={allPipelineItems} selectedId={selectedLeadId} onSelect={setSelectedLeadId} onAddLead={() => setIsLeadModalOpen(true)} />
               </div>
               <div className="col-span-12 md:col-span-8 lg:col-span-5 border-r border-gray-200 h-full overflow-hidden bg-white">
-                <LeadDetail 
-                  lead={selectedItem} 
-                  activities={activities}
-                  note={notes.length > 0 ? notes[0] : undefined}
-                  onDelete={handleDeleteItem}
-                  onUpdate={handleUpdateItem}
-                  onAddNote={addNote}
-                  onAddActivity={addActivity}
-                />
+                <LeadDetail lead={selectedItem} activities={activities} note={notes.length > 0 ? notes[0] : undefined} onDelete={handleDeleteItem} onUpdate={handleUpdateItem} onAddNote={addNote} onAddActivity={addActivity} />
               </div>
               <div className="hidden lg:block lg:col-span-4 h-full overflow-hidden bg-white">
                  <Dialer targetLead={selectedItem} onLogActivity={addActivity} />
@@ -304,33 +242,23 @@ export default function App() {
           )}
 
           {currentView === 'contacts' && (
-            <Contacts 
-              contacts={contacts} 
-              onAddContact={() => setIsContactModalOpen(true)}
-              onDeleteContact={deleteContact}
-            />
+            <Contacts contacts={contacts} onAddContact={() => setIsContactModalOpen(true)} onDeleteContact={deleteContact} />
           )}
 
           {currentView === 'deals' && (
-            <Deals deals={deals} onAddDeal={handleAddDealAction} onDeleteDeal={deleteDeal} />
+            <Deals 
+              items={allPipelineItems} 
+              onUpdateItem={handleUpdateItem} 
+              onDeleteItem={handleDeleteItem} 
+              onAddNew={() => setIsLeadModalOpen(true)} 
+            />
           )}
 
           {currentView === 'analytics' && <Analytics leads={leads} deals={deals} />}
         </div>
         
-        {isContactModalOpen && (
-          <ContactForm 
-            onSave={handleSaveContactAction} 
-            onCancel={() => setIsContactModalOpen(false)} 
-          />
-        )}
-
-        {isLeadModalOpen && (
-          <LeadForm 
-            onSave={handleAddLeadAction} 
-            onCancel={() => setIsLeadModalOpen(false)} 
-          />
-        )}
+        {isContactModalOpen && <ContactForm onSave={handleSaveContactAction} onCancel={() => setIsContactModalOpen(false)} />}
+        {isLeadModalOpen && <LeadForm onSave={handleAddLeadAction} onCancel={() => setIsLeadModalOpen(false)} />}
       </main>
     </div>
   );

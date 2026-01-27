@@ -82,11 +82,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const client = twilio(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN);
 
     // Build the status callback URL with proper protocol
-    const baseUrl = process.env.VERCEL_URL 
-      ? `https://${process.env.VERCEL_URL}`
-      : 'https://sales-crm-sigma-eosin.vercel.app';
+    // Handle Vercel URLs that may or may not include protocol
+    let baseUrl: string;
+    if (process.env.VERCEL_URL) {
+      // Remove any existing protocol and add https://
+      const cleanUrl = process.env.VERCEL_URL.replace(/^https?:\/\//, '');
+      baseUrl = `https://${cleanUrl}`;
+    } else {
+      baseUrl = 'https://sales-crm-sigma-eosin.vercel.app';
+    }
     const statusCallbackUrl = `${baseUrl}/api/webhooks/message-status`;
 
+    console.log('📍 Base URL:', baseUrl);
     console.log('📍 Status callback URL:', statusCallbackUrl);
 
     // Create and send SMS message
