@@ -1,11 +1,32 @@
 /**
  * Generate Twilio Access Token for Voice
+ * This version creates JWT tokens manually without requiring the twilio package
  * GET /api/twilio/token?identity=user123
- * 
- * Returns: { token: "eyJhbGc..." }
  */
 
-const twilio = require('twilio');
+const crypto = require('crypto');
+
+// Helper function to base64url encode
+function base64url(str) {
+  return Buffer.from(str, 'utf-8')
+    .toString('base64')
+    .replace(/=/g, '')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_');
+}
+
+// Helper function to sign JWT
+function signJWT(header, payload, secret) {
+  const message = base64url(JSON.stringify(header)) + '.' + base64url(JSON.stringify(payload));
+  const signature = crypto
+    .createHmac('sha256', secret)
+    .update(message)
+    .digest('base64')
+    .replace(/=/g, '')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_');
+  return message + '.' + signature;
+}
 
 module.exports = async (req, res) => {
   // Set CORS headers
@@ -24,7 +45,7 @@ module.exports = async (req, res) => {
   }
 
   try {
-    // Get environment variables at request time (not at module load time)
+    // Get environment variables
     const TWILIO_ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID;
     const TWILIO_API_KEY = process.env.TWILIO_API_KEY;
     const TWILIO_API_SECRET = process.env.TWILIO_API_SECRET;
@@ -33,7 +54,7 @@ module.exports = async (req, res) => {
     // Get identity from query params or body
     const identity = (req.query?.identity) || (req.body?.identity) || 'sales-user';
 
-    // Validate environment variables with detailed error message
+    // Validate environment variables
     const missingVars = [];
     if (!TWILIO_ACCOUNT_SID) missingVars.push('TWILIO_ACCOUNT_SID');
     if (!TWILIO_API_KEY) missingVars.push('TWILIO_API_KEY');
@@ -42,15 +63,10 @@ module.exports = async (req, res) => {
 
     if (missingVars.length > 0) {
       console.error('❌ Missing Twilio credentials:', missingVars);
-      console.error('Available env vars:', Object.keys(process.env).filter(k => k.includes('TWILIO')));
       return res.status(500).json({ 
         error: 'Server configuration error',
         message: `Missing environment variables: ${missingVars.join(', ')}`,
-        hint: 'Set these in Vercel project Settings → Environment Variables',
-        debug: {
-          missing: missingVars,
-          available: Object.keys(process.env).filter(k => k.includes('TWILIO') || k.includes('SUPABASE'))
-        }
+        hint: 'Set these in Vercel project Settings → Environment Variables'
       });
     }
 
@@ -67,26 +83,39 @@ module.exports = async (req, res) => {
 
     console.log(`🔐 Generating token for identity: ${sanitizedIdentity}`);
 
-    // Create access token with Voice grant
-    const AccessToken = twilio.jwt.AccessToken;
-    const VoiceGrant = AccessToken.VoiceGrant;
-    
-    const token = new AccessToken(
-      TWILIO_ACCOUNT_SID,
-      TWILIO_API_KEY,
-      TWILIO_API_SECRET,
-      { identity: sanitizedIdentity, ttl: 3600 }
-    );
+    // Create JWT header
+    const header = {
+      alg: 'HS256',
+      typ: 'JWT',
+      cty: 'twilio-fpa;v=1'
+    };
 
-    // Add Voice grant for outgoing calls
-    const voiceGrant = new VoiceGrant({
-      outgoingApplicationSid: TWILIO_TWIML_APP_SID,
-      incomingAllow: true
-    });
+    // Get current timestamp
+    const now = Math.floor(Date.now() / 1000);
+    const ttl = 3600; // 1 hour
 
-    token.addGrant(voiceGrant);
+    // Create JWT payload with Voice grant
+    const payload = {
+      jti: TWILIO_API_KEY + '-' + now,
+      grants: {
+        identity: sanitizedIdentity,
+        voice: {
+          incoming: {
+            allow: true
+          },
+          outgoing: {
+            application_sid: TWILIO_TWIML_APP_SID
+          }
+        }
+      },
+      iat: now,
+      exp: now + ttl,
+      iss: TWILIO_API_KEY,
+      sub: TWILIO_ACCOUNT_SID
+    };
 
-    const tokenString = token.toJwt();
+    // Sign the JWT
+    const tokenString = signJWT(header, payload, TWILIO_API_SECRET);
 
     console.log(`✅ Token generated successfully for ${sanitizedIdentity}`);
     console.log(`   Token length: ${tokenString.length} bytes`);
@@ -94,7 +123,7 @@ module.exports = async (req, res) => {
     return res.status(200).json({ 
       token: tokenString,
       identity: sanitizedIdentity,
-      expiresIn: 3600
+      expiresIn: ttl
     });
 
   } catch (error) {
