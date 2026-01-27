@@ -6,7 +6,7 @@ import { VercelRequest, VercelResponse } from '@vercel/node';
  * 
  * Returns: { token: "eyJhbGc..." }
  */
-export default function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -23,7 +23,10 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    // Import twilio within the handler to ensure it's available
+    // Dynamically import twilio using CommonJS require syntax
+    // This works in Node.js 12.20+ and Vercel's Node runtime
+    const { createRequire } = await import('module');
+    const require = createRequire(import.meta.url);
     const twilio = require('twilio');
     // Get environment variables at request time (not at module load time)
     const TWILIO_ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID;
