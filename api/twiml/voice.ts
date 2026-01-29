@@ -49,10 +49,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   // 3. Get SIP trunk configuration
   const sipDomain = process.env.TWILIO_SIP_DOMAIN?.trim();
-  const sipUsername = process.env.TWILIO_SIP_USERNAME?.trim();
-  const sipPassword = process.env.TWILIO_SIP_PASSWORD?.trim();
-
-  const sipTrunkConfigured = !!(sipDomain && sipUsername && sipPassword);
+  const sipTrunkConfigured = !!sipDomain;
 
   // 4. Create the TwiML response
   let twiml: string;
@@ -77,12 +74,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       twiml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Dial ${callerIdAttr} timeout="30" answerOnBridge="true">
-    <Sip username="${sipUsername}" password="${sipPassword}">${sipUri}</Sip>
+    <Sip>${sipUri}</Sip>
   </Dial>
 </Response>`;
     } else {
       // Standard routing for mobile/landline numbers
       console.log(`   📞 Using standard routing (mobile/landline)`);
+      if (!sipTrunkConfigured && isPremiumNumber) {
+        console.warn('   ⚠️ SIP trunk domain not configured. Premium numbers may fail.');
+      }
       
       twiml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
