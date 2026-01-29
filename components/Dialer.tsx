@@ -119,7 +119,7 @@ export const Dialer: React.FC<DialerProps> = ({ targetLead, onLogActivity, activ
       const { data: user } = await supabase.auth.getUser();
       if (user?.user) {
         const dbRecord = await addCallRecord({
-          lead_id: callerInfo.leadId || '',
+          lead_id: callerInfo.leadId || null, // Use null instead of empty string
           phone_number: callerNumber,
           call_type: 'incoming',
           duration_seconds: 0,
@@ -227,11 +227,18 @@ export const Dialer: React.FC<DialerProps> = ({ targetLead, onLogActivity, activ
     if (callTimerRef.current) clearInterval(callTimerRef.current);
     
     // Update database with final call duration
-    if (incomingCall?.callHistoryId && callDuration > 0) {
-      await updateCallRecord(incomingCall.callHistoryId, {
-        duration_seconds: callDuration,
-        notes: `Call completed - ${formatDuration(callDuration)}`
-      });
+    const callHistoryIdToUpdate = incomingCall?.callHistoryId || (currentCall as any)?._callHistoryId;
+    
+    if (callHistoryIdToUpdate && callDuration > 0) {
+      try {
+        await updateCallRecord(callHistoryIdToUpdate, {
+          duration_seconds: callDuration,
+          notes: `Call completed - ${formatDuration(callDuration)}`
+        });
+        console.log('✅ Call duration updated in database:', callDuration, 'seconds');
+      } catch (err) {
+        console.error('❌ Failed to update call duration:', err);
+      }
     }
     
     if (targetLead && callDuration > 0 && onLogActivity) {
@@ -292,7 +299,7 @@ export const Dialer: React.FC<DialerProps> = ({ targetLead, onLogActivity, activ
       const { data: user } = await supabase.auth.getUser();
       if (user?.user) {
         const dbRecord = await addCallRecord({
-          lead_id: targetLead?.id || '',
+          lead_id: targetLead?.id || null, // Use null instead of empty string
           phone_number: validation.formattedNumber,
           call_type: 'outgoing',
           duration_seconds: 0,
@@ -300,31 +307,48 @@ export const Dialer: React.FC<DialerProps> = ({ targetLead, onLogActivity, activ
           user_id: user.user.id
         });
         outgoingCallHistoryId = dbRecord?.id;
+        console.log('📝 Outgoing call logged to database:', dbRecord?.id);
       }
     } catch (err) {
-      console.error('Failed to log outgoing call:', err);
+      console.error('❌ Failed to log outgoing call:', err);
+      // Don't block the call if logging fails
     }
     
     try {
       // Use validated/formatted number
       const params = { To: validation.formattedNumber };
+      console.log('📞 Initiating call to:', validation.formattedNumber);
+      console.log('📡 Using Twilio device:', twilioDevice?.state);
+      
       const call = await twilioDevice.connect({ params });
       setCurrentCall(call);
       
+      // Store the call history ID for later updates
+      if (outgoingCallHistoryId) {
+        (call as any)._callHistoryId = outgoingCallHistoryId;
+      }
+      
       call.on('accept', () => {
+         console.log('✅ Call accepted');
          setCallStatus(`In call`);
          callTimerRef.current = setInterval(() => setCallDuration((prev) => prev + 1), 1000);
       });
       
-      call.on('disconnect', () => handleEndCall());
+      call.on('disconnect', () => {
+        console.log('📴 Call disconnected');
+        handleEndCall();
+      });
       
       call.on('error', (error: any) => { 
         // Enhanced error handling for specific error codes
         let errorMsg = error.message || 'Call failed';
+        console.error('❌ Call error:', error);
+        console.error('   Error code:', error.code);
+        console.error('   Error message:', error.message);
         
         // Check for error code 31005 (connection error)
         if (error.code === 31005 || errorMsg.includes('31005')) {
-          errorMsg = '⚠️ Call rejected: This number type may require Twilio premium permissions. Try a mobile number instead.';
+          errorMsg = '⚠️ Call rejected by carrier. This may indicate: 1) Number requires premium permissions, 2) Invalid number format, or 3) Carrier restriction. Check Twilio console logs for details.';
         } else if (error.code === 31003 || error.code === 31000) {
           errorMsg = '⚠️ Permission denied: Your Twilio account cannot call this number type.';
         }
@@ -334,10 +358,11 @@ export const Dialer: React.FC<DialerProps> = ({ targetLead, onLogActivity, activ
       });
     } catch (err: any) {
       let errorMsg = err.message || 'Failed to initiate call';
+      console.error('❌ Exception during call initiation:', err);
       
       // Handle connection errors
       if (err.code === 31005 || errorMsg.includes('31005')) {
-        errorMsg = '⚠️ Connection failed: This number may require special permissions (1300/1800 numbers need premium access).';
+        errorMsg = '⚠️ Connection failed: Check Twilio console for detailed error logs. This may indicate TwiML webhook issues or carrier restrictions.';
       }
       
       setError(errorMsg);

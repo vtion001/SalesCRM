@@ -41,18 +41,31 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   console.log('   Twilio Phone:', twilioPhoneNumber);
   console.log('   Body:', JSON.stringify(req.body));
 
-  // 2. Create the TwiML response
+  // 2. Validate caller ID
+  if (!twilioPhoneNumber) {
+    console.error('   ❌ CRITICAL: TWILIO_PHONE_NUMBER not set in environment!');
+    console.error('   This will cause 31005 errors. Set it in Vercel environment variables.');
+  }
+
+  // 3. Create the TwiML response
   let twiml: string;
 
   if (toNumber) {
     // Outgoing call - dial the destination number
     console.log(`   ✅ Dialing: ${toNumber}`);
+    console.log(`   📱 Using Caller ID: ${twilioPhoneNumber || 'MISSING - THIS WILL FAIL!'}`);
+    
+    // Only include callerId if we have a valid Twilio number
+    const callerIdAttr = twilioPhoneNumber ? `callerId="${twilioPhoneNumber}"` : '';
+    
     twiml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Dial callerId="${twilioPhoneNumber || fromNumber}" timeout="30" answerOnBridge="true">
+  <Dial ${callerIdAttr} timeout="30" answerOnBridge="true">
     <Number>${toNumber}</Number>
   </Dial>
 </Response>`;
+    
+    console.log('   📄 TwiML Generated:', twiml);
   } else {
     // No destination number provided
     console.log('   ⚠️ No destination number provided');
@@ -62,7 +75,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 </Response>`;
   }
 
-  // 3. CRITICAL: Return Content-Type: text/xml to prevent Error 31005
+  // 4. CRITICAL: Return Content-Type: text/xml to prevent Error 31005
   res.setHeader('Content-Type', 'text/xml');
   return res.status(200).send(twiml);
 }
