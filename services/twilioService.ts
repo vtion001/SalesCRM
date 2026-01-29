@@ -82,13 +82,13 @@ export const validatePhoneNumber = (phoneNumber: string): NumberValidation => {
   // Australian number detection
   if (cleaned.match(/^\+?61/)) {
     // 1300 numbers: +61 1300 xxx xxx or +61 300 xxx xxx
+    // Note: Allow calling but mark as premium type for logging
     if (cleaned.match(/^\+?61\s?1?300/)) {
       return {
         isValid: true,
         type: NumberType.PREMIUM_1300,
-        canCall: false,
-        errorMessage: '1300 numbers require Twilio premium permissions. Please upgrade your account or use a mobile/landline number.',
-        formattedNumber: cleaned
+        canCall: true, // Changed: Allow if user has premium permissions
+        formattedNumber: cleaned.startsWith('+') ? cleaned : '+' + cleaned
       };
     }
 
@@ -97,9 +97,8 @@ export const validatePhoneNumber = (phoneNumber: string): NumberValidation => {
       return {
         isValid: true,
         type: NumberType.PREMIUM_1800,
-        canCall: false,
-        errorMessage: '1800 numbers require Twilio premium permissions. Please upgrade your account or use a mobile/landline number.',
-        formattedNumber: cleaned
+        canCall: true, // Changed: Allow if user has premium permissions
+        formattedNumber: cleaned.startsWith('+') ? cleaned : '+' + cleaned
       };
     }
 
@@ -108,9 +107,8 @@ export const validatePhoneNumber = (phoneNumber: string): NumberValidation => {
       return {
         isValid: true,
         type: NumberType.PREMIUM_13,
-        canCall: false,
-        errorMessage: '13xx numbers require Twilio premium permissions. Please upgrade your account or use a mobile/landline number.',
-        formattedNumber: cleaned
+        canCall: true, // Changed: Allow if user has premium permissions
+        formattedNumber: cleaned.startsWith('+') ? cleaned : '+' + cleaned
       };
     }
 

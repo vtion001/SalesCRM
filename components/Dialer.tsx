@@ -1,10 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MicOff, Pause, PhoneForwarded, Headphones, Phone, PhoneOff, Clock, MessageSquare, Send, ArrowDownLeft, ArrowUpRight, Ban, AlertCircle, Volume2 } from 'lucide-react';
+import { MicOff, Pause, PhoneForwarded, Headphones, Phone, PhoneOff, Clock, MessageSquare, Send, ArrowDownLeft, ArrowUpRight, Ban, AlertCircle, Volume2, User } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { DIALER_KEYS } from '../constants';
 import { Lead, Activity } from '../types';
 import { sendSMS, initializeTwilioDevice, getAccessToken } from '../services/twilioService';
 import { CallHistoryList } from './CallHistoryList';
+import { useCallHistory } from '../hooks/useCallHistory';
+import { useLeads } from '../hooks/useLeads';
+import { useContacts } from '../hooks/useContacts';
+import { supabase } from '../services/supabaseClient';
 
 interface DialerProps {
   targetLead: Lead | undefined;
@@ -18,6 +22,10 @@ interface IncomingCall {
   from: string;
   timestamp: Date;
   accepted?: boolean;
+  callerName?: string;
+  callerCompany?: string;
+  callerAvatar?: string;
+  callHistoryId?: string; // Link to database record
 }
 
 export const Dialer: React.FC<DialerProps> = ({ targetLead, onLogActivity, activeTab: propsActiveTab, onTabChange }) => {
@@ -37,6 +45,12 @@ export const Dialer: React.FC<DialerProps> = ({ targetLead, onLogActivity, activ
   const [messages, setMessages] = useState<any[]>([]);
   const [isSending, setIsSending] = useState(false);
   const [currentCall, setCurrentCall] = useState<any>(null);
+  const [missedCallCount, setMissedCallCount] = useState(0);
+  
+  // Hooks for data access
+  const { callHistory, addCallRecord, updateCallRecord } = useCallHistory(targetLead?.id);
+  const { leads } = useLeads();
+  const { contacts } = useContacts();
   
   const activeTab = propsActiveTab || internalActiveTab;
   const setActiveTab = onTabChange || setInternalActiveTab;
@@ -92,16 +106,79 @@ export const Dialer: React.FC<DialerProps> = ({ targetLead, onLogActivity, activ
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, activeTab]);
 
-  const handleIncomingCall = (call: any) => {
+  const handleIncomingCall = async (call: any) => {
+    const callerNumber = call.parameters.From || 'Unknown';
+    const callSid = call.parameters.CallSid || Date.now().toString();
+    
+    // Identify caller from leads/contacts
+    let callerInfo = await identifyCaller(callerNumber);
+    
+    // Create database record immediately (status: ringing)
+    let callHistoryId: string | undefined;
+    try {
+      const { data: user } = await supabase.auth.getUser();
+      if (user?.user) {
+        const dbRecord = await addCallRecord({
+          lead_id: callerInfo.leadId || '',
+          phone_number: callerNumber,
+          call_type: 'incoming',
+          duration_seconds: 0,
+          call_sid: callSid,
+          notes: 'Ringing...',
+          user_id: user.user.id
+        });
+        callHistoryId = dbRecord?.id;
+      }
+    } catch (err) {
+      console.error('Failed to log incoming call:', err);
+    }
+    
     const callData: IncomingCall = {
-      id: call.parameters.CallSid || Date.now().toString(),
-      from: call.parameters.From || 'Unknown',
+      id: callSid,
+      from: callerNumber,
       timestamp: new Date(),
+      callerName: callerInfo.name,
+      callerCompany: callerInfo.company,
+      callerAvatar: callerInfo.avatar,
+      callHistoryId
     };
+    
     setCurrentCall(call);
     setIncomingCall(callData);
-    setCallStatus(`Incoming call from ${callData.from}`);
+    setCallStatus(`Incoming call from ${callerInfo.name || callerNumber}`);
+    
     call.on('disconnect', () => handleEndCall());
+  };
+  
+  // Identify caller from leads or contacts database
+  const identifyCaller = async (phoneNumber: string): Promise<{name?: string, company?: string, avatar?: string, leadId?: string}> => {
+    try {
+      // Check leads first
+      const matchingLead = leads.find(l => l.phone === phoneNumber);
+      if (matchingLead) {
+        return {
+          name: matchingLead.name,
+          company: matchingLead.company,
+          avatar: matchingLead.avatar,
+          leadId: matchingLead.id
+        };
+      }
+      
+      // Check contacts
+      const matchingContact = contacts.find(c => c.phone === phoneNumber);
+      if (matchingContact) {
+        return {
+          name: matchingContact.name,
+          company: matchingContact.company,
+          leadId: undefined
+        };
+      }
+      
+      return { name: 'Unknown Caller' };
+    } catch (err) {
+      console.error('Error identifying caller:', err);
+      return { name: 'Unknown Caller' };
+    }
   };
 
   const handleAnswerCall = async () => {
@@ -113,6 +190,14 @@ export const Dialer: React.FC<DialerProps> = ({ targetLead, onLogActivity, activ
       setCallDuration(0);
       setIncomingCall({ ...incomingCall, accepted: true });
       callTimerRef.current = setInterval(() => setCallDuration((prev) => prev + 1), 1000);
+      
+      // Update database: call answered
+      if (incomingCall.callHistoryId) {
+        await updateCallRecord(incomingCall.callHistoryId, {
+          notes: 'Answered'
+        });
+      }
+      
       await currentCall.accept();
     } catch (err: any) {
       setError(err.message || 'Failed to answer call');
@@ -120,19 +205,45 @@ export const Dialer: React.FC<DialerProps> = ({ targetLead, onLogActivity, activ
     }
   };
 
-  const handleRejectCall = () => {
+  const handleRejectCall = async () => {
     if (!currentCall) return;
+    
+    // Update database: call rejected/missed
+    if (incomingCall?.callHistoryId) {
+      await updateCallRecord(incomingCall.callHistoryId, {
+        notes: 'Rejected',
+        duration_seconds: 0
+      });
+      setMissedCallCount(prev => prev + 1);
+    }
+    
     setIncomingCall(null);
     setCallStatus(null);
     try { currentCall.reject(); } catch (err) { console.error(err); }
     setCurrentCall(null);
   };
 
-  const handleEndCall = () => {
+  const handleEndCall = async () => {
     if (callTimerRef.current) clearInterval(callTimerRef.current);
-    if (targetLead && callDuration > 0 && onLogActivity) {
-      onLogActivity({ type: 'call', title: 'Outgoing Call', description: `Completed call to ${phoneNumber}`, duration: formatDuration(callDuration), timestamp: 'Just now' });
+    
+    // Update database with final call duration
+    if (incomingCall?.callHistoryId && callDuration > 0) {
+      await updateCallRecord(incomingCall.callHistoryId, {
+        duration_seconds: callDuration,
+        notes: `Call completed - ${formatDuration(callDuration)}`
+      });
     }
+    
+    if (targetLead && callDuration > 0 && onLogActivity) {
+      onLogActivity({ 
+        type: 'call', 
+        title: incomingCall ? 'Incoming Call' : 'Outgoing Call', 
+        description: `Completed call ${incomingCall ? 'from' : 'to'} ${phoneNumber}`, 
+        duration: formatDuration(callDuration), 
+        timestamp: 'Just now' 
+      });
+    }
+    
     setIsCallInProgress(false);
     setCallDuration(0);
     setCallStatus(null);
@@ -174,6 +285,25 @@ export const Dialer: React.FC<DialerProps> = ({ targetLead, onLogActivity, activ
     setIsCallInProgress(true);
     setCallDuration(0);
     setCallStatus('Connecting...');
+    
+    // Log outgoing call to database
+    let outgoingCallHistoryId: string | undefined;
+    try {
+      const { data: user } = await supabase.auth.getUser();
+      if (user?.user) {
+        const dbRecord = await addCallRecord({
+          lead_id: targetLead?.id || '',
+          phone_number: validation.formattedNumber,
+          call_type: 'outgoing',
+          duration_seconds: 0,
+          notes: 'Dialing...',
+          user_id: user.user.id
+        });
+        outgoingCallHistoryId = dbRecord?.id;
+      }
+    } catch (err) {
+      console.error('Failed to log outgoing call:', err);
+    }
     
     try {
       // Use validated/formatted number
@@ -252,20 +382,38 @@ export const Dialer: React.FC<DialerProps> = ({ targetLead, onLogActivity, activ
 
       <AnimatePresence>
         {incomingCall && !incomingCall.accepted && (
-          <motion.div initial={{ y: -50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: -50, opacity: 0 }} className="px-6 py-6 bg-indigo-600 shadow-2xl relative z-20">
+          <motion.div initial={{ y: -50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: -50, opacity: 0 }} className="px-6 py-6 bg-gradient-to-r from-indigo-600 to-purple-600 shadow-2xl relative z-20">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center">
-                  <Volume2 size={24} className="text-white animate-pulse" />
-                </div>
-                <div>
-                  <p className="text-xs font-black text-indigo-100 uppercase tracking-widest">Incoming Call</p>
-                  <p className="text-xl font-black text-white">{incomingCall.from}</p>
+                {incomingCall.callerAvatar ? (
+                  <img src={incomingCall.callerAvatar} alt={incomingCall.callerName} className="w-14 h-14 rounded-2xl object-cover ring-2 ring-white/30" />
+                ) : (
+                  <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center">
+                    {incomingCall.callerName && incomingCall.callerName !== 'Unknown Caller' ? (
+                      <span className="text-xl font-black text-white">{incomingCall.callerName.charAt(0)}</span>
+                    ) : (
+                      <User size={24} className="text-white" />
+                    )}
+                  </div>
+                )}
+                <div className="flex-1">
+                  <p className="text-[10px] font-black text-indigo-100 uppercase tracking-widest mb-1">📞 Incoming Call</p>
+                  <p className="text-xl font-black text-white leading-tight">
+                    {incomingCall.callerName || 'Unknown Caller'}
+                  </p>
+                  {incomingCall.callerCompany && (
+                    <p className="text-xs font-semibold text-white/80 mt-0.5">{incomingCall.callerCompany}</p>
+                  )}
+                  <p className="text-[11px] font-medium text-white/70 mt-1">{incomingCall.from}</p>
                 </div>
               </div>
               <div className="flex gap-2">
-                <button onClick={handleAnswerCall} className="w-12 h-12 bg-emerald-500 text-white rounded-2xl flex items-center justify-center shadow-lg active:scale-95 transition-transform"><Phone size={20} /></button>
-                <button onClick={handleRejectCall} className="w-12 h-12 bg-rose-500 text-white rounded-2xl flex items-center justify-center shadow-lg active:scale-95 transition-transform"><PhoneOff size={20} /></button>
+                <button onClick={handleAnswerCall} className="w-14 h-14 bg-emerald-500 text-white rounded-2xl flex items-center justify-center shadow-lg active:scale-95 transition-transform hover:bg-emerald-600">
+                  <Phone size={22} />
+                </button>
+                <button onClick={handleRejectCall} className="w-14 h-14 bg-rose-500 text-white rounded-2xl flex items-center justify-center shadow-lg active:scale-95 transition-transform hover:bg-rose-600">
+                  <PhoneOff size={22} />
+                </button>
               </div>
             </div>
           </motion.div>
@@ -276,12 +424,20 @@ export const Dialer: React.FC<DialerProps> = ({ targetLead, onLogActivity, activ
         {['Dialer', 'History', 'SMS'].map((tab) => (
           <button
             key={tab}
-            onClick={() => setActiveTab(tab)}
+            onClick={() => {
+              setActiveTab(tab);
+              if (tab === 'History') setMissedCallCount(0); // Clear badge when viewing history
+            }}
             className={`flex-1 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-center transition-all relative rounded-xl ${
               activeTab === tab ? 'text-indigo-600 bg-white shadow-sm' : 'text-slate-400 hover:text-slate-600'
             }`}
           >
             {tab}
+            {tab === 'History' && missedCallCount > 0 && (
+              <span className="absolute -top-1 -right-1 w-5 h-5 bg-rose-500 text-white text-[9px] font-black rounded-full flex items-center justify-center shadow-lg">
+                {missedCallCount > 9 ? '9+' : missedCallCount}
+              </span>
+            )}
           </button>
         ))}
       </div>
