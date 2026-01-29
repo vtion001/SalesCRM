@@ -92,6 +92,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     token.addGrant(voiceGrant);
 
+    // 4. Add SIP Grant for Elastic SIP Trunking (if configured)
+    const sipDomain = process.env.TWILIO_SIP_DOMAIN?.trim();
+    const sipTrunkSid = process.env.TWILIO_SIP_TRUNK_SID?.trim();
+    const sipUsername = process.env.TWILIO_SIP_USERNAME?.trim();
+    const sipPassword = process.env.TWILIO_SIP_PASSWORD?.trim();
+
+    if (sipDomain && sipTrunkSid && sipUsername && sipPassword) {
+      console.log('✅ Adding SIP grant for trunk:', sipDomain);
+      const SIPGrant = AccessToken.SIPGrant;
+      const sipGrant = new SIPGrant({
+        username: sipUsername,
+        password: sipPassword,
+        outgoingConnectionTimeout: 30,
+        outgoingApplicationSid: twimlAppSid,
+      });
+      token.addGrant(sipGrant);
+    } else if (sipDomain) {
+      console.warn('⚠️  SIP Domain configured but missing credentials. SIP calling may not work.');
+    }
+
     const jwt = token.toJwt();
     console.log('✅ Token generated successfully');
     console.log('Token length:', jwt.length);

@@ -21,6 +21,35 @@ console.log('📡 Using API Base:', API_BASE || '(same origin)');
 
 console.log('Twilio Service initialized for Vercel API Routes deployment');
 
+/**
+ * SIP Trunk Configuration
+ * Elastic SIP Trunking for outbound calls through Twilio's carrier network
+ */
+export interface SIPTrunkConfig {
+  domain: string;
+  trunkSid: string;
+  username: string;
+  password: string;
+}
+
+// Load SIP trunk config from environment
+export const getSIPTrunkConfig = (): SIPTrunkConfig | null => {
+  const domain = process.env.TWILIO_SIP_DOMAIN;
+  const trunkSid = process.env.TWILIO_SIP_TRUNK_SID;
+  const username = process.env.TWILIO_SIP_USERNAME;
+  const password = process.env.TWILIO_SIP_PASSWORD;
+
+  if (!domain || !trunkSid || !username || !password) {
+    if (isDevelopment) {
+      console.warn('⚠️  SIP Trunk not fully configured. Some carriers may not be supported.');
+    }
+    return null;
+  }
+
+  console.log('✅ SIP Trunk configured:', domain);
+  return { domain, trunkSid, username, password };
+};
+
 interface TwilioToken {
   token: string;
   method?: string;

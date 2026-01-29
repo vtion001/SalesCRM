@@ -97,26 +97,15 @@ Mock data is generated on-demand when needed (e.g., `handleAddLead` creates rand
 **Install & Run:**
 ```bash
 npm install
-npm run backend:install  # Install backend dependencies
-npm run dev             # Start Vite dev server at http://localhost:3000
-npm run dev:backend     # Start Express backend at http://localhost:4000 (in another terminal)
-npm run dev:all         # Start both frontend + backend
-npm run build           # Production build to ./dist
-npm run preview         # Preview production build
+npm run dev     # Start Vite dev server at http://localhost:3000 (configured in vite.config.ts)
+npm run build   # Production build to ./dist
+npm run preview # Preview production build
 ```
-
-**Twilio Integration:**
-- Backend: `/backend/server.js` - Handles token generation, call/SMS initiation, webhooks
-- Frontend: `services/twilioService.ts` - API layer for Twilio operations
-- Dialer: `components/Dialer.tsx` - UI for making calls and sending SMS
-- Config: See [TWILIO_SETUP.md](TWILIO_SETUP.md) for complete Twilio credentials setup
 
 **Key Files to Check:**
 - Component implementations: `components/*.tsx`
 - App state logic: `App.tsx` (centerpiece of all business logic)
 - Type definitions: `types.ts` (source of truth for data shapes)
-- Backend API: `backend/server.js` (Twilio integration)
-- Twilio service: `services/twilioService.ts` (API layer)
 - Build config: `vite.config.ts` + `tsconfig.json`
 
 ## Cross-Component Communication
@@ -143,8 +132,6 @@ This keeps component responsibilities clear and makes App.tsx the sole source of
 
 7. **Authentication is Mock:** `Login.tsx` doesn't validate credentials; any submission sets `isAuthenticated = true` and creates sample lead data.
 
-8. **Twilio Integration:** Real calling/SMS requires backend. Dialer.tsx calls `twilioService.ts` which communicates with Express backend on port 4000. Backend generates Twilio access tokens and handles webhooks.
-
 ## Common Implementation Tasks
 
 **Adding a new data entity type** (e.g., Tasks):
@@ -165,20 +152,6 @@ This keeps component responsibilities clear and makes App.tsx the sole source of
 - Won deals: `deals.filter(d => d.stage === 'Closed')`
 - Pipeline value: `deals.filter(d => d.stage !== 'Closed').reduce((sum, d) => sum + d.value, 0)`
 - Use these patterns in Dashboard.tsx around lines 11-14 as reference
-
-**Making a call via Twilio**:
-1. Dialer.tsx imports `initiateCall` from `services/twilioService.ts`
-2. Call `await initiateCall(phoneNumber, userId)` which POSTs to backend `/call` endpoint
-3. Backend uses Twilio SDK to create the call
-4. Backend returns `callSid` and status message
-5. Handle errors with try/catch and display status in UI
-
-**Sending SMS via Twilio**:
-1. Dialer.tsx imports `sendSMS` from `services/twilioService.ts`
-2. Call `await sendSMS(phoneNumber, messageText)` which POSTs to backend `/sms` endpoint
-3. Backend uses Twilio SDK to send the message
-4. Add message locally to UI state and update backend status
-5. Set `isSending` state to prevent double-sends
 
 ## Code Style
 
