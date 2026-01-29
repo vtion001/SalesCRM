@@ -4,6 +4,7 @@ import { DollarSign, Users, Briefcase, TrendingUp, ArrowUpRight, ArrowDownRight,
 import { AreaChart, Area, ResponsiveContainer, XAxis, Tooltip } from 'recharts';
 import { motion } from 'framer-motion';
 import { toast } from 'react-hot-toast';
+import { PrivateNotes } from './PrivateNotes';
 
 interface DashboardProps {
   leads: Lead[];
@@ -156,6 +157,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ leads, deals, onNavigate, 
                 </div>
               </div>
             </div>
+
+            <PrivateNotes />
 
             <div className="bg-white rounded-[48px] shadow-[0_32px_64px_-12px_rgba(0,0,0,0.04)] border border-slate-100 p-10 flex-1">
               <h2 className="text-xl font-black text-slate-900 tracking-tight mb-8">Priority Queue</h2>

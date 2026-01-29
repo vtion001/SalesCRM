@@ -8,22 +8,24 @@ export const useNotes = (leadId: string | null) => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (leadId) {
-      fetchNotes();
-    } else {
-      setNotes([]);
-    }
+    fetchNotes();
   }, [leadId]);
 
   const fetchNotes = async () => {
-    if (!leadId) return;
     try {
       setLoading(true);
-      const { data, error: fetchError } = await supabase
+      let query = supabase
         .from('notes')
         .select('*')
-        .eq('lead_id', leadId)
         .order('created_at', { ascending: false });
+
+      if (leadId) {
+        query = query.eq('lead_id', leadId);
+      } else {
+        query = query.is('lead_id', null);
+      }
+
+      const { data, error: fetchError } = await query;
 
       if (fetchError) throw fetchError;
       setNotes(data || []);
@@ -37,11 +39,15 @@ export const useNotes = (leadId: string | null) => {
   };
 
   const addNote = async (note: Omit<Note, 'id'>) => {
-    if (!leadId) return;
     try {
+      const noteData = {
+        ...note,
+        lead_id: leadId || null // Explicitly null for workspace notes
+      };
+      
       const { data, error: insertError } = await supabase
         .from('notes')
-        .insert([{ ...note, lead_id: leadId }])
+        .insert([noteData])
         .select()
         .single();
 

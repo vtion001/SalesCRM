@@ -154,21 +154,63 @@ export const Dialer: React.FC<DialerProps> = ({ targetLead, onLogActivity, activ
   const handleMakeCall = async () => {
     if (!phoneNumber || isCallInProgress || !isDeviceReady || !twilioDevice) return;
     setError(null);
+    
+    // Import validatePhoneNumber dynamically
+    const { validatePhoneNumber } = await import('../services/twilioService');
+    
+    // Validate phone number before attempting call
+    const validation = validatePhoneNumber(phoneNumber);
+    
+    if (!validation.isValid) {
+      setError(validation.errorMessage || 'Invalid phone number');
+      return;
+    }
+    
+    if (!validation.canCall) {
+      setError(validation.errorMessage || 'Cannot call this number type');
+      return;
+    }
+    
     setIsCallInProgress(true);
     setCallDuration(0);
     setCallStatus('Connecting...');
+    
     try {
-      const params = { To: phoneNumber };
+      // Use validated/formatted number
+      const params = { To: validation.formattedNumber };
       const call = await twilioDevice.connect({ params });
       setCurrentCall(call);
+      
       call.on('accept', () => {
          setCallStatus(`In call`);
          callTimerRef.current = setInterval(() => setCallDuration((prev) => prev + 1), 1000);
       });
+      
       call.on('disconnect', () => handleEndCall());
-      call.on('error', (error: any) => { setError(error.message || 'Call failed'); handleEndCall(); });
+      
+      call.on('error', (error: any) => { 
+        // Enhanced error handling for specific error codes
+        let errorMsg = error.message || 'Call failed';
+        
+        // Check for error code 31005 (connection error)
+        if (error.code === 31005 || errorMsg.includes('31005')) {
+          errorMsg = '⚠️ Call rejected: This number type may require Twilio premium permissions. Try a mobile number instead.';
+        } else if (error.code === 31003 || error.code === 31000) {
+          errorMsg = '⚠️ Permission denied: Your Twilio account cannot call this number type.';
+        }
+        
+        setError(errorMsg);
+        handleEndCall();
+      });
     } catch (err: any) {
-      setError(err.message || 'Failed to initiate call');
+      let errorMsg = err.message || 'Failed to initiate call';
+      
+      // Handle connection errors
+      if (err.code === 31005 || errorMsg.includes('31005')) {
+        errorMsg = '⚠️ Connection failed: This number may require special permissions (1300/1800 numbers need premium access).';
+      }
+      
+      setError(errorMsg);
       setCallStatus(null);
       setIsCallInProgress(false);
       setCurrentCall(null);

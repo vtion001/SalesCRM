@@ -39,6 +39,112 @@ interface SMSResponse {
 }
 
 /**
+ * Number Type Detection for Australian Numbers
+ */
+export enum NumberType {
+  MOBILE = 'mobile',
+  LANDLINE = 'landline',
+  PREMIUM_1300 = 'premium_1300',  // 1300 shared-cost numbers
+  PREMIUM_1800 = 'premium_1800',  // 1800 toll-free numbers
+  PREMIUM_13 = 'premium_13',      // 13/1300 short numbers
+  INTERNATIONAL = 'international',
+  INVALID = 'invalid'
+}
+
+interface NumberValidation {
+  isValid: boolean;
+  type: NumberType;
+  canCall: boolean;
+  errorMessage?: string;
+  formattedNumber: string;
+}
+
+/**
+ * Detect Australian number type and validate for calling
+ * @param phoneNumber - Phone number in E.164 format (+61...)
+ * @returns NumberValidation object with type and calling permissions
+ */
+export const validatePhoneNumber = (phoneNumber: string): NumberValidation => {
+  // Remove spaces and dashes
+  const cleaned = phoneNumber.replace(/[\s-]/g, '');
+  
+  // Check if it's a valid format
+  if (!cleaned.match(/^\+?[0-9]{10,15}$/)) {
+    return {
+      isValid: false,
+      type: NumberType.INVALID,
+      canCall: false,
+      errorMessage: 'Invalid phone number format. Use international format (e.g., +61466123456)',
+      formattedNumber: phoneNumber
+    };
+  }
+
+  // Australian number detection
+  if (cleaned.match(/^\+?61/)) {
+    // 1300 numbers: +61 1300 xxx xxx or +61 300 xxx xxx
+    if (cleaned.match(/^\+?61\s?1?300/)) {
+      return {
+        isValid: true,
+        type: NumberType.PREMIUM_1300,
+        canCall: false,
+        errorMessage: '1300 numbers require Twilio premium permissions. Please upgrade your account or use a mobile/landline number.',
+        formattedNumber: cleaned
+      };
+    }
+
+    // 1800 toll-free numbers: +61 1800 xxx xxx or +61 800 xxx xxx
+    if (cleaned.match(/^\+?61\s?1?800/)) {
+      return {
+        isValid: true,
+        type: NumberType.PREMIUM_1800,
+        canCall: false,
+        errorMessage: '1800 numbers require Twilio premium permissions. Please upgrade your account or use a mobile/landline number.',
+        formattedNumber: cleaned
+      };
+    }
+
+    // 13/1300 short numbers
+    if (cleaned.match(/^\+?61\s?13[0-9]{4,6}$/)) {
+      return {
+        isValid: true,
+        type: NumberType.PREMIUM_13,
+        canCall: false,
+        errorMessage: '13xx numbers require Twilio premium permissions. Please upgrade your account or use a mobile/landline number.',
+        formattedNumber: cleaned
+      };
+    }
+
+    // Australian mobile: +61 4xx xxx xxx
+    if (cleaned.match(/^\+?61\s?4[0-9]{8}$/)) {
+      return {
+        isValid: true,
+        type: NumberType.MOBILE,
+        canCall: true,
+        formattedNumber: cleaned.startsWith('+') ? cleaned : '+' + cleaned
+      };
+    }
+
+    // Australian landline: +61 [2,3,7,8] xxxx xxxx
+    if (cleaned.match(/^\+?61\s?[2378][0-9]{8}$/)) {
+      return {
+        isValid: true,
+        type: NumberType.LANDLINE,
+        canCall: true,
+        formattedNumber: cleaned.startsWith('+') ? cleaned : '+' + cleaned
+      };
+    }
+  }
+
+  // International or other numbers
+  return {
+    isValid: true,
+    type: NumberType.INTERNATIONAL,
+    canCall: true,
+    formattedNumber: cleaned.startsWith('+') ? cleaned : '+' + cleaned
+  };
+};
+
+/**
  * Get Twilio access token from Vercel API
  * This token allows the frontend to use Twilio.Device
  */
@@ -241,6 +347,7 @@ export const initializeTwilioDevice = async (
       
       // Map error codes to user-friendly messages
       const errorCodeMap: {[key: number]: string} = {
+        31005: 'Call rejected by carrier - number may be restricted or require premium permissions (1300/1800 numbers)',
         31204: 'Invalid JWT token - token is malformed or has expired',
         31202: 'JWT signature validation failed - token signature is invalid',
         31205: 'JWT token expired - please refresh',
@@ -248,8 +355,13 @@ export const initializeTwilioDevice = async (
         31102: 'Authorization token missing from request',
         31105: 'Invalid client name/identity in token',
         31203: 'No valid account associated with this token',
+        31206: 'Access token does not have the required grants',
         53000: 'Signaling connection timeout - websocket failed',
-        53405: 'Media connection failed - ICE connection failed'
+        53405: 'Media connection failed - ICE connection failed',
+        31000: 'Authorization error - check Twilio account permissions',
+        31002: 'Invalid phone number format',
+        31003: 'Forbidden - account does not have permission to call this number',
+        31201: 'Authentication failed - invalid credentials'
       };
       
       const friendlyMessage = errorCode ? errorCodeMap[errorCode] || `Twilio error ${errorCode}` : errorMessage;
