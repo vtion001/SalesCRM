@@ -47,23 +47,50 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.error('   This will cause 31005 errors. Set it in Vercel environment variables.');
   }
 
-  // 3. Create the TwiML response
+  // 3. Get SIP trunk configuration
+  const sipDomain = process.env.TWILIO_SIP_DOMAIN?.trim();
+  const sipUsername = process.env.TWILIO_SIP_USERNAME?.trim();
+  const sipPassword = process.env.TWILIO_SIP_PASSWORD?.trim();
+
+  const sipTrunkConfigured = !!(sipDomain && sipUsername && sipPassword);
+
+  // 4. Create the TwiML response
   let twiml: string;
 
   if (toNumber) {
     // Outgoing call - dial the destination number
     console.log(`   ✅ Dialing: ${toNumber}`);
     console.log(`   📱 Using Caller ID: ${twilioPhoneNumber || 'MISSING - THIS WILL FAIL!'}`);
+    console.log(`   🔧 SIP Trunk: ${sipTrunkConfigured ? `Enabled (${sipDomain})` : 'Disabled - using standard routing'}`);
     
     // Only include callerId if we have a valid Twilio number
     const callerIdAttr = twilioPhoneNumber ? `callerId="${twilioPhoneNumber}"` : '';
     
-    twiml = `<?xml version="1.0" encoding="UTF-8"?>
+    // Check if this is a premium Australian number (1300/1800/13xx)
+    const isPremiumNumber = toNumber.match(/^\+?61\s?(1?300|1?800|13)/);
+    
+    if (sipTrunkConfigured && isPremiumNumber) {
+      // Route through SIP trunk for premium numbers
+      console.log(`   🚀 Routing via SIP Trunk for premium number`);
+      const sipUri = `sip:${toNumber.replace(/^\+/, '')}@${sipDomain}`;
+      
+      twiml = `<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Dial ${callerIdAttr} timeout="30" answerOnBridge="true">
+    <Sip username="${sipUsername}" password="${sipPassword}">${sipUri}</Sip>
+  </Dial>
+</Response>`;
+    } else {
+      // Standard routing for mobile/landline numbers
+      console.log(`   📞 Using standard routing (mobile/landline)`);
+      
+      twiml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Dial ${callerIdAttr} timeout="30" answerOnBridge="true">
     <Number>${toNumber}</Number>
   </Dial>
 </Response>`;
+    }
     
     console.log('   📄 TwiML Generated:', twiml);
   } else {
