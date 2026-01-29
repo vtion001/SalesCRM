@@ -86,7 +86,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       
       twiml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Dial ${callerIdAttr} timeout="30" answerOnBridge="true">
+  <Dial ${callerIdAttr} timeout="30" answerOnBridge="true" statusCallbackEvent="initiated ringing answered completed" statusCallback="https://sales-crm-sigma-eosin.vercel.app/api/webhooks/call-status" statusCallbackMethod="POST">
     <Sip>${sipUri}</Sip>
   </Dial>
 </Response>`;
@@ -99,7 +99,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       
       twiml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Dial ${callerIdAttr} timeout="30" answerOnBridge="true">
+  <Dial ${callerIdAttr} timeout="30" answerOnBridge="true" statusCallbackEvent="initiated ringing answered completed" statusCallback="https://sales-crm-sigma-eosin.vercel.app/api/webhooks/call-status" statusCallbackMethod="POST">
     <Number>${toNumber}</Number>
   </Dial>
 </Response>`;
