@@ -108,38 +108,74 @@ export const validatePhoneNumber = (phoneNumber: string): NumberValidation => {
     };
   }
 
+  // Check if SIP trunk is configured for premium numbers
+  const sipTrunkConfigured = !!(
+    typeof process !== 'undefined' &&
+    process.env.TWILIO_SIP_DOMAIN &&
+    process.env.TWILIO_SIP_TRUNK_SID &&
+    process.env.TWILIO_SIP_USERNAME &&
+    process.env.TWILIO_SIP_PASSWORD
+  );
+
   // Australian number detection
   if (cleaned.match(/^\+?61/)) {
     // 1300 numbers: +61 1300 xxx xxx or +61 300 xxx xxx
-    // Twilio Error 13224: These numbers are not supported by Twilio's carrier network
+    // Supported via SIP Trunk, otherwise blocked by Twilio
     if (cleaned.match(/^\+?61\s?1?300/)) {
+      if (sipTrunkConfigured) {
+        console.log('✅ 1300 number allowed via SIP Trunk');
+        return {
+          isValid: true,
+          type: NumberType.PREMIUM_1300,
+          canCall: true,
+          formattedNumber: cleaned.startsWith('+') ? cleaned : '+' + cleaned
+        };
+      }
       return {
         isValid: true,
         type: NumberType.PREMIUM_1300,
         canCall: false,
-        errorMessage: '❌ 1300 numbers are not supported by Twilio (Error 13224). Please use a mobile number (+61 4xx) or landline (+61 2/3/7/8) instead.',
+        errorMessage: '❌ 1300 numbers require SIP Trunk configuration. Please contact your administrator.',
         formattedNumber: cleaned.startsWith('+') ? cleaned : '+' + cleaned
       };
     }
 
     // 1800 toll-free numbers: +61 1800 xxx xxx or +61 800 xxx xxx
     if (cleaned.match(/^\+?61\s?1?800/)) {
+      if (sipTrunkConfigured) {
+        console.log('✅ 1800 number allowed via SIP Trunk');
+        return {
+          isValid: true,
+          type: NumberType.PREMIUM_1800,
+          canCall: true,
+          formattedNumber: cleaned.startsWith('+') ? cleaned : '+' + cleaned
+        };
+      }
       return {
         isValid: true,
         type: NumberType.PREMIUM_1800,
         canCall: false,
-        errorMessage: '❌ 1800 numbers are not supported by Twilio (Error 13224). Please use a mobile number (+61 4xx) or landline (+61 2/3/7/8) instead.',
+        errorMessage: '❌ 1800 numbers require SIP Trunk configuration. Please contact your administrator.',
         formattedNumber: cleaned.startsWith('+') ? cleaned : '+' + cleaned
       };
     }
 
     // 13/1300 short numbers
     if (cleaned.match(/^\+?61\s?13[0-9]{4,6}$/)) {
+      if (sipTrunkConfigured) {
+        console.log('✅ 13xx number allowed via SIP Trunk');
+        return {
+          isValid: true,
+          type: NumberType.PREMIUM_13,
+          canCall: true,
+          formattedNumber: cleaned.startsWith('+') ? cleaned : '+' + cleaned
+        };
+      }
       return {
         isValid: true,
         type: NumberType.PREMIUM_13,
         canCall: false,
-        errorMessage: '❌ 13xx numbers are not supported by Twilio (Error 13224). Please use a mobile number (+61 4xx) or landline (+61 2/3/7/8) instead.',
+        errorMessage: '❌ 13xx numbers require SIP Trunk configuration. Please contact your administrator.',
         formattedNumber: cleaned.startsWith('+') ? cleaned : '+' + cleaned
       };
     }
