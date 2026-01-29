@@ -51,6 +51,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const sipDomain = process.env.TWILIO_SIP_DOMAIN?.trim();
   const sipTrunkConfigured = !!sipDomain;
 
+  // Log all environment variables for debugging
+  console.log('   🔍 Environment Check:');
+  console.log('      TWILIO_SIP_DOMAIN:', sipDomain || 'NOT SET');
+  console.log('      TWILIO_PHONE_NUMBER:', twilioPhoneNumber || 'NOT SET');
+
   // 4. Create the TwiML response
   let twiml: string;
 
@@ -64,12 +69,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const callerIdAttr = twilioPhoneNumber ? `callerId="${twilioPhoneNumber}"` : '';
     
     // Check if this is a premium Australian number (1300/1800/13xx)
-    const isPremiumNumber = toNumber.match(/^\+?61\s?(1?300|1?800|13)/);
+    // Updated regex to handle various formats: +61300xxx, +611300xxx, etc.
+    const isPremiumNumber = /^\+?61\s?1?3(00|800)/.test(toNumber) || /^\+?611[0-9]{1,4}$/.test(toNumber);
+    
+    console.log(`   🎯 Number Type Check:`);
+    console.log(`      Input: ${toNumber}`);
+    console.log(`      Is Premium (1300/1800/13xx): ${isPremiumNumber}`);
+    console.log(`      Decision: ${sipTrunkConfigured && isPremiumNumber ? 'SIP' : 'Standard Number routing'}`);
     
     if (sipTrunkConfigured && isPremiumNumber) {
       // Route through SIP trunk for premium numbers
-      console.log(`   🚀 Routing via SIP Trunk for premium number`);
-      const sipUri = `sip:${toNumber.replace(/^\+/, '')}@${sipDomain}`;
+      // Format: sip:61300130928@altoproperty.pstn.twilio.com
+      const normalizedNumber = toNumber.replace(/^\+/, '').replace(/\s/g, '');
+      const sipUri = `sip:${normalizedNumber}@${sipDomain}`;
+      console.log(`   🚀 SIP Routing: ${sipUri}`);
       
       twiml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
