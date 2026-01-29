@@ -82,12 +82,13 @@ export const validatePhoneNumber = (phoneNumber: string): NumberValidation => {
   // Australian number detection
   if (cleaned.match(/^\+?61/)) {
     // 1300 numbers: +61 1300 xxx xxx or +61 300 xxx xxx
-    // Note: Allow calling but mark as premium type for logging
+    // Note: These are premium service numbers - most Twilio accounts can't call them
     if (cleaned.match(/^\+?61\s?1?300/)) {
       return {
         isValid: true,
         type: NumberType.PREMIUM_1300,
-        canCall: true, // Changed: Allow if user has premium permissions
+        canCall: false, // Block: Requires special Twilio approval
+        errorMessage: '⚠️ 1300 numbers require special Twilio permissions. Contact Twilio support to enable premium service numbers, or use a mobile/landline instead.',
         formattedNumber: cleaned.startsWith('+') ? cleaned : '+' + cleaned
       };
     }
@@ -97,7 +98,8 @@ export const validatePhoneNumber = (phoneNumber: string): NumberValidation => {
       return {
         isValid: true,
         type: NumberType.PREMIUM_1800,
-        canCall: true, // Changed: Allow if user has premium permissions
+        canCall: false, // Block: Requires special Twilio approval
+        errorMessage: '⚠️ 1800 numbers require special Twilio permissions. Contact Twilio support to enable premium service numbers, or use a mobile/landline instead.',
         formattedNumber: cleaned.startsWith('+') ? cleaned : '+' + cleaned
       };
     }
@@ -107,7 +109,8 @@ export const validatePhoneNumber = (phoneNumber: string): NumberValidation => {
       return {
         isValid: true,
         type: NumberType.PREMIUM_13,
-        canCall: true, // Changed: Allow if user has premium permissions
+        canCall: false, // Block: Requires special Twilio approval
+        errorMessage: '⚠️ 13xx numbers require special Twilio permissions. Contact Twilio support to enable premium service numbers, or use a mobile/landline instead.',
         formattedNumber: cleaned.startsWith('+') ? cleaned : '+' + cleaned
       };
     }
