@@ -82,13 +82,13 @@ export const validatePhoneNumber = (phoneNumber: string): NumberValidation => {
   // Australian number detection
   if (cleaned.match(/^\+?61/)) {
     // 1300 numbers: +61 1300 xxx xxx or +61 300 xxx xxx
-    // Note: These are premium service numbers - most Twilio accounts can't call them
+    // Twilio Error 13224: These numbers are not supported by Twilio's carrier network
     if (cleaned.match(/^\+?61\s?1?300/)) {
       return {
         isValid: true,
         type: NumberType.PREMIUM_1300,
-        canCall: false, // Block: Requires special Twilio approval
-        errorMessage: '⚠️ 1300 numbers require special Twilio permissions. Contact Twilio support to enable premium service numbers, or use a mobile/landline instead.',
+        canCall: false,
+        errorMessage: '❌ 1300 numbers are not supported by Twilio (Error 13224). Please use a mobile number (+61 4xx) or landline (+61 2/3/7/8) instead.',
         formattedNumber: cleaned.startsWith('+') ? cleaned : '+' + cleaned
       };
     }
@@ -98,8 +98,8 @@ export const validatePhoneNumber = (phoneNumber: string): NumberValidation => {
       return {
         isValid: true,
         type: NumberType.PREMIUM_1800,
-        canCall: false, // Block: Requires special Twilio approval
-        errorMessage: '⚠️ 1800 numbers require special Twilio permissions. Contact Twilio support to enable premium service numbers, or use a mobile/landline instead.',
+        canCall: false,
+        errorMessage: '❌ 1800 numbers are not supported by Twilio (Error 13224). Please use a mobile number (+61 4xx) or landline (+61 2/3/7/8) instead.',
         formattedNumber: cleaned.startsWith('+') ? cleaned : '+' + cleaned
       };
     }
@@ -109,8 +109,8 @@ export const validatePhoneNumber = (phoneNumber: string): NumberValidation => {
       return {
         isValid: true,
         type: NumberType.PREMIUM_13,
-        canCall: false, // Block: Requires special Twilio approval
-        errorMessage: '⚠️ 13xx numbers require special Twilio permissions. Contact Twilio support to enable premium service numbers, or use a mobile/landline instead.',
+        canCall: false,
+        errorMessage: '❌ 13xx numbers are not supported by Twilio (Error 13224). Please use a mobile number (+61 4xx) or landline (+61 2/3/7/8) instead.',
         formattedNumber: cleaned.startsWith('+') ? cleaned : '+' + cleaned
       };
     }
