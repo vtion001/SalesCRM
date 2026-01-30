@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { DIALER_KEYS } from '../constants';
 import { Lead, Activity } from '../types';
 import { sendSMS, initializeTwilioDevice, getAccessToken } from '../services/twilioService';
-import { CallHistoryList } from './CallHistoryList';
+import { CallLogs } from './CallLogs';
 import { useCallHistory } from '../hooks/useCallHistory';
 import { useLeads } from '../hooks/useLeads';
 import { useContacts } from '../hooks/useContacts';
@@ -551,7 +551,10 @@ export const Dialer: React.FC<DialerProps> = ({ targetLead, onLogActivity, activ
 
           {activeTab === 'History' && (
             <motion.div key="history" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="flex-1 overflow-hidden flex flex-col">
-              <CallHistoryList targetLead={targetLead} />
+              <CallLogs onDial={(number) => {
+                setPhoneNumber(number);
+                setActiveTab('Dialer');
+              }} />
             </motion.div>
           )}
 

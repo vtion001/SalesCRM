@@ -20,19 +20,22 @@ export const useCallHistory = (leadId?: string) => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (leadId) {
-      fetchCallHistory(leadId);
-    }
+    fetchCallHistory(leadId);
   }, [leadId]);
 
-  const fetchCallHistory = async (id: string) => {
+  const fetchCallHistory = async (id?: string) => {
     try {
       setLoading(true);
-      const { data, error: fetchError } = await supabase
+      let query = supabase
         .from('call_history')
-        .select('*')
-        .eq('lead_id', id)
-        .order('created_at', { ascending: false });
+        .select('*');
+      
+      // If leadId provided, filter by it; otherwise get all calls
+      if (id) {
+        query = query.eq('lead_id', id);
+      }
+      
+      const { data, error: fetchError } = await query.order('created_at', { ascending: false });
 
       if (fetchError) throw fetchError;
       setCallHistory(data || []);
@@ -102,6 +105,6 @@ export const useCallHistory = (leadId?: string) => {
     addCallRecord, 
     updateCallRecord, 
     deleteCallRecord, 
-    refetch: () => leadId && fetchCallHistory(leadId)
+    refetch: () => fetchCallHistory(leadId)
   };
 };

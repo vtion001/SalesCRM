@@ -25,12 +25,14 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
   const [editingStat, setEditingStat] = useState<'dealValue' | 'probability' | null>(null);
   const [tempStatValue, setTempStatValue] = useState<number>(0);
   const [editData, setEditData] = useState<Partial<Lead>>({});
+  const [activityFilter, setActivityFilter] = useState<'all' | 'calls' | 'sms' | 'notes'>('all');
 
   useEffect(() => {
     setEditingStat(null);
     setIsEditingProfile(false);
     setIsAddingNote(false);
     setShowOptions(false);
+    setActivityFilter('all');
   }, [lead?.id]);
 
   if (!lead) {
@@ -73,10 +75,10 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
         await onAddNote({ content: newNoteContent, isPinned: false, author: 'Me' });
       }
       
-      // 2. Add to Activity Timeline as a log
+      // 2. Add to Activity Timeline as a note entry
       if (onAddActivity) {
         await onAddActivity({
-          type: 'message', // We'll treat note logs as message types in the feed
+          type: 'note',
           title: 'Note Added',
           description: newNoteContent.length > 60 ? newNoteContent.substring(0, 60) + '...' : newNoteContent,
           timestamp: new Date().toLocaleString(),
@@ -99,14 +101,23 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
     }
   };
 
+  // Filter activities based on selected filter
+  const filteredActivities = (activities || []).filter(activity => {
+    if (activityFilter === 'all') return true;
+    if (activityFilter === 'calls') return activity.type === 'call';
+    if (activityFilter === 'sms') return activity.type === 'email';
+    if (activityFilter === 'notes') return activity.type === 'note';
+    return true;
+  });
+
   const getActivityIcon = (type: string, title?: string) => {
-    if (title === 'Note Added') return <Edit3 size={14} />;
+    if (type === 'note' || title === 'Note Added') return <Edit3 size={14} />;
     if (type === 'call') return <Phone size={14} />;
     return <MessageSquare size={14} />;
   };
 
   const getActivityColor = (type: string, title?: string) => {
-    if (title === 'Note Added') return 'bg-amber-500';
+    if (type === 'note' || title === 'Note Added') return 'bg-amber-500';
     if (type === 'call') return 'bg-indigo-600';
     return 'bg-fuchsia-600';
   };
@@ -179,15 +190,27 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
       </div>
 
       <div className="mb-12">
-        <div className="flex items-center justify-between mb-8"><h3 className="text-lg font-black text-slate-900 uppercase tracking-widest flex items-center gap-3"><div className="w-2 h-2 bg-indigo-500 rounded-full"></div>Activity Feed</h3>
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-lg font-black text-slate-900 uppercase tracking-widest flex items-center gap-3">
+            <div className="w-2 h-2 bg-indigo-500 rounded-full"></div>Activity Feed
+          </h3>
           <div className="flex gap-3">
             <button onClick={() => handleManualLog('call')} className="text-[10px] font-black uppercase tracking-widest bg-slate-900 text-white px-4 py-2 rounded-xl hover:bg-slate-800 transition-all active:scale-95 shadow-lg shadow-slate-900/10 flex items-center gap-2 font-bold"><Phone size={12} /> Log Call</button>
             <button onClick={() => handleManualLog('email')} className="text-[10px] font-black uppercase tracking-widest bg-white border-2 border-slate-100 text-slate-900 px-4 py-2 rounded-xl hover:bg-slate-50 transition-all active:scale-95 flex items-center gap-2 font-bold"><MessageSquare size={12} /> Log SMS</button>
           </div>
         </div>
-        {(activities || []).length > 0 ? (
+
+        {/* Activity Filter */}
+        <div className="flex gap-2 p-1 bg-slate-50 rounded-xl mb-6">
+          <FilterButton label="All" active={activityFilter === 'all'} onClick={() => setActivityFilter('all')} count={(activities || []).length} />
+          <FilterButton label="Calls" active={activityFilter === 'calls'} onClick={() => setActivityFilter('calls')} count={(activities || []).filter(a => a.type === 'call').length} />
+          <FilterButton label="SMS" active={activityFilter === 'sms'} onClick={() => setActivityFilter('sms')} count={(activities || []).filter(a => a.type === 'email').length} />
+          <FilterButton label="Notes" active={activityFilter === 'notes'} onClick={() => setActivityFilter('notes')} count={(activities || []).filter(a => a.type === 'note').length} />
+        </div>
+
+        {filteredActivities.length > 0 ? (
           <div className="relative pl-4 space-y-8 before:absolute before:left-4 before:top-4 before:bottom-4 before:w-px before:bg-slate-100">
-            {(activities || []).map((activity, idx) => (
+            {filteredActivities.map((activity, idx) => (
               <motion.div key={activity.id} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: idx * 0.1 }} className="relative pl-10">
                 <div className={`absolute left-0 top-0 w-8 h-8 rounded-2xl flex items-center justify-center shadow-lg border-2 border-white translate-x-[-16px] z-10 text-white ${getActivityColor(activity.type, activity.title)}`}>
                   {getActivityIcon(activity.type, activity.title)}
@@ -225,6 +248,22 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({
     </div>
   );
 };
+
+const FilterButton = ({ label, active, onClick, count }: { label: string; active: boolean; onClick: () => void; count: number }) => (
+  <button
+    onClick={onClick}
+    className={`flex-1 py-2 px-3 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all flex items-center justify-center gap-2 ${
+      active
+        ? 'bg-white text-indigo-600 shadow-sm'
+        : 'text-slate-400 hover:text-slate-600'
+    }`}
+  >
+    {label}
+    <span className={`text-[9px] font-black px-1.5 py-0.5 rounded ${active ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-100 text-slate-400'}`}>
+      {count}
+    </span>
+  </button>
+);
 
 const StatCard = ({ label, value, icon, color, isEditing, onEdit, onSave, onCancel, inputValue, onInputChange }: any) => (
   <motion.div layout whileHover={{ y: -4 }} className={`bg-slate-50/50 rounded-[32px] p-6 border border-transparent transition-all ${!isEditing && onEdit ? 'hover:bg-white hover:border-indigo-100 hover:shadow-2xl hover:shadow-slate-200/50 cursor-pointer' : ''}`} onClick={!isEditing && onEdit ? onEdit : undefined}>

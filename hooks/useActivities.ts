@@ -39,9 +39,12 @@ export const useActivities = (leadId: string | null) => {
   const addActivity = async (activity: Omit<Activity, 'id'>) => {
     if (!leadId) return;
     try {
+      const { data: user } = await supabase.auth.getUser();
+      if (!user?.user) throw new Error('User not authenticated');
+
       const { data, error: insertError } = await supabase
         .from('activities')
-        .insert([{ ...activity, lead_id: leadId }])
+        .insert([{ ...activity, lead_id: leadId, user_id: user.user.id }])
         .select()
         .single();
 
