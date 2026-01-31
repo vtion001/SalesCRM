@@ -52,14 +52,33 @@ async function handleMakeCall(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
+    // Log environment configuration
+    console.log('🔧 Zadarma Config Check:');
+    console.log('   API_KEY:', ZADARMA_CONFIG.API_KEY ? ZADARMA_CONFIG.API_KEY.substring(0, 5) + '...' : 'NOT SET');
+    console.log('   SECRET_KEY:', ZADARMA_CONFIG.SECRET_KEY ? ZADARMA_CONFIG.SECRET_KEY.substring(0, 5) + '...' : 'NOT SET');
+    console.log('   SIP_NUMBER:', ZADARMA_CONFIG.SIP_NUMBER || 'NOT SET');
+    console.log('   BASE_URL:', ZADARMA_CONFIG.BASE_URL);
+
     const { to, from, predicted } = req.body;
 
     if (!to) {
       return res.status(400).json({ error: 'Destination number (to) is required' });
     }
 
+    if (!ZADARMA_CONFIG.API_KEY || !ZADARMA_CONFIG.SECRET_KEY) {
+      console.error('❌ Zadarma credentials not configured');
+      return res.status(500).json({ 
+        error: 'Zadarma API credentials not configured. Please set ZADARMA_API_KEY and ZADARMA_SECRET_KEY in Vercel environment variables.',
+        debug: {
+          apiKey: !!ZADARMA_CONFIG.API_KEY,
+          secretKey: !!ZADARMA_CONFIG.SECRET_KEY,
+          sipNumber: !!ZADARMA_CONFIG.SIP_NUMBER
+        }
+      });
+    }
+
     const params: Record<string, any> = {
-      from: from || ZADARMA_CONFIG.SIP_NUMBER,
+      from: from || ZADARMA_CONFIG.SIP_NUMBER || '',
       to: to
     };
 
@@ -67,20 +86,21 @@ async function handleMakeCall(req: VercelRequest, res: VercelResponse) {
       params.predicted = 'y';
     }
 
-    console.log('📞 Initiating Zadarma callback:', params);
-    console.log('🔐 Using API Key:', ZADARMA_CONFIG.API_KEY.substring(0, 5) + '...');
-    console.log('🔐 Using Secret:', ZADARMA_CONFIG.SECRET_KEY.substring(0, 5) + '...');
+    console.log('📞 Initiating Zadarma callback with params:', params);
 
     const result = await zadarmaRequest('/request/callback/', params, 'GET');
 
-    console.log('📡 Zadarma API result:', result);
+    console.log('📡 Zadarma API result:', JSON.stringify(result));
 
     if (result.status === 'error') {
       console.error('❌ Zadarma API returned error:', result);
-      throw new Error(result.message || 'Zadarma callback request failed');
+      return res.status(400).json({ 
+        error: result.message || 'Zadarma callback request failed',
+        zadarmaResponse: result
+      });
     }
 
-    console.log('✅ Zadarma callback initiated:', result);
+    console.log('✅ Zadarma callback initiated successfully');
 
     res.status(200).json({
       success: true,
@@ -88,9 +108,14 @@ async function handleMakeCall(req: VercelRequest, res: VercelResponse) {
       data: result
     });
   } catch (error: any) {
-    console.error('❌ Zadarma make-call error:', error);
+    console.error('❌ Exception in Zadarma make-call handler:', error);
+    console.error('   Error name:', error.name);
+    console.error('   Error message:', error.message);
+    console.error('   Error stack:', error.stack);
+    
     res.status(500).json({ 
       error: error.message || 'Failed to initiate call',
+      errorType: error.name,
       details: error.toString()
     });
   }

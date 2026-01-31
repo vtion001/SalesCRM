@@ -69,29 +69,52 @@ export async function zadarmaRequest(
   params: Record<string, any> = {},
   httpMethod: 'GET' | 'POST' | 'PUT' | 'DELETE' = 'GET'
 ): Promise<any> {
-  const method = endpoint; // Method is the endpoint path for signature
-  const headers = createZadarmaHeaders(method, params);
-  
-  let url = `${ZADARMA_CONFIG.BASE_URL}${endpoint}`;
-  let body: string | undefined;
+  try {
+    const method = endpoint; // Method is the endpoint path for signature
+    const headers = createZadarmaHeaders(method, params);
+    
+    let url = `${ZADARMA_CONFIG.BASE_URL}${endpoint}`;
+    let body: string | undefined;
 
-  if (httpMethod === 'GET' && Object.keys(params).length > 0) {
-    const queryString = new URLSearchParams(params).toString();
-    url += `?${queryString}`;
-  } else if (httpMethod !== 'GET') {
-    body = new URLSearchParams(params).toString();
+    if (httpMethod === 'GET' && Object.keys(params).length > 0) {
+      const queryString = new URLSearchParams(params).toString();
+      url += `?${queryString}`;
+    } else if (httpMethod !== 'GET') {
+      body = new URLSearchParams(params).toString();
+    }
+
+    console.log('🌐 Zadarma Request:', {
+      method: httpMethod,
+      url,
+      hasBody: !!body
+    });
+
+    const response = await fetch(url, {
+      method: httpMethod,
+      headers,
+      body
+    });
+
+    const responseText = await response.text();
+    console.log('📡 Zadarma Response:', {
+      status: response.status,
+      statusText: response.statusText,
+      body: responseText.substring(0, 500)
+    });
+
+    if (!response.ok) {
+      throw new Error(`Zadarma API error: ${response.status} ${response.statusText} - ${responseText}`);
+    }
+
+    // Parse JSON response
+    try {
+      return JSON.parse(responseText);
+    } catch (e) {
+      console.error('❌ Failed to parse Zadarma response as JSON:', responseText);
+      throw new Error(`Invalid JSON response from Zadarma: ${responseText.substring(0, 100)}`);
+    }
+  } catch (error: any) {
+    console.error('❌ zadarmaRequest exception:', error.message);
+    throw error;
   }
-
-  const response = await fetch(url, {
-    method: httpMethod,
-    headers,
-    body
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Zadarma API error: ${response.status} - ${errorText}`);
-  }
-
-  return response.json();
 }
