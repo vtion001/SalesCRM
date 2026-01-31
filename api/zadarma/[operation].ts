@@ -87,10 +87,27 @@ async function handleMakeCall(req: VercelRequest, res: VercelResponse) {
     }
 
     console.log('📞 Initiating Zadarma callback with params:', params);
+    console.log('   to:', params.to);
+    console.log('   from:', params.from);
+    console.log('   predicted:', params.predicted);
 
-    const result = await zadarmaRequest('/request/callback/', params, 'GET');
+    // Validate that we have at least a 'to' number
+    if (!params.to || typeof params.to !== 'string') {
+      return res.status(400).json({ 
+        error: 'Invalid destination number',
+        received: { to: params.to, type: typeof params.to }
+      });
+    }
 
-    console.log('📡 Zadarma API result:', JSON.stringify(result));
+    let result;
+    try {
+      result = await zadarmaRequest('/request/callback/', params, 'GET');
+    } catch (apiError: any) {
+      console.error('❌ zadarmaRequest threw error:', apiError.message);
+      throw apiError;
+    }
+
+    console.log('📡 Zadarma API result:', JSON.stringify(result).substring(0, 500));
 
     if (result.status === 'error') {
       console.error('❌ Zadarma API returned error:', result);
