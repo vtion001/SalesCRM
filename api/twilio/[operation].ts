@@ -49,29 +49,53 @@ async function handleToken(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const identity = req.body.identity || `user_${Date.now()}`;
+    const accountSid = process.env.TWILIO_ACCOUNT_SID?.trim();
+    const apiKey = process.env.TWILIO_API_KEY?.trim();
+    const apiSecret = process.env.TWILIO_API_SECRET?.trim();
+    const twimlAppSid = process.env.TWILIO_TWIML_APP_SID?.trim();
 
-    const token = new AccessToken(
-      process.env.TWILIO_ACCOUNT_SID!,
-      process.env.TWILIO_API_KEY!,
-      process.env.TWILIO_API_SECRET!,
-      { identity }
-    );
+    if (!accountSid || !twimlAppSid) {
+      console.error('❌ Missing Twilio credentials:', {
+        accountSid: !!accountSid,
+        twimlAppSid: !!twimlAppSid,
+        apiKey: !!apiKey,
+        apiSecret: !!apiSecret
+      });
+      return res.status(500).json({ error: 'Twilio credentials not configured' });
+    }
+
+    const identity = (req.body.identity || `user_${Date.now()}`).replace(/[^a-zA-Z0-9_]/g, '_');
+
+    console.log('🔐 Generating token for identity:', identity);
+
+    // Use API Key/Secret if available, otherwise use Account SID as fallback
+    let token: typeof AccessToken.prototype;
+    if (apiKey && apiSecret) {
+      token = new AccessToken(accountSid, apiKey, apiSecret, { identity });
+      console.log('✅ Using API Key/Secret method');
+    } else {
+      token = new AccessToken(accountSid, accountSid, process.env.TWILIO_AUTH_TOKEN!, { identity });
+      console.log('✅ Using Account SID fallback method');
+    }
 
     const voiceGrant = new VoiceGrant({
-      outgoingApplicationSid: process.env.TWILIO_TWIML_APP_SID!,
+      outgoingApplicationSid: twimlAppSid,
       incomingAllow: true,
     });
 
     token.addGrant(voiceGrant);
 
+    const jwt = token.toJwt();
+    console.log('✅ Token generated successfully');
+
     res.status(200).json({
       identity,
-      token: token.toJwt(),
+      token: jwt,
+      expiresIn: 3600
     });
-  } catch (error) {
-    console.error('Error generating token:', error);
-    res.status(500).json({ error: 'Failed to generate token' });
+  } catch (error: any) {
+    console.error('❌ Error generating token:', error.message);
+    res.status(500).json({ error: error.message || 'Failed to generate token' });
   }
 }
 
