@@ -49,34 +49,61 @@ async function handleToken(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
+    // Log all environment variables for debugging
+    console.log('🔧 Twilio Env Vars Check:');
+    console.log('   TWILIO_ACCOUNT_SID:', process.env.TWILIO_ACCOUNT_SID ? `${process.env.TWILIO_ACCOUNT_SID.substring(0, 5)}...` : 'NOT SET');
+    console.log('   TWILIO_API_KEY:', process.env.TWILIO_API_KEY ? `${process.env.TWILIO_API_KEY.substring(0, 5)}...` : 'NOT SET');
+    console.log('   TWILIO_API_SECRET:', process.env.TWILIO_API_SECRET ? `${process.env.TWILIO_API_SECRET.substring(0, 5)}...` : 'NOT SET');
+    console.log('   TWILIO_TWIML_APP_SID:', process.env.TWILIO_TWIML_APP_SID ? `${process.env.TWILIO_TWIML_APP_SID.substring(0, 5)}...` : 'NOT SET');
+    console.log('   TWILIO_AUTH_TOKEN:', process.env.TWILIO_AUTH_TOKEN ? `${process.env.TWILIO_AUTH_TOKEN.substring(0, 5)}...` : 'NOT SET');
+
     const accountSid = process.env.TWILIO_ACCOUNT_SID?.trim();
     const apiKey = process.env.TWILIO_API_KEY?.trim();
     const apiSecret = process.env.TWILIO_API_SECRET?.trim();
     const twimlAppSid = process.env.TWILIO_TWIML_APP_SID?.trim();
 
-    if (!accountSid || !twimlAppSid) {
-      console.error('❌ Missing Twilio credentials:', {
-        accountSid: !!accountSid,
-        twimlAppSid: !!twimlAppSid,
-        apiKey: !!apiKey,
-        apiSecret: !!apiSecret
+    // Validate required credentials
+    if (!accountSid) {
+      console.error('❌ TWILIO_ACCOUNT_SID is not set in environment variables');
+      return res.status(500).json({ 
+        error: 'TWILIO_ACCOUNT_SID not configured. Please add it to Vercel environment variables.',
+        missingVars: { accountSid: true }
       });
-      return res.status(500).json({ error: 'Twilio credentials not configured' });
+    }
+
+    if (!twimlAppSid) {
+      console.error('❌ TWILIO_TWIML_APP_SID is not set in environment variables');
+      return res.status(500).json({ 
+        error: 'TWILIO_TWIML_APP_SID not configured. Please add it to Vercel environment variables.',
+        missingVars: { twimlAppSid: true }
+      });
+    }
+
+    // API Key/Secret are REQUIRED for valid JWT signing
+    if (!apiKey || !apiSecret) {
+      console.error('❌ TWILIO_API_KEY and TWILIO_API_SECRET are REQUIRED for token generation');
+      console.error('   API Key set:', !!apiKey);
+      console.error('   API Secret set:', !!apiSecret);
+      console.error('   NOTE: Auth Token cannot be used to sign JWT tokens');
+      
+      return res.status(500).json({ 
+        error: 'TWILIO_API_KEY and TWILIO_API_SECRET are required. Please configure them in Vercel environment variables. Auth Token cannot be used to sign JWT tokens.',
+        debug: {
+          accountSid: !!accountSid,
+          apiKey: !!apiKey,
+          apiSecret: !!apiSecret,
+          twimlAppSid: !!twimlAppSid,
+          authToken: !!process.env.TWILIO_AUTH_TOKEN,
+          message: 'Get API Key from: https://www.twilio.com/console/keys-credentials'
+        }
+      });
     }
 
     const identity = (req.body.identity || `user_${Date.now()}`).replace(/[^a-zA-Z0-9_]/g, '_');
-
     console.log('🔐 Generating token for identity:', identity);
 
-    // Try API Key/Secret first, fallback to Account SID auth if not available
-    let token: typeof AccessToken.prototype;
-    if (apiKey && apiSecret) {
-      console.log('✅ Using API Key/Secret method');
-      token = new AccessToken(accountSid, apiKey, apiSecret, { identity });
-    } else {
-      console.log('⚠️  API Key/Secret not found, using Account SID fallback method');
-      token = new AccessToken(accountSid, accountSid, process.env.TWILIO_AUTH_TOKEN!, { identity });
-    }
+    // Create token with API Key/Secret (required for valid signing)
+    const token = new AccessToken(accountSid, apiKey, apiSecret, { identity });
 
     const voiceGrant = new VoiceGrant({
       outgoingApplicationSid: twimlAppSid,
@@ -86,16 +113,22 @@ async function handleToken(req: VercelRequest, res: VercelResponse) {
     token.addGrant(voiceGrant);
 
     const jwt = token.toJwt();
-    console.log('✅ Token generated successfully');
+    console.log('✅ Token generated successfully with API Key/Secret method');
+    console.log('   Token format: valid JWT (', jwt.split('.').length, 'parts)');
 
     res.status(200).json({
       identity,
       token: jwt,
-      expiresIn: 3600
+      expiresIn: 3600,
+      method: 'API Key/Secret'
     });
   } catch (error: any) {
     console.error('❌ Error generating token:', error.message);
-    res.status(500).json({ error: error.message || 'Failed to generate token' });
+    console.error('   Full error:', error);
+    res.status(500).json({ 
+      error: error.message || 'Failed to generate token',
+      errorDetails: error.toString()
+    });
   }
 }
 
