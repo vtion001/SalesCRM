@@ -72,34 +72,51 @@ export const Dialer: React.FC<DialerProps> = ({ targetLead, onLogActivity, activ
       try {
         setDeviceError(null);
         setIsDeviceReady(false);
-        const userId = 'user_default'; 
-        const token = await getAccessToken(userId);
-        const device = await initializeTwilioDevice(token, handleIncomingCall);
         
-        const readyPromise = new Promise<void>((resolve, reject) => {
-          let hasResolved = false;
-          const readyTimeout = setTimeout(() => { if (!hasResolved) { hasResolved = true; resolve(); } }, 10000);
-          const onReady = () => { if (!hasResolved) { clearTimeout(readyTimeout); hasResolved = true; resolve(); } };
-          const onError = (error: any) => { if (!hasResolved) { clearTimeout(readyTimeout); hasResolved = true; reject(new Error(error?.message || 'Device error')); } };
-          device.on('registered', onReady);
-          device.on('error', onError);
-          if (device.state === 'registered') onReady();
-        });
+        // Only initialize the selected provider, not both
+        if (provider === 'twilio') {
+          console.log('📞 Initializing Twilio provider...');
+          const userId = 'user_default'; 
+          const token = await getAccessToken(userId);
+          const device = await initializeTwilioDevice(token, handleIncomingCall);
+          
+          const readyPromise = new Promise<void>((resolve, reject) => {
+            let hasResolved = false;
+            const readyTimeout = setTimeout(() => { if (!hasResolved) { hasResolved = true; resolve(); } }, 10000);
+            const onReady = () => { if (!hasResolved) { clearTimeout(readyTimeout); hasResolved = true; resolve(); } };
+            const onError = (error: any) => { if (!hasResolved) { clearTimeout(readyTimeout); hasResolved = true; reject(new Error(error?.message || 'Device error')); } };
+            device.on('registered', onReady);
+            device.on('error', onError);
+            if (device.state === 'registered') onReady();
+          });
 
-        await readyPromise;
-        setTwilioDevice(device);
-        setIsDeviceReady(true);
+          await readyPromise;
+          setTwilioDevice(device);
+          setIsDeviceReady(true);
+          console.log('✅ Twilio provider ready');
+        } else if (provider === 'zadarma') {
+          console.log('📞 Initializing Zadarma provider...');
+          // Zadarma uses callback API - no device initialization needed
+          // It will call our webhook, so just mark as ready
+          setIsDeviceReady(true);
+          console.log('✅ Zadarma provider ready');
+        }
       } catch (err: any) {
-        setDeviceError(err?.message || 'Failed to initialize Twilio Device');
+        console.error('❌ Device initialization error:', err);
+        setDeviceError(err?.message || `Failed to initialize ${provider} provider`);
+        setIsDeviceReady(false);
       }
     };
+    
+    // Only initialize when provider changes
     initDevice();
+    
     return () => {
-      if (twilioDevice) {
+      if (provider === 'twilio' && twilioDevice) {
         try { twilioDevice.disconnectAll?.(); twilioDevice.destroy?.(); } catch (err) { console.error(err); }
       }
     };
-  }, []);
+  }, [provider]);
 
   useEffect(() => {
     if (targetLead) setPhoneNumber(targetLead.phone);
@@ -273,7 +290,7 @@ export const Dialer: React.FC<DialerProps> = ({ targetLead, onLogActivity, activ
   const handleKeyPress = (num: string) => setPhoneNumber(prev => prev + num);
 
   const handleMakeCall = async () => {
-    if (!phoneNumber || isCallInProgress || !isDeviceReady || !twilioDevice) return;
+    if (!phoneNumber || isCallInProgress || !isDeviceReady) return;
     setError(null);
     
     // Import validatePhoneNumber dynamically
@@ -292,6 +309,12 @@ export const Dialer: React.FC<DialerProps> = ({ targetLead, onLogActivity, activ
       return;
     }
     
+    // Check provider-specific requirements
+    if (provider === 'twilio' && !twilioDevice) {
+      setError('Twilio device not ready');
+      return;
+    }
+    
     setIsCallInProgress(true);
     setCallDuration(0);
     setCallStatus('Connecting...');
@@ -302,11 +325,11 @@ export const Dialer: React.FC<DialerProps> = ({ targetLead, onLogActivity, activ
       const { data: user } = await supabase.auth.getUser();
       if (user?.user) {
         const dbRecord = await addCallRecord({
-          lead_id: targetLead?.id || null, // Use null instead of empty string
+          lead_id: targetLead?.id || null,
           phone_number: validation.formattedNumber,
           call_type: 'outgoing',
           duration_seconds: 0,
-          notes: 'Dialing...',
+          notes: `Dialing via ${provider}...`,
           user_id: user.user.id
         });
         outgoingCallHistoryId = dbRecord?.id;
@@ -314,60 +337,71 @@ export const Dialer: React.FC<DialerProps> = ({ targetLead, onLogActivity, activ
       }
     } catch (err) {
       console.error('❌ Failed to log outgoing call:', err);
-      // Don't block the call if logging fails
     }
     
     try {
-      // Use validated/formatted number
-      const params = { To: validation.formattedNumber };
-      console.log('📞 Initiating call to:', validation.formattedNumber);
-      console.log('📡 Using Twilio device:', twilioDevice?.state);
-      
-      const call = await twilioDevice.connect({ params });
-      setCurrentCall(call);
-      
-      // Store the call history ID for later updates
-      if (outgoingCallHistoryId) {
-        (call as any)._callHistoryId = outgoingCallHistoryId;
-      }
-      
-      call.on('accept', () => {
-         console.log('✅ Call accepted');
-         setCallStatus(`In call`);
-         callTimerRef.current = setInterval(() => setCallDuration((prev) => prev + 1), 1000);
-      });
-      
-      call.on('disconnect', () => {
-        console.log('📴 Call disconnected');
-        handleEndCall();
-      });
-      
-      call.on('error', (error: any) => { 
-        // Enhanced error handling for specific error codes
-        let errorMsg = error.message || 'Call failed';
-        console.error('❌ Call error:', error);
-        console.error('   Error code:', error.code);
-        console.error('   Error message:', error.message);
+      if (provider === 'twilio') {
+        // Twilio: Use device.connect()
+        const params = { To: validation.formattedNumber };
+        console.log('📞 Initiating Twilio call to:', validation.formattedNumber);
+        console.log('📡 Using Twilio device:', twilioDevice?.state);
         
-        // Check for error code 31005 (connection error)
-        if (error.code === 31005 || errorMsg.includes('31005')) {
-          errorMsg = '⚠️ Call rejected by carrier. This may indicate: 1) Number requires premium permissions, 2) Invalid number format, or 3) Carrier restriction. Check Twilio console logs for details.';
-        } else if (error.code === 31003 || error.code === 31000) {
-          errorMsg = '⚠️ Permission denied: Your Twilio account cannot call this number type.';
+        const call = await twilioDevice!.connect({ params });
+        setCurrentCall(call);
+        
+        if (outgoingCallHistoryId) {
+          (call as any)._callHistoryId = outgoingCallHistoryId;
         }
         
-        setError(errorMsg);
-        handleEndCall();
-      });
+        call.on('accept', () => {
+          console.log('✅ Twilio call accepted');
+          setCallStatus(`In call`);
+          callTimerRef.current = setInterval(() => setCallDuration((prev) => prev + 1), 1000);
+        });
+        
+        call.on('disconnect', () => {
+          console.log('📴 Twilio call disconnected');
+          handleEndCall();
+        });
+        
+        call.on('error', (error: any) => {
+          let errorMsg = error.message || 'Call failed';
+          console.error('❌ Twilio call error:', error);
+          if (error.code === 31005 || errorMsg.includes('31005')) {
+            errorMsg = '⚠️ Call rejected by carrier. Check Twilio console logs.';
+          } else if (error.code === 31003 || error.code === 31000) {
+            errorMsg = '⚠️ Permission denied for this number type.';
+          }
+          setError(errorMsg);
+          handleEndCall();
+        });
+      } else if (provider === 'zadarma') {
+        // Zadarma: Use callback API
+        console.log('📞 Initiating Zadarma call to:', validation.formattedNumber);
+        
+        const response = await fetch('/api/zadarma/make-call', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            to: validation.formattedNumber,
+            predicted: true
+          })
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to initiate Zadarma call');
+        }
+        
+        const data = await response.json();
+        console.log('✅ Zadarma call initiated:', data);
+        
+        setCallStatus('Zadarma connecting...');
+        callTimerRef.current = setInterval(() => setCallDuration((prev) => prev + 1), 1000);
+      }
     } catch (err: any) {
       let errorMsg = err.message || 'Failed to initiate call';
       console.error('❌ Exception during call initiation:', err);
-      
-      // Handle connection errors
-      if (err.code === 31005 || errorMsg.includes('31005')) {
-        errorMsg = '⚠️ Connection failed: Check Twilio console for detailed error logs. This may indicate TwiML webhook issues or carrier restrictions.';
-      }
-      
       setError(errorMsg);
       setCallStatus(null);
       setIsCallInProgress(false);
