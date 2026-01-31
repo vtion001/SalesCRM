@@ -20,6 +20,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return;
   }
 
+  // Zadarma webhook verification - echo back zd_echo parameter
+  if (req.method === 'GET' && req.query.zd_echo) {
+    console.log('✅ Zadarma webhook verification:', req.query.zd_echo);
+    return res.status(200).send(req.query.zd_echo as string);
+  }
+
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
