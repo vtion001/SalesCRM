@@ -3,82 +3,114 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { zadarmaRequest, ZADARMA_CONFIG } from './config';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // CORS headers
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
-  res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version');
-
-  if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
-  }
-
-  const { operation } = req.query;
-  const op = Array.isArray(operation) ? operation[0] : operation;
-
+  console.log('🚀 Zadarma handler invoked');
+  console.log('   Method:', req.method);
+  console.log('   Query:', req.query);
+  
   try {
+    // CORS headers
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
+    res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version');
+
+    if (req.method === 'OPTIONS') {
+      res.status(200).end();
+      return;
+    }
+
+    const { operation } = req.query;
+    const op = Array.isArray(operation) ? operation[0] : operation;
+
+    console.log('📋 Operation:', op);
+
     // Route to appropriate handler based on operation
     switch (op) {
       case 'make-call':
-        return handleMakeCall(req, res);
+        console.log('📞 Routing to make-call handler');
+        return await handleMakeCall(req, res);
       case 'call-logs':
-        return handleCallLogs(req, res);
+        console.log('📊 Routing to call-logs handler');
+        return await handleCallLogs(req, res);
       case 'send-sms':
-        return handleSendSMS(req, res);
+        console.log('💬 Routing to send-sms handler');
+        return await handleSendSMS(req, res);
       case 'hangup-call':
-        return handleHangupCall(req, res);
+        console.log('🔴 Routing to hangup-call handler');
+        return await handleHangupCall(req, res);
       case 'reject-call':
-        return handleRejectCall(req, res);
+        console.log('🚫 Routing to reject-call handler');
+        return await handleRejectCall(req, res);
       case 'validate-number':
-        return handleValidateNumber(req, res);
+        console.log('✔️ Routing to validate-number handler');
+        return await handleValidateNumber(req, res);
       case 'initialize':
-        return handleInitialize(req, res);
+        console.log('🚀 Routing to initialize handler');
+        return await handleInitialize(req, res);
       default:
+        console.log('❌ Unknown operation:', op);
         return res.status(404).json({ error: `Unknown operation: ${op}` });
     }
-  } catch (error) {
-    console.error('❌ Zadarma API error:', error);
-    res.status(500).json({ 
-      error: error instanceof Error ? error.message : 'Internal server error' 
-    });
+  } catch (error: any) {
+    console.error('❌ Top-level handler error:', error);
+    console.error('   Error name:', error?.name);
+    console.error('   Error message:', error?.message);
+    console.error('   Error stack:', error?.stack?.substring(0, 1000));
+    
+    // Ensure we always send a response
+    if (!res.headersSent) {
+      res.status(500).json({ 
+        error: error?.message || 'Internal server error',
+        errorType: error?.name,
+        operationId: Date.now()
+      });
+    }
   }
 }
 
 // Handler: Make Call (callback API)
 async function handleMakeCall(req: VercelRequest, res: VercelResponse) {
+  console.log('📞 handleMakeCall called');
+  
   if (req.method !== 'POST') {
+    console.log('❌ Wrong method, expected POST got:', req.method);
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
-    // Log environment configuration
-    console.log('🔧 Zadarma Config Check:');
-    console.log('   API_KEY:', ZADARMA_CONFIG.API_KEY ? ZADARMA_CONFIG.API_KEY.substring(0, 5) + '...' : 'NOT SET');
-    console.log('   SECRET_KEY:', ZADARMA_CONFIG.SECRET_KEY ? ZADARMA_CONFIG.SECRET_KEY.substring(0, 5) + '...' : 'NOT SET');
-    console.log('   SIP_NUMBER:', ZADARMA_CONFIG.SIP_NUMBER || 'NOT SET');
-    console.log('   BASE_URL:', ZADARMA_CONFIG.BASE_URL);
-
+    console.log('📦 Request body:', JSON.stringify(req.body).substring(0, 200));
+    
     const { to, from, predicted } = req.body;
 
     if (!to) {
+      console.log('❌ Missing destination number');
       return res.status(400).json({ error: 'Destination number (to) is required' });
     }
+
+    console.log('✅ Config check starting...');
+    console.log('   API_KEY exists:', !!ZADARMA_CONFIG.API_KEY);
+    console.log('   SECRET_KEY exists:', !!ZADARMA_CONFIG.SECRET_KEY);
+    console.log('   SIP_NUMBER:', ZADARMA_CONFIG.SIP_NUMBER || '(empty)');
 
     if (!ZADARMA_CONFIG.API_KEY || !ZADARMA_CONFIG.SECRET_KEY) {
       console.error('❌ Zadarma credentials not configured');
       return res.status(500).json({ 
-        error: 'Zadarma API credentials not configured. Please set ZADARMA_API_KEY and ZADARMA_SECRET_KEY in Vercel environment variables.',
+        error: 'Zadarma API credentials not configured',
         debug: {
           apiKey: !!ZADARMA_CONFIG.API_KEY,
-          secretKey: !!ZADARMA_CONFIG.SECRET_KEY,
-          sipNumber: !!ZADARMA_CONFIG.SIP_NUMBER
+          secretKey: !!ZADARMA_CONFIG.SECRET_KEY
         }
       });
     }
 
+    const fromNumber = from || ZADARMA_CONFIG.SIP_NUMBER || '';
+    console.log('✅ Building params:');
+    console.log('   to:', to);
+    console.log('   from:', fromNumber);
+    console.log('   predicted:', predicted);
+
     const params: Record<string, any> = {
-      from: from || ZADARMA_CONFIG.SIP_NUMBER || '',
+      from: fromNumber,
       to: to
     };
 
@@ -86,55 +118,35 @@ async function handleMakeCall(req: VercelRequest, res: VercelResponse) {
       params.predicted = 'y';
     }
 
-    console.log('📞 Initiating Zadarma callback with params:', params);
-    console.log('   to:', params.to);
-    console.log('   from:', params.from);
-    console.log('   predicted:', params.predicted);
+    console.log('📞 Calling zadarmaRequest...');
+    const result = await zadarmaRequest('/request/callback/', params, 'GET');
+    
+    console.log('✅ zadarmaRequest returned:', JSON.stringify(result).substring(0, 300));
 
-    // Validate that we have at least a 'to' number
-    if (!params.to || typeof params.to !== 'string') {
-      return res.status(400).json({ 
-        error: 'Invalid destination number',
-        received: { to: params.to, type: typeof params.to }
-      });
-    }
-
-    let result;
-    try {
-      result = await zadarmaRequest('/request/callback/', params, 'GET');
-    } catch (apiError: any) {
-      console.error('❌ zadarmaRequest threw error:', apiError.message);
-      throw apiError;
-    }
-
-    console.log('📡 Zadarma API result:', JSON.stringify(result).substring(0, 500));
-
-    if (result.status === 'error') {
-      console.error('❌ Zadarma API returned error:', result);
+    if (result?.status === 'error') {
+      console.error('❌ Zadarma error response:', result);
       return res.status(400).json({ 
         error: result.message || 'Zadarma callback request failed',
-        zadarmaResponse: result
+        zadarmaError: result
       });
     }
 
-    console.log('✅ Zadarma callback initiated successfully');
-
+    console.log('✅ Call initiated successfully');
     res.status(200).json({
       success: true,
       message: 'Call initiated',
       data: result
     });
   } catch (error: any) {
-    console.error('❌ Exception in Zadarma make-call handler:', error);
-    console.error('   Error name:', error.name);
-    console.error('   Error message:', error.message);
-    console.error('   Error stack:', error.stack);
+    console.error('❌ Exception in handleMakeCall:', error?.message);
+    console.error('   Stack:', error?.stack?.substring(0, 500));
     
-    res.status(500).json({ 
-      error: error.message || 'Failed to initiate call',
-      errorType: error.name,
-      details: error.toString()
-    });
+    if (!res.headersSent) {
+      res.status(500).json({ 
+        error: error?.message || 'Failed to initiate call',
+        timestamp: Date.now()
+      });
+    }
   }
 }
 
