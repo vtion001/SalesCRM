@@ -9,6 +9,8 @@ import { useCallHistory } from '../hooks/useCallHistory';
 import { useLeads } from '../hooks/useLeads';
 import { useContacts } from '../hooks/useContacts';
 import { supabase } from '../services/supabaseClient';
+import { useTelephony } from '../context';
+import { TelephonyProviderBadge, ProviderSwitcher } from './Providers';
 
 interface DialerProps {
   targetLead: Lead | undefined;
@@ -51,6 +53,7 @@ export const Dialer: React.FC<DialerProps> = ({ targetLead, onLogActivity, activ
   const { callHistory, addCallRecord, updateCallRecord } = useCallHistory(targetLead?.id);
   const { leads } = useLeads();
   const { contacts } = useContacts();
+  const { provider, isReady: providerReady, switchProvider } = useTelephony();
   
   const activeTab = propsActiveTab || internalActiveTab;
   const setActiveTab = onTabChange || setInternalActiveTab;
@@ -598,14 +601,18 @@ export const Dialer: React.FC<DialerProps> = ({ targetLead, onLogActivity, activ
 
       <div className="h-16 border-t border-slate-50 flex items-center justify-between px-8 bg-slate-50/30 flex-shrink-0">
         <div className="flex items-center gap-3">
-          <div className={`w-2.5 h-2.5 rounded-full border-2 border-white shadow-sm ${isDeviceReady ? 'bg-emerald-500' : 'bg-slate-300'}`}></div>
-          <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
-            {isDeviceReady ? 'Client Ready' : 'Connecting...'}
-          </span>
+          <TelephonyProviderBadge
+            provider={provider}
+            isOnline={true}
+            isReady={isDeviceReady && providerReady}
+          />
         </div>
         <div className="flex items-center gap-4">
-           <Headphones size={14} className="text-slate-300" />
-           <Volume2 size={14} className="text-slate-300" />
+          <ProviderSwitcher
+            currentProvider={provider}
+            onSwitch={switchProvider}
+            isCallActive={isCallInProgress}
+          />
         </div>
       </div>
     </div>

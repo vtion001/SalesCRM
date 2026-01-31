@@ -23,6 +23,7 @@ import { useContacts } from './hooks/useContacts';
 import { useDeals } from './hooks/useDeals';
 import { useActivities } from './hooks/useActivities';
 import { useNotes } from './hooks/useNotes';
+import { TelephonyProviderWrapper } from './context';
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
@@ -260,6 +261,7 @@ export default function App() {
   if (!isAuthenticated) return <Auth />;
 
   return (
+    <TelephonyProviderWrapper>
     <div className="flex h-screen w-full bg-white text-slate-900 font-sans selection:bg-indigo-100 selection:text-indigo-900">
       <Toaster position="top-right" toastOptions={{
         className: 'font-bold text-sm rounded-2xl border border-slate-100 shadow-2xl',
@@ -371,6 +373,7 @@ export default function App() {
       <SupabaseHealthIndicator />
       <Toaster position="top-right" />
     </div>
+    </TelephonyProviderWrapper>
   );
 }
 

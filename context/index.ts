@@ -1,1 +1,1 @@
-export { AppContext, AppContextProvider, useAppContext, type AppContextType } from './AppContext';
+export { TelephonyProviderWrapper, useTelephony } from './TelephonyContext';
