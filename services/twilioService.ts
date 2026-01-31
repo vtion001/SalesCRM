@@ -185,9 +185,10 @@ export const getAccessToken = async (identity: string, retryCount = 0): Promise<
     console.log('🔐 Requesting token for identity:', identity);
     
     // Use relative API path - works on Vercel domain
-    const response = await fetch(`${API_BASE}/api/twilio/token?identity=${encodeURIComponent(identity)}`, {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
+    const response = await fetch(`${API_BASE}/api/twilio/token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ identity })
     });
 
     if (!response.ok) {
