@@ -349,11 +349,7 @@ export const initializeTwilioDevice = async (
       codecPreferences: [Call.Codec.Opus, Call.Codec.PCMU],
       fakeLocalDTMF: true,
       enableRingingState: true,
-      allowIncomingWhileBusy: false,
-      // maxAverageBitrate is not a direct option in v2 DeviceOptions root, 
-      // often handled via connection constraints or it's legacy. 
-      // We will omit it for standard v2 setup unless specifically required.
-      logLevel: 'debug' as const
+      allowIncomingWhileBusy: false
     };
 
     const device = new Device(token, options);
