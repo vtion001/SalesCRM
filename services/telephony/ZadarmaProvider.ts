@@ -33,7 +33,7 @@ export class ZadarmaProvider implements ITelephonyProvider {
     try {
       // Initialize Zadarma device using callback method
       // This will use Supabase realtime subscriptions for incoming call notifications
-      const response = await fetch('/api/zadarma/?operation=initialize', {
+      const response = await fetch('/api/zadarma/initialize', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId })
@@ -118,7 +118,7 @@ export class ZadarmaProvider implements ITelephonyProvider {
   ): Promise<CallInstance> {
     try {
       // Use Zadarma callback API to make call
-      const response = await fetch('/api/zadarma/?operation=make-call', {
+      const response = await fetch('/api/zadarma/make-call', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -160,7 +160,7 @@ export class ZadarmaProvider implements ITelephonyProvider {
       },
       
       async reject() {
-        await fetch('/api/zadarma/?operation=reject-call', {
+        await fetch('/api/zadarma/reject-call', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ callId })
@@ -168,7 +168,7 @@ export class ZadarmaProvider implements ITelephonyProvider {
       },
       
       async disconnect() {
-        await fetch('/api/zadarma/?operation=hangup-call', {
+        await fetch('/api/zadarma/hangup-call', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ callId })
@@ -218,7 +218,7 @@ export class ZadarmaProvider implements ITelephonyProvider {
 
   async sendSMS(to: string, message: string, from?: string): Promise<SMSResponse> {
     try {
-      const response = await fetch('/api/zadarma/?operation=send-sms', {
+      const response = await fetch('/api/zadarma/send-sms', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ to, message, from })
@@ -271,7 +271,7 @@ export class ZadarmaProvider implements ITelephonyProvider {
         queryParams.append('skip', params.skip.toString());
       }
 
-      const response = await fetch(`/api/zadarma/?operation=call-logs&${queryParams}`);
+      const response = await fetch(`/api/zadarma/call-logs?${queryParams}`);
       
       if (!response.ok) {
         throw new Error(`Failed to fetch call logs: ${response.statusText}`);
@@ -325,7 +325,7 @@ export class ZadarmaProvider implements ITelephonyProvider {
 
   async validatePhoneNumber(phoneNumber: string): Promise<NumberValidation> {
     try {
-      const response = await fetch('/api/zadarma/?operation=validate-number', {
+      const response = await fetch('/api/zadarma/validate-number', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phoneNumber })
