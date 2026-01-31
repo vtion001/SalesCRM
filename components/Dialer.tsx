@@ -388,12 +388,32 @@ export const Dialer: React.FC<DialerProps> = ({ targetLead, onLogActivity, activ
           })
         });
         
+        // Get response text first to handle non-JSON responses
+        const responseText = await response.text();
+        console.log('📡 Zadarma API response status:', response.status);
+        console.log('📡 Zadarma API response:', responseText.substring(0, 200));
+        
         if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Failed to initiate Zadarma call');
+          // Try to parse as JSON, fallback to text error
+          let errorMessage = `Failed to initiate Zadarma call (${response.status})`;
+          try {
+            const errorData = JSON.parse(responseText);
+            errorMessage = errorData.error || errorMessage;
+          } catch {
+            errorMessage = responseText || errorMessage;
+          }
+          throw new Error(errorMessage);
         }
         
-        const data = await response.json();
+        // Parse successful response
+        let data;
+        try {
+          data = JSON.parse(responseText);
+        } catch (e) {
+          console.error('❌ Failed to parse Zadarma response as JSON:', responseText);
+          throw new Error('Invalid response from Zadarma API: ' + responseText.substring(0, 100));
+        }
+        
         console.log('✅ Zadarma call initiated:', data);
         
         setCallStatus('Zadarma connecting...');

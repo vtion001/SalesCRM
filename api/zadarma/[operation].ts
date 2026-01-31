@@ -51,36 +51,49 @@ async function handleMakeCall(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { to, from, predicted } = req.body;
+  try {
+    const { to, from, predicted } = req.body;
 
-  if (!to) {
-    return res.status(400).json({ error: 'Destination number (to) is required' });
+    if (!to) {
+      return res.status(400).json({ error: 'Destination number (to) is required' });
+    }
+
+    const params: Record<string, any> = {
+      from: from || ZADARMA_CONFIG.SIP_NUMBER,
+      to: to
+    };
+
+    if (predicted) {
+      params.predicted = 'y';
+    }
+
+    console.log('📞 Initiating Zadarma callback:', params);
+    console.log('🔐 Using API Key:', ZADARMA_CONFIG.API_KEY.substring(0, 5) + '...');
+    console.log('🔐 Using Secret:', ZADARMA_CONFIG.SECRET_KEY.substring(0, 5) + '...');
+
+    const result = await zadarmaRequest('/request/callback/', params, 'GET');
+
+    console.log('📡 Zadarma API result:', result);
+
+    if (result.status === 'error') {
+      console.error('❌ Zadarma API returned error:', result);
+      throw new Error(result.message || 'Zadarma callback request failed');
+    }
+
+    console.log('✅ Zadarma callback initiated:', result);
+
+    res.status(200).json({
+      success: true,
+      message: 'Call initiated',
+      data: result
+    });
+  } catch (error: any) {
+    console.error('❌ Zadarma make-call error:', error);
+    res.status(500).json({ 
+      error: error.message || 'Failed to initiate call',
+      details: error.toString()
+    });
   }
-
-  const params: Record<string, any> = {
-    from: from || ZADARMA_CONFIG.SIP_NUMBER,
-    to: to
-  };
-
-  if (predicted) {
-    params.predicted = 'y';
-  }
-
-  console.log('📞 Initiating Zadarma callback:', params);
-
-  const result = await zadarmaRequest('/request/callback/', params, 'GET');
-
-  if (result.status === 'error') {
-    throw new Error(result.message || 'Zadarma callback request failed');
-  }
-
-  console.log('✅ Zadarma callback initiated:', result);
-
-  res.status(200).json({
-    success: true,
-    message: 'Call initiated',
-    data: result
-  });
 }
 
 // Handler: Get Call Logs
