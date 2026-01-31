@@ -68,28 +68,15 @@ async function handleToken(req: VercelRequest, res: VercelResponse) {
 
     console.log('🔐 Generating token for identity:', identity);
 
-    // AccessToken requires API Key/Secret for signing
-    // These MUST be set for token generation to work
-    if (!apiKey || !apiSecret) {
-      console.error('❌ TWILIO_API_KEY and TWILIO_API_SECRET are required for token generation');
-      console.error('   API Key available:', !!apiKey);
-      console.error('   API Secret available:', !!apiSecret);
-      return res.status(500).json({ 
-        error: 'Twilio API Key and Secret are required. Please configure TWILIO_API_KEY and TWILIO_API_SECRET environment variables in Vercel.',
-        debug: {
-          accountSid: !!accountSid,
-          apiKey: !!apiKey,
-          apiSecret: !!apiSecret,
-          twimlAppSid: !!twimlAppSid
-        }
-      });
+    // Try API Key/Secret first, fallback to Account SID auth if not available
+    let token: typeof AccessToken.prototype;
+    if (apiKey && apiSecret) {
+      console.log('✅ Using API Key/Secret method');
+      token = new AccessToken(accountSid, apiKey, apiSecret, { identity });
+    } else {
+      console.log('⚠️  API Key/Secret not found, using Account SID fallback method');
+      token = new AccessToken(accountSid, accountSid, process.env.TWILIO_AUTH_TOKEN!, { identity });
     }
-
-    console.log('🔐 Generating token for identity:', identity);
-
-    // Create AccessToken with API Key/Secret
-    const token = new AccessToken(accountSid, apiKey, apiSecret, { identity });
-    console.log('✅ Using API Key/Secret method');
 
     const voiceGrant = new VoiceGrant({
       outgoingApplicationSid: twimlAppSid,
