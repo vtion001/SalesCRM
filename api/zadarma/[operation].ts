@@ -35,9 +35,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       case 'test-auth':
         console.log('🧪 Routing to test-auth handler');
         return await handleTestAuth(req, res);
-      case 'webrtc-key':
-        console.log('🔑 Routing to webrtc-key handler');
-        return await handleWebRTCKey(req, res);
+      // webrtc-key is now a separate file: /api/zadarma/webrtc-key.ts
       case 'make-call':
         console.log('📞 Routing to make-call handler');
         return await handleMakeCall(req, res);

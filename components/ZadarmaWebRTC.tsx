@@ -26,15 +26,30 @@ export const ZadarmaWebRTC: React.FC<ZadarmaWebRTCProps> = ({ sipLogin, onReady,
         console.log('🔑 Fetching WebRTC key...');
         setStatus('loading');
 
-        // Get WebRTC key from backend
+        // Get WebRTC key from dedicated endpoint (not the router)
         const params = new URLSearchParams();
         if (sipLogin) params.set('sip_login', sipLogin);
 
-        const response = await fetch(`/api/zadarma/webrtc-key?${params}`);
-        const data = await response.json();
+        const url = `/api/zadarma/webrtc-key?${params}`;
+        console.log('📡 Calling:', url);
+        
+        const response = await fetch(url);
+        const text = await response.text();
+        
+        console.log('📥 Response status:', response.status);
+        console.log('📥 Response text:', text.substring(0, 200));
+        
+        // Try to parse as JSON
+        let data;
+        try {
+          data = JSON.parse(text);
+        } catch (parseErr) {
+          console.error('❌ Response is not JSON:', text.substring(0, 100));
+          throw new Error(`Server returned non-JSON response: ${text.substring(0, 50)}...`);
+        }
 
         if (!response.ok || !data.success) {
-          throw new Error(data.error || 'Failed to get WebRTC key');
+          throw new Error(data.error || data.message || 'Failed to get WebRTC key');
         }
 
         if (!mounted) return;
