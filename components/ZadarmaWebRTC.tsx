@@ -29,6 +29,7 @@ export const ZadarmaWebRTC: React.FC<ZadarmaWebRTCProps> = ({ sipLogin, onReady,
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [permissionHint, setPermissionHint] = useState<string>('');
+  const [audioActive, setAudioActive] = useState(false);
   
   // Expose dial method via window for external access from Dialer component
   React.useEffect(() => {
@@ -150,6 +151,9 @@ export const ZadarmaWebRTC: React.FC<ZadarmaWebRTCProps> = ({ sipLogin, onReady,
         // Request microphone access and surface permission status
         await requestMicrophoneAccess();
         await checkMicrophonePermission();
+
+        // Monitor audio connection state
+        monitorAudioConnection();
 
         setStatus('ready');
         onReady?.();
@@ -341,6 +345,7 @@ export const ZadarmaWebRTC: React.FC<ZadarmaWebRTCProps> = ({ sipLogin, onReady,
       // Immediately stop tracks; we only need to prompt for permission
       stream.getTracks().forEach((track) => track.stop());
       setPermissionHint('');
+      setAudioActive(true);
     } catch (error: any) {
       const name = error?.name || '';
       if (name === 'NotAllowedError' || name === 'PermissionDeniedError') {
@@ -350,7 +355,47 @@ export const ZadarmaWebRTC: React.FC<ZadarmaWebRTCProps> = ({ sipLogin, onReady,
       } else {
         setPermissionHint('Microphone access failed. Check browser audio settings.');
       }
+      setAudioActive(false);
     }
+  };
+
+  const monitorAudioConnection = () => {
+    // Monitor audio stream from widget via Web Audio API
+    // This helps diagnose if audio is actually flowing
+    if (!navigator.mediaDevices?.getUserMedia || typeof window === 'undefined') return;
+
+    const checkAudioLevels = async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false } });
+        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+        const analyser = audioContext.createAnalyser();
+        const microphone = audioContext.createMediaStreamSource(stream);
+        const dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+        microphone.connect(analyser);
+
+        // Monitor for 5 seconds
+        const monitorInterval = setInterval(() => {
+          analyser.getByteFrequencyData(dataArray);
+          const hasAudio = dataArray.some((value) => value > 30);
+          if (hasAudio) {
+            console.log('✅ Microphone active - audio detected');
+            setAudioActive(true);
+          }
+        }, 100);
+
+        setTimeout(() => {
+          clearInterval(monitorInterval);
+          stream.getTracks().forEach((track) => track.stop());
+          audioContext.close();
+        }, 5000);
+      } catch (err) {
+        console.warn('⚠️ Could not monitor audio levels:', err);
+      }
+    };
+
+    // Start monitoring after a delay to ensure audio device is ready
+    setTimeout(checkAudioLevels, 2000);
   };
 
   const hideWidget = () => {
@@ -403,12 +448,17 @@ export const ZadarmaWebRTC: React.FC<ZadarmaWebRTCProps> = ({ sipLogin, onReady,
     <div className="flex items-center gap-2 px-4 py-3 bg-green-50 border border-green-200 rounded-lg">
       <Phone className="text-green-600" size={16} />
       <div className="flex-1">
-        <p className="text-sm font-medium text-green-900">WebRTC Ready</p>
+        <p className="text-sm font-medium text-green-900">
+          WebRTC Ready {audioActive && <span className="text-green-600 ml-1">🎤</span>}
+        </p>
         <p className="text-xs text-green-700">Widget loaded. Dial numbers using the widget in bottom-right corner.</p>
         {permissionHint && (
           <p className="text-[10px] text-amber-700 mt-1">⚠️ {permissionHint}</p>
         )}
-        <p className="text-[10px] text-green-600 mt-1">💡 Make sure your iPhone microphone is enabled in browser settings (⚙️ → Microphone)</p>
+        {!audioActive && (
+          <p className="text-[10px] text-amber-600 mt-1">📍 Microphone connection pending - try clicking the widget to activate</p>
+        )}
+        <p className="text-[10px] text-green-600 mt-1">💡 Tip: Make sure your iPhone microphone is enabled in Safari settings (⚙️ → Microphone)</p>
       </div>
     </div>
   );
