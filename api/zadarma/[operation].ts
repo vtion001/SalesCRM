@@ -1,6 +1,5 @@
 // Consolidated Zadarma API router - handles all operations
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { zadarmaRequest, ZADARMA_CONFIG } from './config';
 
 // Force Node.js runtime (crypto module needs Node.js)
 export const config = {
@@ -8,11 +7,26 @@ export const config = {
 };
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  console.log('🚀 Zadarma handler invoked');
-  console.log('   Method:', req.method);
-  console.log('   Query:', req.query);
-  
+  // Top-level error boundary
   try {
+    console.log('🚀 Zadarma handler invoked');
+    console.log('   Method:', req.method);
+    console.log('   Query:', req.query);
+    
+    // Dynamically import config (needed for Node.js crypto)
+    let zadarmaRequest: any;
+    let ZADARMA_CONFIG: any;
+    
+    try {
+      const configModule = await import('./config');
+      zadarmaRequest = configModule.zadarmaRequest;
+      ZADARMA_CONFIG = configModule.ZADARMA_CONFIG;
+      console.log('✅ Config imported');
+    } catch (importErr: any) {
+      console.error('❌ Failed to import config:', importErr.message);
+      throw importErr;
+    }
+    
     // CORS headers
     res.setHeader('Access-Control-Allow-Credentials', 'true');
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -62,17 +76,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         console.log('❌ Unknown operation:', op);
         return res.status(404).json({ error: `Unknown operation: ${op}` });
     }
-  } catch (error: any) {
-    console.error('❌ Top-level handler error:', error);
-    console.error('   Error name:', error?.name);
-    console.error('   Error message:', error?.message);
-    console.error('   Error stack:', error?.stack?.substring(0, 1000));
+  } catch (switchError: any) {
+    console.error('❌ Error in switch statement:', switchError);
+    console.error('   Error:', switchError?.message);
+    
+    if (!res.headersSent) {
+      res.status(500).json({ 
+        error: switchError?.message || 'Switch error',
+        errorType: 'SWITCH_ERROR',
+        operationId: Date.now()
+      });
+    }
+  }
+  } catch (outerError: any) {
+    console.error('❌ OUTER CATCH - Top-level handler error:', outerError);
+    console.error('   Error name:', outerError?.name);
+    console.error('   Error message:', outerError?.message);
+    console.error('   Error stack:', outerError?.stack?.substring(0, 1000));
     
     // Ensure we always send a response
     if (!res.headersSent) {
       res.status(500).json({ 
-        error: error?.message || 'Internal server error',
-        errorType: error?.name,
+        error: outerError?.message || 'Internal server error',
+        errorType: outerError?.name,
         operationId: Date.now()
       });
     }
@@ -410,43 +436,52 @@ async function handleWebRTCKey(req: VercelRequest, res: VercelResponse) {
   console.log('🔑 === WEBRTC KEY HANDLER START ===');
   
   try {
+    // Import config dynamically
+    const { ZADARMA_CONFIG: CONFIG, zadarmaRequest: makeRequest } = await import('./config');
+    
+    console.log('✅ Config loaded');
+    console.log('   API Key:', CONFIG.API_KEY ? 'present' : 'MISSING');
+    console.log('   Secret Key:', CONFIG.SECRET_KEY ? 'present' : 'MISSING');
+    console.log('   SIP Number:', CONFIG.SIP_NUMBER || 'MISSING');
+    
     // Validate config first
-    if (!ZADARMA_CONFIG.API_KEY) {
+    if (!CONFIG.API_KEY) {
       console.error('❌ ZADARMA_API_KEY not set');
       return res.status(500).json({
         success: false,
-        error: 'ZADARMA_API_KEY not configured'
+        error: 'ZADARMA_API_KEY not configured',
+        debug: 'Check Vercel environment variables'
       });
     }
     
-    if (!ZADARMA_CONFIG.SECRET_KEY) {
+    if (!CONFIG.SECRET_KEY) {
       console.error('❌ ZADARMA_SECRET_KEY not set');
       return res.status(500).json({
         success: false,
-        error: 'ZADARMA_SECRET_KEY not configured'
+        error: 'ZADARMA_SECRET_KEY not configured',
+        debug: 'Check Vercel environment variables'
       });
     }
     
     // Get SIP login from query params or use configured SIP number
-    const sipLogin = req.query.sip_login || ZADARMA_CONFIG.SIP_NUMBER;
+    const sipLogin = req.query.sip_login || CONFIG.SIP_NUMBER;
     
     if (!sipLogin) {
       console.error('❌ No SIP login provided');
       return res.status(400).json({
         success: false,
-        error: 'SIP login is required. Provide sip_login query param or set ZADARMA_SIP_NUMBER env var'
+        error: 'SIP login is required',
+        debug: 'Provide sip_login query param or set ZADARMA_SIP_NUMBER env var'
       });
     }
     
     console.log('📞 SIP login:', sipLogin);
-    console.log('🔐 API Key available:', !!ZADARMA_CONFIG.API_KEY);
-    console.log('🔐 Secret Key available:', !!ZADARMA_CONFIG.SECRET_KEY);
     
     // Call Zadarma API to get WebRTC key
     console.log('📡 Calling Zadarma /v1/webrtc/get_key/ endpoint...');
-    const result = await zadarmaRequest(`/v1/webrtc/get_key/`, { sip_login: sipLogin }, 'GET');
+    const result = await makeRequest(`/v1/webrtc/get_key/`, { sip_login: sipLogin }, 'GET');
     
-    console.log('📥 API Response:', result);
+    console.log('📥 API Response:', JSON.stringify(result).substring(0, 200));
     
     if (result?.status === 'success' && result?.key) {
       console.log('✅ WebRTC key generated successfully');
