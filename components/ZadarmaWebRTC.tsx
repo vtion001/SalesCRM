@@ -23,12 +23,53 @@ const WIDGET_POSITION = { right: '10px', bottom: '5px' };
  * Zadarma WebRTC Widget Component
  * Loads the Zadarma webphone widget into the page
  * 
- * This is a simpler alternative to the REST API - the widget handles all call logic
+ * This handles browser-based WebRTC calls directly (no callback API needed)
  */
 export const ZadarmaWebRTC: React.FC<ZadarmaWebRTCProps> = ({ sipLogin, onReady, onError }) => {
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [permissionHint, setPermissionHint] = useState<string>('');
+  
+  // Expose dial method via window for external access from Dialer component
+  React.useEffect(() => {
+    (window as any).zadarmaWebRTCDial = async (phoneNumber: string) => {
+      console.log('📞 ZadarmaWebRTC.dial() called with:', phoneNumber);
+      
+      const widgetApi = (window as any).zdrmWebrtcPhoneInterface;
+      if (!widgetApi) {
+        console.error('❌ Widget API not available');
+        throw new Error('WebRTC widget not initialized');
+      }
+      
+      // Ensure widget is visible and open
+      showWidget();
+      openWidget();
+      
+      // Try to programmatically dial through the widget
+      // Some versions of Zadarma widget support this
+      if (typeof widgetApi.dial === 'function') {
+        try {
+          widgetApi.dial(phoneNumber);
+          console.log('✅ Widget dial() called');
+        } catch (err) {
+          console.error('⚠️ Widget dial() failed:', err);
+        }
+      } else if (typeof widgetApi.makeCall === 'function') {
+        try {
+          widgetApi.makeCall(phoneNumber);
+          console.log('✅ Widget makeCall() called');
+        } catch (err) {
+          console.error('⚠️ Widget makeCall() failed:', err);
+        }
+      } else {
+        console.log('⚠️ Widget does not support programmatic dialing. User must dial manually in widget.');
+      }
+    };
+    
+    return () => {
+      delete (window as any).zadarmaWebRTCDial;
+    };
+  }, []);
 
   useEffect(() => {
     let mounted = true;

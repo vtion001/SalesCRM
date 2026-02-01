@@ -390,48 +390,25 @@ export const Dialer: React.FC<DialerProps> = ({ targetLead, onLogActivity, activ
           handleEndCall();
         });
       } else if (provider === 'zadarma') {
-        // Zadarma: Use callback API
-        console.log('📞 Initiating Zadarma call to:', validation.formattedNumber);
+        // Zadarma: Use WebRTC widget to dial directly
+        console.log('📞 Initiating Zadarma WebRTC call to:', validation.formattedNumber);
         
-        const response = await fetch('/api/zadarma/make-call', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            to: validation.formattedNumber,
-            predicted: true
-          })
-        });
-        
-        // Get response text first to handle non-JSON responses
-        const responseText = await response.text();
-        console.log('📡 Zadarma API response status:', response.status);
-        console.log('📡 Zadarma API response:', responseText.substring(0, 200));
-        
-        if (!response.ok) {
-          // Try to parse as JSON, fallback to text error
-          let errorMessage = `Failed to initiate Zadarma call (${response.status})`;
+        // Call the widget's dial method if available
+        const zadarmaDialFn = (window as any).zadarmaWebRTCDial;
+        if (zadarmaDialFn && typeof zadarmaDialFn === 'function') {
           try {
-            const errorData = JSON.parse(responseText);
-            errorMessage = errorData.error || errorMessage;
-          } catch {
-            errorMessage = responseText || errorMessage;
+            await zadarmaDialFn(validation.formattedNumber);
+            console.log('✅ WebRTC widget dial command sent');
+            setCallStatus('Connecting via WebRTC...');
+            callTimerRef.current = setInterval(() => setCallDuration((prev) => prev + 1), 1000);
+          } catch (err: any) {
+            console.error('❌ WebRTC dial failed:', err);
+            throw new Error(`WebRTC dial failed: ${err.message}`);
           }
-          throw new Error(errorMessage);
+        } else {
+          console.warn('⚠️ WebRTC dial function not available. Widget may not be fully loaded.');
+          throw new Error('WebRTC widget not ready. Please wait for the widget to load.');
         }
-        
-        // Parse successful response
-        let data;
-        try {
-          data = JSON.parse(responseText);
-        } catch (e) {
-          console.error('❌ Failed to parse Zadarma response as JSON:', responseText);
-          throw new Error('Invalid response from Zadarma API: ' + responseText.substring(0, 100));
-        }
-        
-        console.log('✅ Zadarma call initiated:', data);
-        
-        setCallStatus('Zadarma connecting...');
-        callTimerRef.current = setInterval(() => setCallDuration((prev) => prev + 1), 1000);
       }
     } catch (err: any) {
       let errorMsg = err.message || 'Failed to initiate call';
