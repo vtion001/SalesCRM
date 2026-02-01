@@ -510,28 +510,6 @@ export const Dialer: React.FC<DialerProps> = ({ targetLead, onLogActivity, activ
         )}
       </AnimatePresence>
 
-      <div className="flex border-b border-slate-100 p-2 bg-slate-50/50">
-        {['Dialer', 'History', 'SMS'].map((tab) => (
-          <button
-            key={tab}
-            onClick={() => {
-              setActiveTab(tab);
-              if (tab === 'History') setMissedCallCount(0); // Clear badge when viewing history
-            }}
-            className={`flex-1 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-center transition-all relative rounded-xl ${
-              activeTab === tab ? 'text-indigo-600 bg-white shadow-sm' : 'text-slate-400 hover:text-slate-600'
-            }`}
-          >
-            {tab}
-            {tab === 'History' && missedCallCount > 0 && (
-              <span className="absolute -top-1 -right-1 w-5 h-5 bg-rose-500 text-white text-[9px] font-black rounded-full flex items-center justify-center shadow-lg">
-                {missedCallCount > 9 ? '9+' : missedCallCount}
-              </span>
-            )}
-          </button>
-        ))}
-      </div>
-
       {/* Zadarma Mode Switcher - only show for Zadarma provider */}
       {provider === 'zadarma' && activeTab === 'Dialer' && (
         <div className="px-4 pt-3 pb-2 bg-slate-50 border-b border-slate-100">
@@ -562,6 +540,28 @@ export const Dialer: React.FC<DialerProps> = ({ targetLead, onLogActivity, activ
           </p>
         </div>
       )}
+
+      <div className="flex border-b border-slate-100 p-2 bg-slate-50/50">
+        {['Dialer', 'History', 'SMS'].map((tab) => (
+          <button
+            key={tab}
+            onClick={() => {
+              setActiveTab(tab);
+              if (tab === 'History') setMissedCallCount(0); // Clear badge when viewing history
+            }}
+            className={`flex-1 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-center transition-all relative rounded-xl ${
+              activeTab === tab ? 'text-indigo-600 bg-white shadow-sm' : 'text-slate-400 hover:text-slate-600'
+            }`}
+          >
+            {tab}
+            {tab === 'History' && missedCallCount > 0 && (
+              <span className="absolute -top-1 -right-1 w-5 h-5 bg-rose-500 text-white text-[9px] font-black rounded-full flex items-center justify-center shadow-lg">
+                {missedCallCount > 9 ? '9+' : missedCallCount}
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
 
       <div className="flex-1 overflow-hidden relative flex flex-col">
         <AnimatePresence mode="wait">

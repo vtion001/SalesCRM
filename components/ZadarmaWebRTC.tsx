@@ -28,6 +28,7 @@ const WIDGET_POSITION = { right: '10px', bottom: '5px' };
 export const ZadarmaWebRTC: React.FC<ZadarmaWebRTCProps> = ({ sipLogin, onReady, onError }) => {
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const [errorMessage, setErrorMessage] = useState<string>('');
+  const [permissionHint, setPermissionHint] = useState<string>('');
 
   useEffect(() => {
     let mounted = true;
@@ -77,8 +78,12 @@ export const ZadarmaWebRTC: React.FC<ZadarmaWebRTCProps> = ({ sipLogin, onReady,
         // Initialize widget with key and SIP (with retry)
         await initializeWidgetWithRetry(data.key, sip);
 
-        // Ensure iframe is visible when switching back to WebRTC
+        // Ensure iframe is visible and widget is opened when switching back to WebRTC
         showWidget();
+        openWidget();
+
+        // Check microphone permission to help diagnose silent calls
+        await checkMicrophonePermission();
 
         setStatus('ready');
         onReady?.();
@@ -230,6 +235,38 @@ export const ZadarmaWebRTC: React.FC<ZadarmaWebRTCProps> = ({ sipLogin, onReady,
     });
   };
 
+  const openWidget = () => {
+    const widgetApi = (window as any).zdrmWebrtcPhoneInterface;
+    if (!widgetApi) return;
+
+    const openFn = widgetApi.open || widgetApi.show || widgetApi.toggle;
+    if (typeof openFn === 'function') {
+      try {
+        openFn.call(widgetApi);
+        console.log('✅ Zadarma widget opened');
+      } catch {
+        // ignore
+      }
+    }
+  };
+
+  const checkMicrophonePermission = async () => {
+    if (!('permissions' in navigator)) return;
+
+    try {
+      const status = await (navigator as any).permissions.query({ name: 'microphone' });
+      if (status.state === 'denied') {
+        setPermissionHint('Microphone permission is blocked. Allow mic access to hear audio.');
+      } else if (status.state === 'prompt') {
+        setPermissionHint('Microphone permission is not granted yet. Click the widget to allow access.');
+      } else {
+        setPermissionHint('');
+      }
+    } catch {
+      // ignore
+    }
+  };
+
   const hideWidget = () => {
     // Attempt to hide/close widget if API is available
     const widgetApi = (window as any).zdrmWebrtcPhoneInterface;
@@ -282,6 +319,9 @@ export const ZadarmaWebRTC: React.FC<ZadarmaWebRTCProps> = ({ sipLogin, onReady,
       <div className="flex-1">
         <p className="text-sm font-medium text-green-900">WebRTC Ready</p>
         <p className="text-xs text-green-700">Widget loaded in bottom-right corner</p>
+        {permissionHint && (
+          <p className="text-[10px] text-amber-700 mt-1">{permissionHint}</p>
+        )}
       </div>
     </div>
   );
