@@ -519,8 +519,13 @@ async function handleWebRTCKey(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({
         success: false,
         error: 'SIP login is required',
-        fix: 'Set ZADARMA_SIP_NUMBER env var or pass sip_login query param'
+        fix: 'Set ZADARMA_SIP_NUMBER env var to your SIP ID (numeric, like "12825"), or pass sip_login query param. Use /api/zadarma/list-sip to find your SIP ID.'
       });
+    }
+    
+    // Warn if SIP login looks like a phone number
+    if (sipLogin.startsWith('+') || sipLogin.length > 10) {
+      console.warn('⚠️ SIP login looks like a phone number. It should be a numeric SIP ID like "12825"');
     }
     
     console.log('📞 SIP login:', sipLogin);
