@@ -2,6 +2,12 @@
 
 import crypto from 'crypto';
 
+// Verify crypto module is available
+if (!crypto) {
+  console.error('❌ crypto module not available');
+  throw new Error('crypto module required for Zadarma API');
+}
+
 export const ZADARMA_CONFIG = {
   API_KEY: process.env.ZADARMA_API_KEY || '9730a08f829a0b6b08ba',
   SECRET_KEY: process.env.ZADARMA_SECRET_KEY || 'cecf0fdc63df8efbc513',
@@ -17,33 +23,41 @@ export function generateZadarmaSignature(
   method: string,
   params: Record<string, any> = {}
 ): string {
-  // Sort params by key
-  const sortedKeys = Object.keys(params).sort();
-  const sortedParams: Record<string, any> = {};
-  sortedKeys.forEach(key => {
-    sortedParams[key] = params[key];
-  });
+  try {
+    // Sort params by key
+    const sortedKeys = Object.keys(params).sort();
+    const sortedParams: Record<string, any> = {};
+    sortedKeys.forEach(key => {
+      sortedParams[key] = params[key];
+    });
 
-  // Build query string
-  const paramsStr = new URLSearchParams(sortedParams).toString();
-  
-  // Create MD5 hash of params
-  const paramsMd5 = crypto
-    .createHash('md5')
-    .update(paramsStr)
-    .digest('hex');
+    // Build query string
+    const paramsStr = new URLSearchParams(sortedParams).toString();
+    
+    // Create MD5 hash of params
+    const paramsMd5 = crypto
+      .createHash('md5')
+      .update(paramsStr)
+      .digest('hex');
 
-  // Create signature string
-  const signatureString = method + paramsStr + paramsMd5;
+    // Create signature string
+    const signatureString = method + paramsStr + paramsMd5;
 
-  // Create HMAC SHA1 hash with secret key
-  const hash = crypto
-    .createHmac('sha1', ZADARMA_CONFIG.SECRET_KEY)
-    .update(signatureString)
-    .digest();
+    // Create HMAC SHA1 hash with secret key
+    const hash = crypto
+      .createHmac('sha1', ZADARMA_CONFIG.SECRET_KEY)
+      .update(signatureString)
+      .digest();
 
-  // Encode to base64
-  return hash.toString('base64');
+    // Encode to base64
+    const signature = hash.toString('base64');
+    
+    console.log('🔐 Signature generated for:', method);
+    return signature;
+  } catch (error: any) {
+    console.error('❌ Error generating signature:', error);
+    throw new Error('Failed to generate signature: ' + error.message);
+  }
 }
 
 /**

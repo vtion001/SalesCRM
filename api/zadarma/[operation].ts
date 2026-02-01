@@ -2,6 +2,11 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { zadarmaRequest, ZADARMA_CONFIG } from './config';
 
+// Force Node.js runtime (crypto module needs Node.js)
+export const config = {
+  runtime: 'nodejs18.x',
+};
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   console.log('🚀 Zadarma handler invoked');
   console.log('   Method:', req.method);
