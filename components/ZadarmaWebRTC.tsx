@@ -71,8 +71,8 @@ export const ZadarmaWebRTC: React.FC<ZadarmaWebRTCProps> = ({ sipLogin, onReady,
 
         if (!mounted) return;
 
-        // Initialize widget with key and SIP
-        initializeWidget(data.key, sip);
+        // Initialize widget with key and SIP (with retry)
+        await initializeWidgetWithRetry(data.key, sip);
 
         setStatus('ready');
         onReady?.();
@@ -180,13 +180,33 @@ export const ZadarmaWebRTC: React.FC<ZadarmaWebRTCProps> = ({ sipLogin, onReady,
     zadarmaWidgetFn(
       key,           // WebRTC key from API
       sip,           // SIP ID (e.g., "12825")
-      'square',      // Shape: 'square' or 'rounded'
+      'rounded',     // Shape: 'square' or 'rounded'
       'en',          // Language: ru, en, es, fr, de, pl, ua
       true,          // Visible
       { right: '10px', bottom: '5px' }  // Position object (not string!)
     );
     
     console.log('✅ Zadarma widget initialized');
+  };
+
+  const initializeWidgetWithRetry = (key: string, sip: string, retries = 3): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      try {
+        initializeWidget(key, sip);
+        resolve();
+      } catch (error) {
+        if (retries <= 0) {
+          reject(error);
+          return;
+        }
+        console.warn(`⚠️ Widget init failed, retrying... (${retries})`);
+        setTimeout(() => {
+          initializeWidgetWithRetry(key, sip, retries - 1)
+            .then(resolve)
+            .catch(reject);
+        }, 300);
+      }
+    });
   };
 
   if (status === 'loading') {
