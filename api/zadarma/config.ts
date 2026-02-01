@@ -86,6 +86,14 @@ export async function zadarmaRequest(
   const TIMEOUT_MS = 30000; // 30 second timeout
   
   try {
+    // Validate API credentials
+    if (!ZADARMA_CONFIG.API_KEY) {
+      throw new Error('ZADARMA_API_KEY not configured');
+    }
+    if (!ZADARMA_CONFIG.SECRET_KEY) {
+      throw new Error('ZADARMA_SECRET_KEY not configured');
+    }
+    
     const method = endpoint;
     const headers = createZadarmaHeaders(method, params);
     
@@ -103,7 +111,8 @@ export async function zadarmaRequest(
       method: httpMethod,
       endpoint,
       url: url.substring(0, 100),
-      hasBody: !!body
+      hasBody: !!body,
+      paramsCount: Object.keys(params).length
     });
 
     // Create abort controller for timeout
@@ -123,16 +132,24 @@ export async function zadarmaRequest(
     }
 
     const responseText = await response.text();
-    console.log('📡 Zadarma Response:', {
-      status: response.status,
-      statusText: response.statusText,
-      contentLength: responseText.length,
-      preview: responseText.substring(0, 200)
-    });
+    console.log('📡 Zadarma Response Status:', response.status, response.statusText);
+    console.log('📡 Response Text Length:', responseText.length);
+    console.log('📡 Response Preview:', responseText.substring(0, 300));
 
-    if (!response.ok) {
-      console.error('❌ Zadarma API returned non-ok status:', response.status);
-      throw new Error(`Zadarma API error: ${response.status} ${response.statusText} - ${responseText.substring(0, 200)}`);
+    // Check if we got an error status
+    if (response.status >= 400) {
+      console.error('❌ Zadarma API returned error status:', response.status);
+      console.error('   Response:', responseText.substring(0, 500));
+      
+      // Try to parse as JSON to get error details
+      try {
+        const errorJson = JSON.parse(responseText);
+        console.error('   Error JSON:', errorJson);
+      } catch (e) {
+        console.error('   (Response is not JSON)');
+      }
+      
+      throw new Error(`Zadarma API error: ${response.status} ${response.statusText}`);
     }
 
     // Parse JSON response
@@ -145,13 +162,15 @@ export async function zadarmaRequest(
       const parsed = JSON.parse(responseText);
       console.log('✅ Successfully parsed Zadarma response');
       return parsed;
-    } catch (parseError) {
-      console.error('❌ Failed to parse Zadarma response as JSON:', responseText.substring(0, 300));
+    } catch (parseError: any) {
+      console.error('❌ Failed to parse Zadarma response as JSON');
+      console.error('   Response text:', responseText.substring(0, 500));
+      console.error('   Parse error:', parseError.message);
       throw new Error(`Invalid JSON from Zadarma: ${responseText.substring(0, 100)}`);
     }
   } catch (error: any) {
     if (error.name === 'AbortError') {
-      console.error('⏱️ Zadarma API request timeout');
+      console.error('⏱️ Zadarma API request timeout (30s)');
       throw new Error('Zadarma API request timed out');
     }
     console.error('❌ zadarmaRequest exception:', error.message);

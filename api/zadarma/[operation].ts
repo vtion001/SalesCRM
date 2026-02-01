@@ -410,6 +410,23 @@ async function handleWebRTCKey(req: VercelRequest, res: VercelResponse) {
   console.log('🔑 === WEBRTC KEY HANDLER START ===');
   
   try {
+    // Validate config first
+    if (!ZADARMA_CONFIG.API_KEY) {
+      console.error('❌ ZADARMA_API_KEY not set');
+      return res.status(500).json({
+        success: false,
+        error: 'ZADARMA_API_KEY not configured'
+      });
+    }
+    
+    if (!ZADARMA_CONFIG.SECRET_KEY) {
+      console.error('❌ ZADARMA_SECRET_KEY not set');
+      return res.status(500).json({
+        success: false,
+        error: 'ZADARMA_SECRET_KEY not configured'
+      });
+    }
+    
     // Get SIP login from query params or use configured SIP number
     const sipLogin = req.query.sip_login || ZADARMA_CONFIG.SIP_NUMBER;
     
@@ -422,11 +439,16 @@ async function handleWebRTCKey(req: VercelRequest, res: VercelResponse) {
     }
     
     console.log('📞 SIP login:', sipLogin);
+    console.log('🔐 API Key available:', !!ZADARMA_CONFIG.API_KEY);
+    console.log('🔐 Secret Key available:', !!ZADARMA_CONFIG.SECRET_KEY);
     
     // Call Zadarma API to get WebRTC key
+    console.log('📡 Calling Zadarma /v1/webrtc/get_key/ endpoint...');
     const result = await zadarmaRequest(`/v1/webrtc/get_key/`, { sip_login: sipLogin }, 'GET');
     
-    if (result.status === 'success' && result.key) {
+    console.log('📥 API Response:', result);
+    
+    if (result?.status === 'success' && result?.key) {
       console.log('✅ WebRTC key generated successfully');
       console.log('⏰ Key expires in 72 hours');
       
@@ -441,7 +463,17 @@ async function handleWebRTCKey(req: VercelRequest, res: VercelResponse) {
         }
       });
     } else {
-      console.error('❌ Failed to get WebRTC key:', result);
+      console.error('❌ Failed to get WebRTC key, result:', JSON.stringify(result, null, 2));
+      
+      // Check if it's an auth error
+      if (result?.status === 'error' && result?.message?.includes('auth')) {
+        return res.status(401).json({
+          success: false,
+          error: 'Authentication failed with Zadarma',
+          details: result?.message
+        });
+      }
+      
       return res.status(500).json({
         success: false,
         error: 'Failed to generate WebRTC key',
@@ -450,12 +482,14 @@ async function handleWebRTCKey(req: VercelRequest, res: VercelResponse) {
     }
   } catch (error: any) {
     console.error('❌ WebRTC key handler error:', error);
+    console.error('Stack:', error.stack);
     
     if (!res.headersSent) {
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
-        error: error.message,
-        stack: error.stack?.substring(0, 500)
+        error: error.message || 'Internal server error',
+        type: error.constructor?.name,
+        stack: error.stack?.substring(0, 300)
       });
     }
   }
