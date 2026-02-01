@@ -390,25 +390,56 @@ export const Dialer: React.FC<DialerProps> = ({ targetLead, onLogActivity, activ
           handleEndCall();
         });
       } else if (provider === 'zadarma') {
-        // Zadarma: Use WebRTC widget to dial directly
-        console.log('📞 Initiating Zadarma WebRTC call to:', validation.formattedNumber);
+        // Zadarma: Use callback API - backend calls user's SIP, then bridges to destination
+        console.log('📞 Initiating Zadarma callback API call to:', validation.formattedNumber);
         
-        // Call the widget's dial method if available
-        const zadarmaDialFn = (window as any).zadarmaWebRTCDial;
-        if (zadarmaDialFn && typeof zadarmaDialFn === 'function') {
+        const response = await fetch('/api/zadarma/make-call', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            to: validation.formattedNumber,
+            predicted: true
+          })
+        });
+        
+        const responseText = await response.text();
+        console.log('📡 Zadarma response status:', response.status);
+        console.log('📡 Zadarma response:', responseText.substring(0, 300));
+        
+        if (!response.ok) {
+          let errorMessage = `Zadarma API error (${response.status})`;
           try {
-            await zadarmaDialFn(validation.formattedNumber);
-            console.log('✅ WebRTC widget dial command sent');
-            setCallStatus('Connecting via WebRTC...');
-            callTimerRef.current = setInterval(() => setCallDuration((prev) => prev + 1), 1000);
-          } catch (err: any) {
-            console.error('❌ WebRTC dial failed:', err);
-            throw new Error(`WebRTC dial failed: ${err.message}`);
+            const errorData = JSON.parse(responseText);
+            errorMessage = errorData.error || errorData.message || errorMessage;
+          } catch {
+            errorMessage = responseText || errorMessage;
           }
-        } else {
-          console.warn('⚠️ WebRTC dial function not available. Widget may not be fully loaded.');
-          throw new Error('WebRTC widget not ready. Please wait for the widget to load.');
+          throw new Error(errorMessage);
         }
+        
+        let data;
+        try {
+          data = JSON.parse(responseText);
+        } catch (e) {
+          console.error('❌ Failed to parse Zadarma response:', responseText);
+          throw new Error('Invalid response from Zadarma API');
+        }
+        
+        console.log('✅ Zadarma callback initiated:', data);
+        
+        // The callback API will call the user's SIP device, then wait for them to answer
+        // Then it bridges the call to the destination
+        setCallStatus('Zadarma calling your device...');
+        callTimerRef.current = setInterval(() => setCallDuration((prev) => prev + 1), 1000);
+        
+        // Set a timeout to auto-end if no response in 60 seconds
+        setTimeout(() => {
+          if (isCallInProgress && callDuration < 5) {
+            console.warn('⚠️ Call attempt timed out - no answer from SIP device');
+            setError('No answer. Make sure your SIP device is registered and reachable.');
+            handleEndCall();
+          }
+        }, 60000);
       }
     } catch (err: any) {
       let errorMsg = err.message || 'Failed to initiate call';
@@ -563,9 +594,10 @@ export const Dialer: React.FC<DialerProps> = ({ targetLead, onLogActivity, activ
               exit={{ opacity: 0, x: -20 }}
               className="flex-1 flex flex-col items-center justify-between p-10"
             >
-              {/* WebRTC Mode - Show Widget Status */}
+              {/* Zadarma Mode - Use standard dialer with callback API */}
               {provider === 'zadarma' ? (
-                <div className="w-full flex flex-col items-center justify-center flex-1 gap-6">
+                <div className="w-full flex flex-col items-center justify-between p-10">
+                  {/* WebRTC Widget Indicator */}
                   <ZadarmaWebRTC
                     sipLogin={process.env.ZADARMA_SIP_NUMBER}
                     onReady={() => {
@@ -577,44 +609,71 @@ export const Dialer: React.FC<DialerProps> = ({ targetLead, onLogActivity, activ
                       setIsDeviceReady(false);
                     }}
                   />
-                  
-                  {/* Show phone number input for reference */}
-                  <div className="w-full max-w-sm">
-                    <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Number to Dial</p>
-                    <input
-                      type="text"
-                      value={phoneNumber}
-                      onChange={(e) => setPhoneNumber(e.target.value)}
-                      className="w-full text-xl font-bold text-slate-900 text-center bg-slate-50 border border-slate-200 rounded-lg py-3 px-3 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
-                      placeholder="Enter number"
-                    />
+
+                  {/* Standard Dialer UI */}
+                  <div className="w-full flex flex-col items-center">
+                    {isCallInProgress && (
+                      <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="bg-indigo-50 text-indigo-600 px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-3 mb-8 border border-indigo-100">
+                        <div className="relative flex">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-600"></span>
+                        </div>
+                        In Call • {formatDuration(callDuration)}
+                      </motion.div>
+                    )}
+
+                    <motion.div layoutId="phone-input" className="w-full text-center">
+                      <input
+                        type="text"
+                        value={phoneNumber}
+                        onChange={(e) => setPhoneNumber(e.target.value)}
+                        className="text-4xl font-black text-slate-900 text-center w-full bg-transparent outline-none mb-2 tracking-tight"
+                        placeholder="000-000-0000"
+                      />
+                      <p className="text-[10px] font-black text-indigo-500 uppercase tracking-widest bg-indigo-50 inline-block px-3 py-1 rounded-lg">
+                        {targetLead ? `${targetLead.name} • ${targetLead.company}` : 'Awaiting Selection'}
+                      </p>
+                    </motion.div>
                   </div>
-                  
-                  {/* Instructions */}
-                  <div className="w-full max-w-md text-center bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <p className="text-sm font-bold text-blue-900 mb-2">How to Dial with Zadarma WebRTC:</p>
-                    <ol className="text-xs text-blue-800 space-y-1 text-left">
-                      <li>1. Click the Zadarma widget (bottom-right corner)</li>
-                      <li>2. Enter the phone number above into the widget's dial pad</li>
-                      <li>3. Click Call to connect</li>
-                      <li>4. Allow microphone access when prompted</li>
-                    </ol>
+
+                  <div className="grid grid-cols-3 gap-x-8 gap-y-6 my-10">
+                    {DIALER_KEYS.map(({ num, sub }) => (
+                      <motion.button
+                        key={num}
+                        whileTap={{ scale: 0.9 }}
+                        onClick={() => handleKeyPress(num)}
+                        className="w-16 h-16 rounded-[24px] bg-slate-50 hover:bg-slate-100 hover:shadow-lg hover:shadow-slate-200 transition-all flex flex-col items-center justify-center group active:bg-indigo-50"
+                      >
+                        <span className="text-2xl font-black text-slate-900 leading-none mb-1 group-active:text-indigo-600">{num}</span>
+                        <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest group-active:text-indigo-400">{sub}</span>
+                      </motion.button>
+                    ))}
                   </div>
-                  
-                  {/* Quick Copy Button */}
-                  {phoneNumber && (
-                    <motion.button
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      onClick={() => {
-                        navigator.clipboard.writeText(phoneNumber);
-                        alert('Number copied! Paste it in the Zadarma widget.');
-                      }}
-                      className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-lg transition-all active:scale-95"
-                    >
-                      Copy Number to Clipboard
-                    </motion.button>
-                  )}
+
+                  <div className="mb-4">
+                    {isCallInProgress ? (
+                      <motion.button 
+                        initial={{ scale: 0 }} animate={{ scale: 1 }}
+                        onClick={handleEndCall}
+                        className="w-20 h-20 rounded-[32px] flex items-center justify-center shadow-2xl shadow-rose-200 bg-rose-500 hover:bg-rose-600 text-white transition-all active:scale-90"
+                      >
+                        <PhoneOff size={32} />
+                      </motion.button>
+                    ) : (
+                      <motion.button 
+                        initial={{ scale: 0 }} animate={{ scale: 1 }}
+                        onClick={handleMakeCall}
+                        disabled={!phoneNumber || !isDeviceReady}
+                        className={`w-20 h-20 rounded-[32px] flex items-center justify-center shadow-2xl transition-all active:scale-90 ${
+                          phoneNumber && isDeviceReady
+                            ? 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-200' 
+                            : 'bg-slate-100 text-slate-300 cursor-not-allowed shadow-none'
+                        }`}
+                      >
+                        <Phone size={32} />
+                      </motion.button>
+                    )}
+                  </div>
                 </div>
               ) : (
                 <>

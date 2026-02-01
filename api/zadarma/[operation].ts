@@ -195,6 +195,14 @@ async function handleMakeCall(req: VercelRequest, res: VercelResponse) {
     console.log('   from:', fromNumber);
     console.log('   predicted:', predicted);
 
+    if (!fromNumber) {
+      console.error('❌ No source number - need either "from" param or ZADARMA_SIP_NUMBER env var');
+      return res.status(400).json({ 
+        error: 'No source number configured. Set ZADARMA_SIP_NUMBER env variable to your SIP extension or phone number.',
+        hint: 'The "from" must be a registered SIP extension (like 12345) or your Zadarma phone number'
+      });
+    }
+
     const params: Record<string, any> = {
       from: fromNumber,
       to: to
@@ -204,20 +212,44 @@ async function handleMakeCall(req: VercelRequest, res: VercelResponse) {
       params.predicted = 'y';
     }
 
-    console.log('📞 Calling zadarmaRequest...');
+    console.log('📞 Making callback request:');
+    console.log('   from:', params.from);
+    console.log('   to:', params.to);
+    console.log('   predicted:', params.predicted);
+    
     const result = await zadarmaRequest('/request/callback/', params, 'GET');
     
-    console.log('✅ zadarmaRequest returned:', JSON.stringify(result).substring(0, 300));
+    console.log('✅ Callback API response:', JSON.stringify(result).substring(0, 500));
 
     if (result?.status === 'error') {
       console.error('❌ Zadarma error response:', result);
       return res.status(400).json({ 
         error: result.message || 'Zadarma callback request failed',
-        zadarmaError: result
+        zadarmaError: result,
+        hint: 'Ensure your "from" number is a registered SIP extension or phone with Zadarma'
       });
     }
 
     console.log('✅ Call initiated successfully');
+    console.log('   Call ID:', result?.call_id || result?.id || 'pending');
+    
+    return res.status(200).json({
+      success: true,
+      message: 'Callback initiated - Zadarma will call your configured device',
+      callId: result?.call_id || result?.id,
+      status: result?.status,
+      details: result
+    });
+  } catch (err: any) {
+    console.error('❌ Exception in handleMakeCall:', err.message);
+    if (!res.headersSent) {
+      res.status(500).json({ 
+        error: err.message || 'Internal server error',
+        type: 'EXCEPTION'
+      });
+    }
+  }
+}
     res.status(200).json({
       success: true,
       message: 'Call initiated',
