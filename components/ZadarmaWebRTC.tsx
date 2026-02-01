@@ -16,6 +16,9 @@ const ZADARMA_SCRIPTS = {
 // Default SIP ID (found via /api/zadarma/list-sip)
 const DEFAULT_SIP_ID = '12825';
 
+// Widget placement (move higher to avoid covering switch)
+const WIDGET_POSITION = { right: '10px', bottom: '90px' };
+
 /**
  * Zadarma WebRTC Widget Component
  * Loads the Zadarma webphone widget into the page
@@ -74,6 +77,9 @@ export const ZadarmaWebRTC: React.FC<ZadarmaWebRTCProps> = ({ sipLogin, onReady,
         // Initialize widget with key and SIP (with retry)
         await initializeWidgetWithRetry(data.key, sip);
 
+        // Apply explicit position override in case the widget ignores settings
+        applyWidgetPosition();
+
         setStatus('ready');
         onReady?.();
       } catch (error: any) {
@@ -91,6 +97,7 @@ export const ZadarmaWebRTC: React.FC<ZadarmaWebRTCProps> = ({ sipLogin, onReady,
 
     return () => {
       mounted = false;
+      hideWidget();
     };
   }, [sipLogin]);
 
@@ -183,7 +190,7 @@ export const ZadarmaWebRTC: React.FC<ZadarmaWebRTCProps> = ({ sipLogin, onReady,
       'rounded',     // Shape: 'square' or 'rounded'
       'en',          // Language: ru, en, es, fr, de, pl, ua
       true,          // Visible
-      { right: '10px', bottom: '60px' }  // Position object (not string!)
+      WIDGET_POSITION  // Position object (not string!)
     );
     
     console.log('✅ Zadarma widget initialized');
@@ -206,6 +213,75 @@ export const ZadarmaWebRTC: React.FC<ZadarmaWebRTCProps> = ({ sipLogin, onReady,
             .catch(reject);
         }, 300);
       }
+    });
+  };
+
+  const applyWidgetPosition = () => {
+    const attemptPosition = () => {
+      const selectors = [
+        'iframe[src*="webphoneWebRTCWidget"]',
+        'iframe[src*="zadarma"]',
+        'div[id^="zdrm"]',
+        'div[class*="zdrm"]',
+        'div[class*="zadarma"]'
+      ];
+
+      const elements = selectors
+        .map((selector) => Array.from(document.querySelectorAll<HTMLElement>(selector)))
+        .flat();
+
+      if (elements.length === 0) {
+        return false;
+      }
+
+      elements.forEach((el) => {
+        el.style.position = 'fixed';
+        el.style.right = WIDGET_POSITION.right;
+        el.style.bottom = WIDGET_POSITION.bottom;
+        el.style.display = 'block';
+        el.style.visibility = 'visible';
+        el.style.zIndex = '9999';
+      });
+
+      console.log('✅ Applied widget position override', WIDGET_POSITION);
+      return true;
+    };
+
+    let attempts = 0;
+    const timer = setInterval(() => {
+      attempts += 1;
+      const applied = attemptPosition();
+      if (applied || attempts >= 10) {
+        clearInterval(timer);
+      }
+    }, 300);
+  };
+
+  const hideWidget = () => {
+    // Attempt to hide/close widget if API is available
+    const widgetApi = (window as any).zdrmWebrtcPhoneInterface;
+    if (widgetApi && typeof widgetApi.close === 'function') {
+      try {
+        widgetApi.close();
+        console.log('✅ Zadarma widget closed via API');
+      } catch {
+        // ignore
+      }
+    }
+
+    // Fallback: hide widget elements if present
+    const selectors = [
+      'iframe[src*="webphoneWebRTCWidget"]',
+      'iframe[src*="zadarma"]',
+      'div[id^="zdrm"]',
+      'div[class*="zdrm"]',
+      'div[class*="zadarma"]'
+    ];
+
+    selectors.forEach((selector) => {
+      document.querySelectorAll<HTMLElement>(selector).forEach((el) => {
+        el.style.display = 'none';
+      });
     });
   };
 
