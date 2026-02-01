@@ -9,6 +9,11 @@ const supabase = createClient(
 );
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  console.log('📞 Zadarma webhook handler invoked');
+  console.log('   Method:', req.method);
+  console.log('   Query:', JSON.stringify(req.query));
+  console.log('   Body:', JSON.stringify(req.body).substring(0, 300));
+
   // Set CORS headers
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -33,7 +38,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const webhookData = req.body;
     
-    console.log('📞 Zadarma webhook received:', webhookData.event, webhookData);
+    console.log('📞 Zadarma webhook event received:', webhookData.event);
+    console.log('   Full data:', webhookData);
 
     // Zadarma webhooks can be: NOTIFY_START, NOTIFY_END, NOTIFY_ANSWER, NOTIFY_OUT_START, NOTIFY_OUT_END
     const event = webhookData.event;
