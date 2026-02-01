@@ -183,7 +183,7 @@ export const ZadarmaWebRTC: React.FC<ZadarmaWebRTCProps> = ({ sipLogin, onReady,
       'rounded',     // Shape: 'square' or 'rounded'
       'en',          // Language: ru, en, es, fr, de, pl, ua
       true,          // Visible
-      { right: '10px', bottom: '5px' }  // Position object (not string!)
+      { right: '10px', bottom: '60px' }  // Position object (not string!)
     );
     
     console.log('✅ Zadarma widget initialized');
