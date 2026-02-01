@@ -82,7 +82,8 @@ export const ZadarmaWebRTC: React.FC<ZadarmaWebRTCProps> = ({ sipLogin, onReady,
         showWidget();
         openWidget();
 
-        // Check microphone permission to help diagnose silent calls
+        // Request microphone access and surface permission status
+        await requestMicrophoneAccess();
         await checkMicrophonePermission();
 
         setStatus('ready');
@@ -264,6 +265,26 @@ export const ZadarmaWebRTC: React.FC<ZadarmaWebRTCProps> = ({ sipLogin, onReady,
       }
     } catch {
       // ignore
+    }
+  };
+
+  const requestMicrophoneAccess = async () => {
+    if (!navigator.mediaDevices?.getUserMedia) return;
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      // Immediately stop tracks; we only need to prompt for permission
+      stream.getTracks().forEach((track) => track.stop());
+      setPermissionHint('');
+    } catch (error: any) {
+      const name = error?.name || '';
+      if (name === 'NotAllowedError' || name === 'PermissionDeniedError') {
+        setPermissionHint('Microphone permission is blocked. Allow mic access to hear audio.');
+      } else if (name === 'NotFoundError') {
+        setPermissionHint('No microphone detected. Connect a mic to enable audio.');
+      } else {
+        setPermissionHint('Microphone access failed. Check browser audio settings.');
+      }
     }
   };
 

@@ -70,6 +70,12 @@ export const Dialer: React.FC<DialerProps> = ({ targetLead, onLogActivity, activ
   }, [targetLead?.id]);
 
   useEffect(() => {
+    if (provider === 'zadarma' && !useWebRTC) {
+      setUseWebRTC(true);
+    }
+  }, [provider, useWebRTC]);
+
+  useEffect(() => {
     const initDevice = async () => {
       try {
         setDeviceError(null);
@@ -515,16 +521,6 @@ export const Dialer: React.FC<DialerProps> = ({ targetLead, onLogActivity, activ
         <div className="px-4 pt-3 pb-2 bg-slate-50 border-b border-slate-100">
           <div className="flex items-center gap-2">
             <button
-              onClick={() => setUseWebRTC(false)}
-              className={`flex-1 px-3 py-2 text-xs font-semibold rounded-lg transition-all ${
-                !useWebRTC 
-                  ? 'bg-blue-600 text-white shadow-sm' 
-                  : 'bg-white text-slate-600 hover:bg-slate-100'
-              }`}
-            >
-              API Mode
-            </button>
-            <button
               onClick={() => setUseWebRTC(true)}
               className={`flex-1 px-3 py-2 text-xs font-semibold rounded-lg transition-all ${
                 useWebRTC 
@@ -540,6 +536,23 @@ export const Dialer: React.FC<DialerProps> = ({ targetLead, onLogActivity, activ
           </p>
         </div>
       )}
+
+      <div className="h-16 border-b border-slate-100 flex items-center justify-between px-8 bg-slate-50/30 flex-shrink-0">
+        <div className="flex items-center gap-3">
+          <TelephonyProviderBadge
+            provider={provider}
+            isOnline={true}
+            isReady={isDeviceReady && providerReady}
+          />
+        </div>
+        <div className="flex items-center gap-4">
+          <ProviderSwitcher
+            currentProvider={provider}
+            onSwitch={switchProvider}
+            isCallActive={isCallInProgress}
+          />
+        </div>
+      </div>
 
       <div className="flex border-b border-slate-100 p-2 bg-slate-50/50">
         {['Dialer', 'History', 'SMS'].map((tab) => (
@@ -574,7 +587,7 @@ export const Dialer: React.FC<DialerProps> = ({ targetLead, onLogActivity, activ
               className="flex-1 flex flex-col items-center justify-between p-10"
             >
               {/* WebRTC Mode - Show Widget Status */}
-              {provider === 'zadarma' && useWebRTC ? (
+              {provider === 'zadarma' ? (
                 <div className="w-full flex flex-col items-center justify-center flex-1">
                   <ZadarmaWebRTC
                     sipLogin={process.env.ZADARMA_SIP_NUMBER}
@@ -720,22 +733,6 @@ export const Dialer: React.FC<DialerProps> = ({ targetLead, onLogActivity, activ
         </AnimatePresence>
       </div>
 
-      <div className="h-16 border-t border-slate-50 flex items-center justify-between px-8 bg-slate-50/30 flex-shrink-0">
-        <div className="flex items-center gap-3">
-          <TelephonyProviderBadge
-            provider={provider}
-            isOnline={true}
-            isReady={isDeviceReady && providerReady}
-          />
-        </div>
-        <div className="flex items-center gap-4">
-          <ProviderSwitcher
-            currentProvider={provider}
-            onSwitch={switchProvider}
-            isCallActive={isCallInProgress}
-          />
-        </div>
-      </div>
     </div>
   );
 };
