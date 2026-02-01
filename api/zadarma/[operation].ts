@@ -175,7 +175,7 @@ async function handleMakeCall(req: VercelRequest, res: VercelResponse) {
   try {
     console.log('📦 Request body:', JSON.stringify(req.body).substring(0, 200));
     
-    const { to, from, predicted } = req.body;
+    const { to, from, predicted, sip } = req.body;
 
     if (!to) {
       console.log('❌ Missing destination number');
@@ -212,13 +212,18 @@ async function handleMakeCall(req: VercelRequest, res: VercelResponse) {
       });
     }
 
-    const params: Record<string, any> = {
+    const params: Record<string, string> = {
       from: fromNumber,
       to: to
     };
 
     if (predicted) {
       params.predicted = 'y';
+    }
+    
+    // Optional: sip parameter for CallerID and call recording
+    if (sip) {
+      params.sip = sip;
     }
 
     console.log('📞 Making callback request:');
@@ -244,8 +249,10 @@ async function handleMakeCall(req: VercelRequest, res: VercelResponse) {
     
     return res.status(200).json({
       success: true,
-      message: 'Callback initiated - Zadarma will call your configured device',
-      callId: result?.call_id || result?.id,
+      message: 'Callback initiated - Zadarma will call your SIP device, then connect to destination',
+      from: result?.from,
+      to: result?.to,
+      time: result?.time,  // Transaction timestamp from Zadarma
       status: result?.status,
       details: result
     });

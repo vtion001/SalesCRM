@@ -11,7 +11,7 @@ import { useContacts } from '../hooks/useContacts';
 import { supabase } from '../services/supabaseClient';
 import { useTelephony } from '../context';
 import { TelephonyProviderBadge, ProviderSwitcher } from './Providers';
-import { ZadarmaWebRTC } from './ZadarmaWebRTC';
+// ZadarmaWebRTC widget removed - using callback API instead
 
 interface DialerProps {
   targetLead: Lead | undefined;
@@ -69,11 +69,13 @@ export const Dialer: React.FC<DialerProps> = ({ targetLead, onLogActivity, activ
     }
   }, [targetLead?.id]);
 
+  // Zadarma uses callback API - device is always ready when provider is set
   useEffect(() => {
-    if (provider === 'zadarma' && !useWebRTC) {
-      setUseWebRTC(true);
+    if (provider === 'zadarma') {
+      setIsDeviceReady(true);
+      setDeviceError(null);
     }
-  }, [provider, useWebRTC]);
+  }, [provider]);
 
   useEffect(() => {
     const initDevice = async () => {
@@ -594,21 +596,14 @@ export const Dialer: React.FC<DialerProps> = ({ targetLead, onLogActivity, activ
               exit={{ opacity: 0, x: -20 }}
               className="flex-1 flex flex-col items-center justify-between p-10"
             >
-              {/* Zadarma Mode - Use standard dialer with callback API */}
+              {/* Zadarma Mode - Use callback API (no WebRTC widget needed) */}
               {provider === 'zadarma' ? (
                 <div className="w-full flex flex-col items-center justify-between p-10">
-                  {/* WebRTC Widget Indicator */}
-                  <ZadarmaWebRTC
-                    sipLogin={process.env.ZADARMA_SIP_NUMBER}
-                    onReady={() => {
-                      setIsDeviceReady(true);
-                      setDeviceError(null);
-                    }}
-                    onError={(err) => {
-                      setDeviceError(err);
-                      setIsDeviceReady(false);
-                    }}
-                  />
+                  {/* Zadarma Status Banner */}
+                  <div className="w-full max-w-md mb-4 px-4 py-3 bg-green-50 border border-green-200 rounded-lg text-center">
+                    <p className="text-sm font-medium text-green-900">📞 Zadarma Callback Mode</p>
+                    <p className="text-xs text-green-700">When you dial, Zadarma will call your SIP device first, then connect to the destination.</p>
+                  </div>
 
                   {/* Standard Dialer UI */}
                   <div className="w-full flex flex-col items-center">
