@@ -131,6 +131,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       case 'initialize':
         console.log('🚀 Routing to initialize handler');
         return await handleInitialize(req, res);
+      case 'list-sip':
+        console.log('📱 Routing to list-sip handler');
+        return await handleListSIP(req, res);
       default:
         console.log('❌ Unknown operation:', op);
         return res.status(404).json({ error: `Unknown operation: ${op}` });
@@ -594,5 +597,38 @@ async function handleWebRTCKey(req: VercelRequest, res: VercelResponse) {
         errorType: error.name
       });
     }
+  }
+}
+
+/**
+ * Handle listing SIP accounts
+ * GET /v1/sip/ - Returns list of user's SIP numbers
+ */
+async function handleListSIP(req: VercelRequest, res: VercelResponse) {
+  console.log('📱 === LIST SIP HANDLER START ===');
+  
+  try {
+    const result = await zadarmaRequest('/sip/', {}, 'GET');
+    
+    if (result.status === 'success') {
+      return res.json({
+        success: true,
+        sips: result.sips,
+        left: result.left,
+        message: 'Use the "id" field as the sip parameter for WebRTC'
+      });
+    } else {
+      return res.status(400).json({
+        success: false,
+        error: result.message || 'Failed to list SIP accounts',
+        details: result
+      });
+    }
+  } catch (error: any) {
+    console.error('❌ List SIP handler error:', error.message);
+    return res.status(500).json({
+      success: false,
+      error: error.message
+    });
   }
 }
