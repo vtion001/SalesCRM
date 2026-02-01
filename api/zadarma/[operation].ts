@@ -34,7 +34,7 @@ const ZADARMA_CONFIG = {
   get API_KEY() { return process.env.ZADARMA_API_KEY || ''; },
   get SECRET_KEY() { return process.env.ZADARMA_SECRET_KEY || ''; },
   get SIP_NUMBER() { return process.env.ZADARMA_SIP_NUMBER || ''; },
-  BASE_URL: 'https://api.zadarma.com'
+  BASE_URL: 'https://api.zadarma.com/v1'
 };
 
 // Inline API request function
