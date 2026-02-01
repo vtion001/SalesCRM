@@ -565,7 +565,7 @@ export const Dialer: React.FC<DialerProps> = ({ targetLead, onLogActivity, activ
             >
               {/* WebRTC Mode - Show Widget Status */}
               {provider === 'zadarma' ? (
-                <div className="w-full flex flex-col items-center justify-center flex-1">
+                <div className="w-full flex flex-col items-center justify-center flex-1 gap-6">
                   <ZadarmaWebRTC
                     sipLogin={process.env.ZADARMA_SIP_NUMBER}
                     onReady={() => {
@@ -577,14 +577,44 @@ export const Dialer: React.FC<DialerProps> = ({ targetLead, onLogActivity, activ
                       setIsDeviceReady(false);
                     }}
                   />
-                  <div className="mt-6 text-center max-w-md">
-                    <p className="text-sm text-slate-600 mb-2">
-                      The Zadarma webphone widget is loaded in the bottom-right corner of your browser.
-                    </p>
-                    <p className="text-xs text-slate-500">
-                      Click the widget to make calls, receive calls, and manage your phone settings.
-                    </p>
+                  
+                  {/* Show phone number input for reference */}
+                  <div className="w-full max-w-sm">
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Number to Dial</p>
+                    <input
+                      type="text"
+                      value={phoneNumber}
+                      onChange={(e) => setPhoneNumber(e.target.value)}
+                      className="w-full text-xl font-bold text-slate-900 text-center bg-slate-50 border border-slate-200 rounded-lg py-3 px-3 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                      placeholder="Enter number"
+                    />
                   </div>
+                  
+                  {/* Instructions */}
+                  <div className="w-full max-w-md text-center bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <p className="text-sm font-bold text-blue-900 mb-2">How to Dial with Zadarma WebRTC:</p>
+                    <ol className="text-xs text-blue-800 space-y-1 text-left">
+                      <li>1. Click the Zadarma widget (bottom-right corner)</li>
+                      <li>2. Enter the phone number above into the widget's dial pad</li>
+                      <li>3. Click Call to connect</li>
+                      <li>4. Allow microphone access when prompted</li>
+                    </ol>
+                  </div>
+                  
+                  {/* Quick Copy Button */}
+                  {phoneNumber && (
+                    <motion.button
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      onClick={() => {
+                        navigator.clipboard.writeText(phoneNumber);
+                        alert('Number copied! Paste it in the Zadarma widget.');
+                      }}
+                      className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-lg transition-all active:scale-95"
+                    >
+                      Copy Number to Clipboard
+                    </motion.button>
+                  )}
                 </div>
               ) : (
                 <>

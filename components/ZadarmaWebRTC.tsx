@@ -45,29 +45,53 @@ export const ZadarmaWebRTC: React.FC<ZadarmaWebRTCProps> = ({ sipLogin, onReady,
       showWidget();
       openWidget();
       
-      // Try to programmatically dial through the widget
-      // Some versions of Zadarma widget support this
+      // Store the number for user reference
+      (window as any).zadarmaLastDialNumber = phoneNumber;
+      
+      // Try different methods to programmatically dial
+      // Method 1: dial()
       if (typeof widgetApi.dial === 'function') {
         try {
           widgetApi.dial(phoneNumber);
-          console.log('✅ Widget dial() called');
+          console.log('✅ Widget dial() called successfully');
+          return;
         } catch (err) {
-          console.error('⚠️ Widget dial() failed:', err);
+          console.error('⚠️ Widget dial() method failed:', err);
         }
-      } else if (typeof widgetApi.makeCall === 'function') {
+      }
+      
+      // Method 2: makeCall()
+      if (typeof widgetApi.makeCall === 'function') {
         try {
           widgetApi.makeCall(phoneNumber);
-          console.log('✅ Widget makeCall() called');
+          console.log('✅ Widget makeCall() called successfully');
+          return;
         } catch (err) {
-          console.error('⚠️ Widget makeCall() failed:', err);
+          console.error('⚠️ Widget makeCall() method failed:', err);
         }
-      } else {
-        console.log('⚠️ Widget does not support programmatic dialing. User must dial manually in widget.');
       }
+      
+      // Method 3: Try to inject number into widget's input field (if it exists)
+      try {
+        const dialerInput = document.querySelector('iframe[src*="webphoneWebRTCWidget"] ~ input, .zadarma-dialer-input, input[placeholder*="phone"], input[placeholder*="number"]');
+        if (dialerInput && dialerInput instanceof HTMLInputElement) {
+          dialerInput.value = phoneNumber;
+          dialerInput.dispatchEvent(new Event('input', { bubbles: true }));
+          console.log('✅ Widget input field populated with:', phoneNumber);
+          return;
+        }
+      } catch (err) {
+        console.error('⚠️ Failed to inject number into input:', err);
+      }
+      
+      // Fallback: Log message for user to dial manually
+      console.warn('⚠️ Widget does not support programmatic dialing. Showing manual dial instructions...');
+      throw new Error(`Please dial ${phoneNumber} manually in the Zadarma widget that opened in the bottom-right corner.`);
     };
     
     return () => {
       delete (window as any).zadarmaWebRTCDial;
+      delete (window as any).zadarmaLastDialNumber;
     };
   }, []);
 
@@ -380,10 +404,11 @@ export const ZadarmaWebRTC: React.FC<ZadarmaWebRTCProps> = ({ sipLogin, onReady,
       <Phone className="text-green-600" size={16} />
       <div className="flex-1">
         <p className="text-sm font-medium text-green-900">WebRTC Ready</p>
-        <p className="text-xs text-green-700">Widget loaded in bottom-right corner</p>
+        <p className="text-xs text-green-700">Widget loaded. Dial numbers using the widget in bottom-right corner.</p>
         {permissionHint && (
-          <p className="text-[10px] text-amber-700 mt-1">{permissionHint}</p>
+          <p className="text-[10px] text-amber-700 mt-1">⚠️ {permissionHint}</p>
         )}
+        <p className="text-[10px] text-green-600 mt-1">💡 Make sure your iPhone microphone is enabled in browser settings (⚙️ → Microphone)</p>
       </div>
     </div>
   );
