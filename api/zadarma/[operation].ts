@@ -50,13 +50,15 @@ async function zadarmaRequest(
     throw new Error('Zadarma credentials not configured');
   }
   
-  const signature = generateSignature(method, params, config.SECRET_KEY);
+  // Ensure method has /v1 prefix for signature
+  const fullMethod = method.startsWith('/v1') ? method : `/v1${method}`;
+  const signature = generateSignature(fullMethod, params, config.SECRET_KEY);
   const paramsStr = new URLSearchParams(params).toString();
   const url = httpMethod === 'GET' 
     ? `${config.BASE_URL}${method}${paramsStr ? '?' + paramsStr : ''}`
     : `${config.BASE_URL}${method}`;
   
-  console.log(`📡 Zadarma ${httpMethod} ${method}`);
+  console.log(`📡 Zadarma ${httpMethod} ${fullMethod}`);
   
   const options: RequestInit = {
     method: httpMethod,
