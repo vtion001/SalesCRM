@@ -1,6 +1,6 @@
 // Consolidated Zadarma API router - handles all operations
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { zadarmaRequest, ZADARMA_CONFIG } from './config';
+import { zadarmaRequest, ZADARMA_CONFIG } from './config.js';
 
 // Force Node.js runtime (crypto module needs Node.js)
 export const config = {
