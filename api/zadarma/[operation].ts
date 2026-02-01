@@ -15,7 +15,7 @@ const getConfig = () => ({
   BASE_URL: 'https://api.zadarma.com/v1'
 });
 
-// Inline signature generation
+// Inline signature generation - matches PHP hash_hmac behavior
 function generateSignature(method: string, params: Record<string, string>, secretKey: string): string {
   const sortedKeys = Object.keys(params).sort();
   const sortedParams: Record<string, string> = {};
@@ -24,9 +24,10 @@ function generateSignature(method: string, params: Record<string, string>, secre
   const paramsStr = new URLSearchParams(sortedParams).toString();
   const paramsMd5 = crypto.createHash('md5').update(paramsStr).digest('hex');
   const signatureString = method + paramsStr + paramsMd5;
-  const hash = crypto.createHmac('sha1', secretKey).update(signatureString).digest();
   
-  return hash.toString('base64');
+  // PHP hash_hmac returns hex by default, then base64 encodes that hex string
+  const hashHex = crypto.createHmac('sha1', secretKey).update(signatureString).digest('hex');
+  return Buffer.from(hashHex).toString('base64');
 }
 
 // Inline config object for compatibility with existing code
@@ -524,7 +525,7 @@ async function handleWebRTCKey(req: VercelRequest, res: VercelResponse) {
     const method = '/v1/webrtc/get_key/';
     const params: Record<string, string> = { sip_login: sipLogin };
     
-    // Generate signature using inline function
+    // Generate signature - PHP-compatible (hex then base64)
     const sortedKeys = Object.keys(params).sort();
     const sortedParams: Record<string, string> = {};
     sortedKeys.forEach(key => { sortedParams[key] = params[key]; });
@@ -532,7 +533,8 @@ async function handleWebRTCKey(req: VercelRequest, res: VercelResponse) {
     const paramsStr = new URLSearchParams(sortedParams).toString();
     const paramsMd5 = crypto.createHash('md5').update(paramsStr).digest('hex');
     const signatureString = method + paramsStr + paramsMd5;
-    const signature = crypto.createHmac('sha1', SECRET_KEY).update(signatureString).digest('base64');
+    const hashHex = crypto.createHmac('sha1', SECRET_KEY).update(signatureString).digest('hex');
+    const signature = Buffer.from(hashHex).toString('base64');
     
     console.log('🔐 Generated signature for WebRTC key request');
     
