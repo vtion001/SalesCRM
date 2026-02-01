@@ -106,6 +106,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Route to appropriate handler based on operation
     switch (op) {
+      case 'health':
+        // Simple health check that doesn't need any API calls
+        return res.status(200).json({ 
+          ok: true, 
+          timestamp: new Date().toISOString(),
+          hasApiKey: !!process.env.ZADARMA_API_KEY,
+          hasSecretKey: !!process.env.ZADARMA_SECRET_KEY,
+          hasSipNumber: !!process.env.ZADARMA_SIP_NUMBER
+        });
       case 'test-auth':
         console.log('🧪 Routing to test-auth handler');
         return await handleTestAuth(req, res);
