@@ -16,8 +16,8 @@ const ZADARMA_SCRIPTS = {
 // Default SIP ID (found via /api/zadarma/list-sip)
 const DEFAULT_SIP_ID = '12825';
 
-// Widget placement (move higher to avoid covering switch)
-const WIDGET_POSITION = { right: '10px', bottom: '90px' };
+// Widget placement
+const WIDGET_POSITION = { right: '10px', bottom: '5px' };
 
 /**
  * Zadarma WebRTC Widget Component
@@ -77,8 +77,8 @@ export const ZadarmaWebRTC: React.FC<ZadarmaWebRTCProps> = ({ sipLogin, onReady,
         // Initialize widget with key and SIP (with retry)
         await initializeWidgetWithRetry(data.key, sip);
 
-        // Apply explicit position override in case the widget ignores settings
-        applyWidgetPosition();
+        // Ensure iframe is visible when switching back to WebRTC
+        showWidget();
 
         setStatus('ready');
         onReady?.();
@@ -216,45 +216,18 @@ export const ZadarmaWebRTC: React.FC<ZadarmaWebRTCProps> = ({ sipLogin, onReady,
     });
   };
 
-  const applyWidgetPosition = () => {
-    const attemptPosition = () => {
-      const selectors = [
-        'iframe[src*="webphoneWebRTCWidget"]',
-        'iframe[src*="zadarma"]',
-        'div[id^="zdrm"]',
-        'div[class*="zdrm"]',
-        'div[class*="zadarma"]'
-      ];
+  const showWidget = () => {
+    const selectors = [
+      'iframe[src*="webphoneWebRTCWidget"]',
+      'iframe[src*="zadarma"]'
+    ];
 
-      const elements = selectors
-        .map((selector) => Array.from(document.querySelectorAll<HTMLElement>(selector)))
-        .flat();
-
-      if (elements.length === 0) {
-        return false;
-      }
-
-      elements.forEach((el) => {
-        el.style.position = 'fixed';
-        el.style.right = WIDGET_POSITION.right;
-        el.style.bottom = WIDGET_POSITION.bottom;
+    selectors.forEach((selector) => {
+      document.querySelectorAll<HTMLElement>(selector).forEach((el) => {
         el.style.display = 'block';
         el.style.visibility = 'visible';
-        el.style.zIndex = '9999';
       });
-
-      console.log('✅ Applied widget position override', WIDGET_POSITION);
-      return true;
-    };
-
-    let attempts = 0;
-    const timer = setInterval(() => {
-      attempts += 1;
-      const applied = attemptPosition();
-      if (applied || attempts >= 10) {
-        clearInterval(timer);
-      }
-    }, 300);
+    });
   };
 
   const hideWidget = () => {
@@ -272,10 +245,7 @@ export const ZadarmaWebRTC: React.FC<ZadarmaWebRTCProps> = ({ sipLogin, onReady,
     // Fallback: hide widget elements if present
     const selectors = [
       'iframe[src*="webphoneWebRTCWidget"]',
-      'iframe[src*="zadarma"]',
-      'div[id^="zdrm"]',
-      'div[class*="zdrm"]',
-      'div[class*="zadarma"]'
+      'iframe[src*="zadarma"]'
     ];
 
     selectors.forEach((selector) => {
