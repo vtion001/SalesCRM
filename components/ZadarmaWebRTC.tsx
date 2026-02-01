@@ -7,6 +7,15 @@ interface ZadarmaWebRTCProps {
   onError?: (error: string) => void;
 }
 
+// Zadarma WebRTC widget script URLs (v9)
+const ZADARMA_SCRIPTS = {
+  lib: 'https://my.zadarma.com/webphoneWebRTCWidget/v9/js/loader-phone-lib.js?sub_v=1',
+  fn: 'https://my.zadarma.com/webphoneWebRTCWidget/v9/js/loader-phone-fn.js?sub_v=1'
+};
+
+// Default SIP ID (found via /api/zadarma/list-sip)
+const DEFAULT_SIP_ID = '12825';
+
 /**
  * Zadarma WebRTC Widget Component
  * Loads the Zadarma webphone widget into the page
@@ -16,7 +25,6 @@ interface ZadarmaWebRTCProps {
 export const ZadarmaWebRTC: React.FC<ZadarmaWebRTCProps> = ({ sipLogin, onReady, onError }) => {
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const [errorMessage, setErrorMessage] = useState<string>('');
-  const [webrtcKey, setWebrtcKey] = useState<string>('');
 
   useEffect(() => {
     let mounted = true;
@@ -26,11 +34,11 @@ export const ZadarmaWebRTC: React.FC<ZadarmaWebRTCProps> = ({ sipLogin, onReady,
         console.log('🔑 Fetching WebRTC key...');
         setStatus('loading');
 
-        // Get WebRTC key from dedicated endpoint (not the router)
-        const params = new URLSearchParams();
-        if (sipLogin) params.set('sip_login', sipLogin);
-
-        const url = `/api/zadarma/webrtc-key?${params}`;
+        // Use provided SIP login or default
+        const sip = sipLogin || DEFAULT_SIP_ID;
+        
+        // Get WebRTC key from API
+        const url = `/api/zadarma/webrtc-key?sip_login=${sip}`;
         console.log('📡 Calling:', url);
         
         const response = await fetch(url);
@@ -56,15 +64,15 @@ export const ZadarmaWebRTC: React.FC<ZadarmaWebRTCProps> = ({ sipLogin, onReady,
 
         console.log('✅ WebRTC key obtained');
         console.log('⏰ Key valid for:', data.expiresIn);
-        setWebrtcKey(data.key);
+        console.log('🔑 Key preview:', data.key.substring(0, 20) + '...');
 
-        // Load Zadarma scripts
-        await loadZadarmaScripts(data.widget.scriptUrl, data.widget.fnUrl);
+        // Load Zadarma scripts (v9)
+        await loadZadarmaScripts();
 
         if (!mounted) return;
 
-        // Initialize widget
-        initializeWidget(data.key, data.sip_login);
+        // Initialize widget with key and SIP
+        initializeWidget(data.key, sip);
 
         setStatus('ready');
         onReady?.();
@@ -86,27 +94,33 @@ export const ZadarmaWebRTC: React.FC<ZadarmaWebRTCProps> = ({ sipLogin, onReady,
     };
   }, [sipLogin]);
 
-  const loadZadarmaScripts = (scriptUrl: string, fnUrl: string): Promise<void> => {
+  const loadZadarmaScripts = (): Promise<void> => {
     return new Promise((resolve, reject) => {
       // Check if already loaded
       if ((window as any).zadarmaWidgetFn) {
+        console.log('✅ Zadarma scripts already loaded');
         resolve();
         return;
       }
 
-      // Load lib script
+      console.log('📦 Loading Zadarma scripts (v9)...');
+
+      // Load lib script first
       const libScript = document.createElement('script');
-      libScript.src = scriptUrl;
+      libScript.src = ZADARMA_SCRIPTS.lib;
       libScript.async = true;
       
       libScript.onload = () => {
-        // Load fn script
+        console.log('✅ Loaded loader-phone-lib.js');
+        
+        // Load fn script after lib is loaded
         const fnScript = document.createElement('script');
-        fnScript.src = fnUrl;
+        fnScript.src = ZADARMA_SCRIPTS.fn;
         fnScript.async = true;
         
         fnScript.onload = () => {
-          console.log('✅ Zadarma scripts loaded');
+          console.log('✅ Loaded loader-phone-fn.js');
+          console.log('✅ Zadarma scripts loaded successfully');
           resolve();
         };
         
@@ -125,7 +139,7 @@ export const ZadarmaWebRTC: React.FC<ZadarmaWebRTCProps> = ({ sipLogin, onReady,
     });
   };
 
-  const initializeWidget = (key: string, login: string) => {
+  const initializeWidget = (key: string, sip: string) => {
     const zadarmaWidgetFn = (window as any).zadarmaWidgetFn;
     
     if (!zadarmaWidgetFn) {
@@ -133,16 +147,18 @@ export const ZadarmaWebRTC: React.FC<ZadarmaWebRTCProps> = ({ sipLogin, onReady,
     }
 
     console.log('🚀 Initializing Zadarma widget...');
+    console.log('   Key:', key.substring(0, 20) + '...');
+    console.log('   SIP:', sip);
     
-    // Initialize widget
-    // Parameters: key, login, style (square|rounded), language, isVisible, position
+    // Initialize widget with correct parameters matching Zadarma documentation
+    // zadarmaWidgetFn(key, sip, shape, language, visible, position)
     zadarmaWidgetFn(
-      key,
-      login,
-      'square',
-      'en',
-      true,
-      "{right:'20px',bottom:'100px'}" // Position above our dialer
+      key,           // WebRTC key from API
+      sip,           // SIP ID (e.g., "12825")
+      'square',      // Shape: 'square' or 'rounded'
+      'en',          // Language: ru, en, es, fr, de, pl, ua
+      true,          // Visible
+      { right: '10px', bottom: '5px' }  // Position object (not string!)
     );
     
     console.log('✅ Zadarma widget initialized');
