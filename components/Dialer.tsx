@@ -11,6 +11,7 @@ import { useContacts } from '../hooks/useContacts';
 import { supabase } from '../services/supabaseClient';
 import { useTelephony } from '../context';
 import { TelephonyProviderBadge, ProviderSwitcher } from './Providers';
+import { ZadarmaWebRTC } from './ZadarmaWebRTC';
 
 interface DialerProps {
   targetLead: Lead | undefined;
@@ -48,6 +49,7 @@ export const Dialer: React.FC<DialerProps> = ({ targetLead, onLogActivity, activ
   const [isSending, setIsSending] = useState(false);
   const [currentCall, setCurrentCall] = useState<any>(null);
   const [missedCallCount, setMissedCallCount] = useState(0);
+  const [useWebRTC, setUseWebRTC] = useState(false); // Toggle between API and WebRTC
   
   // Hooks for data access
   const { callHistory, addCallRecord, updateCallRecord } = useCallHistory(targetLead?.id);
@@ -72,6 +74,12 @@ export const Dialer: React.FC<DialerProps> = ({ targetLead, onLogActivity, activ
       try {
         setDeviceError(null);
         setIsDeviceReady(false);
+        
+        // Skip initialization if using WebRTC (widget handles everything)
+        if (useWebRTC && provider === 'zadarma') {
+          console.log('📞 Using Zadarma WebRTC widget - no device init needed');
+          return;
+        }
         
         // Only initialize the selected provider, not both
         if (provider === 'twilio') {
@@ -524,6 +532,37 @@ export const Dialer: React.FC<DialerProps> = ({ targetLead, onLogActivity, activ
         ))}
       </div>
 
+      {/* Zadarma Mode Switcher - only show for Zadarma provider */}
+      {provider === 'zadarma' && activeTab === 'Dialer' && (
+        <div className="px-4 pt-3 pb-2 bg-slate-50 border-b border-slate-100">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setUseWebRTC(false)}
+              className={`flex-1 px-3 py-2 text-xs font-semibold rounded-lg transition-all ${
+                !useWebRTC 
+                  ? 'bg-blue-600 text-white shadow-sm' 
+                  : 'bg-white text-slate-600 hover:bg-slate-100'
+              }`}
+            >
+              API Mode
+            </button>
+            <button
+              onClick={() => setUseWebRTC(true)}
+              className={`flex-1 px-3 py-2 text-xs font-semibold rounded-lg transition-all ${
+                useWebRTC 
+                  ? 'bg-blue-600 text-white shadow-sm' 
+                  : 'bg-white text-slate-600 hover:bg-slate-100'
+              }`}
+            >
+              WebRTC Mode
+            </button>
+          </div>
+          <p className="text-[10px] text-slate-500 mt-1.5 text-center">
+            {useWebRTC ? 'Widget handles calls automatically' : 'API-based call control'}
+          </p>
+        </div>
+      )}
+
       <div className="flex-1 overflow-hidden relative flex flex-col">
         <AnimatePresence mode="wait">
           {activeTab === 'Dialer' && (
@@ -534,11 +573,37 @@ export const Dialer: React.FC<DialerProps> = ({ targetLead, onLogActivity, activ
               exit={{ opacity: 0, x: -20 }}
               className="flex-1 flex flex-col items-center justify-between p-10"
             >
-              <div className="w-full flex flex-col items-center">
-                {isCallInProgress && (
-                  <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="bg-indigo-50 text-indigo-600 px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-3 mb-8 border border-indigo-100">
-                    <div className="relative flex">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+              {/* WebRTC Mode - Show Widget Status */}
+              {provider === 'zadarma' && useWebRTC ? (
+                <div className="w-full flex flex-col items-center justify-center flex-1">
+                  <ZadarmaWebRTC
+                    sipLogin={process.env.ZADARMA_SIP_NUMBER}
+                    onReady={() => {
+                      setIsDeviceReady(true);
+                      setDeviceError(null);
+                    }}
+                    onError={(err) => {
+                      setDeviceError(err);
+                      setIsDeviceReady(false);
+                    }}
+                  />
+                  <div className="mt-6 text-center max-w-md">
+                    <p className="text-sm text-slate-600 mb-2">
+                      The Zadarma webphone widget is loaded in the bottom-right corner of your browser.
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      Click the widget to make calls, receive calls, and manage your phone settings.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  {/* Normal Dialer UI */}
+                  <div className="w-full flex flex-col items-center">
+                    {isCallInProgress && (
+                      <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="bg-indigo-50 text-indigo-600 px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-3 mb-8 border border-indigo-100">
+                        <div className="relative flex">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
                       <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-600"></span>
                     </div>
                     In Call • {formatDuration(callDuration)}
@@ -602,6 +667,8 @@ export const Dialer: React.FC<DialerProps> = ({ targetLead, onLogActivity, activ
                 <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-4 px-4 py-2 bg-rose-50 text-rose-600 text-[10px] font-black uppercase tracking-widest rounded-lg border border-rose-100">
                   {error}
                 </motion.div>
+              )}
+              </>
               )}
             </motion.div>
           )}

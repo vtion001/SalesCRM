@@ -34,6 +34,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       case 'test-auth':
         console.log('🧪 Routing to test-auth handler');
         return await handleTestAuth(req, res);
+      case 'webrtc-key':
+        console.log('🔑 Routing to webrtc-key handler');
+        return await handleWebRTCKey(req, res);
       case 'make-call':
         console.log('📞 Routing to make-call handler');
         return await handleMakeCall(req, res);
@@ -388,6 +391,65 @@ async function handleTestAuth(req: VercelRequest, res: VercelResponse) {
     });
   } catch (error: any) {
     console.error('❌ Test auth handler error:', error);
+    
+    if (!res.headersSent) {
+      res.status(500).json({
+        success: false,
+        error: error.message,
+        stack: error.stack?.substring(0, 500)
+      });
+    }
+  }
+}
+
+/**
+ * Handle WebRTC key generation
+ * GET /v1/webrtc/get_key/ - Returns temporary key for WebRTC widget (valid 72 hours)
+ */
+async function handleWebRTCKey(req: VercelRequest, res: VercelResponse) {
+  console.log('🔑 === WEBRTC KEY HANDLER START ===');
+  
+  try {
+    // Get SIP login from query params or use configured SIP number
+    const sipLogin = req.query.sip_login || ZADARMA_CONFIG.SIP_NUMBER;
+    
+    if (!sipLogin) {
+      console.error('❌ No SIP login provided');
+      return res.status(400).json({
+        success: false,
+        error: 'SIP login is required. Provide sip_login query param or set ZADARMA_SIP_NUMBER env var'
+      });
+    }
+    
+    console.log('📞 SIP login:', sipLogin);
+    
+    // Call Zadarma API to get WebRTC key
+    const result = await zadarmaRequest(`/v1/webrtc/get_key/`, { sip_login: sipLogin }, 'GET');
+    
+    if (result.status === 'success' && result.key) {
+      console.log('✅ WebRTC key generated successfully');
+      console.log('⏰ Key expires in 72 hours');
+      
+      return res.json({
+        success: true,
+        key: result.key,
+        sip_login: sipLogin,
+        expiresIn: '72 hours',
+        widget: {
+          scriptUrl: 'https://my.zadarma.com/webphoneWebRTCWidget/v8/js/loader-phone-lib.js?v=23',
+          fnUrl: 'https://my.zadarma.com/webphoneWebRTCWidget/v8/js/loader-phone-fn.js?v=23'
+        }
+      });
+    } else {
+      console.error('❌ Failed to get WebRTC key:', result);
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to generate WebRTC key',
+        details: result
+      });
+    }
+  } catch (error: any) {
+    console.error('❌ WebRTC key handler error:', error);
     
     if (!res.headersSent) {
       res.status(500).json({
