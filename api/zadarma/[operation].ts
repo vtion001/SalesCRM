@@ -523,7 +523,7 @@ async function handleWebRTCKey(req: VercelRequest, res: VercelResponse) {
     
     // Make actual API call to get WebRTC key
     const method = '/v1/webrtc/get_key/';
-    const params: Record<string, string> = { sip_login: sipLogin };
+    const params: Record<string, string> = { sip: sipLogin };
     
     // Generate signature - PHP-compatible (hex then base64)
     const sortedKeys = Object.keys(params).sort();
