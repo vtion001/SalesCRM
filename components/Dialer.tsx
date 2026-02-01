@@ -49,7 +49,6 @@ export const Dialer: React.FC<DialerProps> = ({ targetLead, onLogActivity, activ
   const [isSending, setIsSending] = useState(false);
   const [currentCall, setCurrentCall] = useState<any>(null);
   const [missedCallCount, setMissedCallCount] = useState(0);
-  const [useWebRTC, setUseWebRTC] = useState(false); // Toggle between API and WebRTC
   
   // Hooks for data access
   const { callHistory, addCallRecord, updateCallRecord } = useCallHistory(targetLead?.id);
@@ -83,9 +82,9 @@ export const Dialer: React.FC<DialerProps> = ({ targetLead, onLogActivity, activ
         setDeviceError(null);
         setIsDeviceReady(false);
         
-        // Skip initialization if using WebRTC (widget handles everything)
-        if (useWebRTC && provider === 'zadarma') {
-          console.log('📞 Using Zadarma WebRTC widget - no device init needed');
+        // Skip initialization for Zadarma - callback API doesn't need client-side device
+        if (provider === 'zadarma') {
+          console.log('📞 Using Zadarma callback API - no device init needed');
           return;
         }
         
@@ -525,27 +524,6 @@ export const Dialer: React.FC<DialerProps> = ({ targetLead, onLogActivity, activ
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* Zadarma Mode Switcher - only show for Zadarma provider */}
-      {provider === 'zadarma' && activeTab === 'Dialer' && (
-        <div className="px-4 pt-3 pb-2 bg-slate-50 border-b border-slate-100">
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setUseWebRTC(true)}
-              className={`flex-1 px-3 py-2 text-xs font-semibold rounded-lg transition-all ${
-                useWebRTC 
-                  ? 'bg-blue-600 text-white shadow-sm' 
-                  : 'bg-white text-slate-600 hover:bg-slate-100'
-              }`}
-            >
-              WebRTC Mode
-            </button>
-          </div>
-          <p className="text-[10px] text-slate-500 mt-1.5 text-center">
-            {useWebRTC ? 'Widget handles calls automatically' : 'API-based call control'}
-          </p>
-        </div>
-      )}
 
       <div className="h-16 border-b border-slate-100 flex items-center justify-between px-8 bg-slate-50/30 flex-shrink-0">
         <div className="flex items-center gap-3">
