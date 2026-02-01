@@ -259,23 +259,6 @@ async function handleMakeCall(req: VercelRequest, res: VercelResponse) {
     }
   }
 }
-    res.status(200).json({
-      success: true,
-      message: 'Call initiated',
-      data: result
-    });
-  } catch (error: any) {
-    console.error('❌ Exception in handleMakeCall:', error?.message);
-    console.error('   Stack:', error?.stack?.substring(0, 500));
-    
-    if (!res.headersSent) {
-      res.status(500).json({ 
-        error: error?.message || 'Failed to initiate call',
-        timestamp: Date.now()
-      });
-    }
-  }
-}
 
 // Handler: Get Call Logs
 async function handleCallLogs(req: VercelRequest, res: VercelResponse) {
