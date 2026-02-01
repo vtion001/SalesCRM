@@ -96,8 +96,8 @@ export const ZadarmaWebRTC: React.FC<ZadarmaWebRTCProps> = ({ sipLogin, onReady,
 
   const loadZadarmaScripts = (): Promise<void> => {
     return new Promise((resolve, reject) => {
-      // Check if already loaded
-      if ((window as any).zadarmaWidgetFn) {
+      // Check if already loaded and ready
+      if ((window as any).zadarmaWidgetFn && (window as any).zdrmWebrtcPhoneInterface) {
         console.log('✅ Zadarma scripts already loaded');
         resolve();
         return;
@@ -108,27 +108,52 @@ export const ZadarmaWebRTC: React.FC<ZadarmaWebRTCProps> = ({ sipLogin, onReady,
       // Load lib script first
       const libScript = document.createElement('script');
       libScript.src = ZADARMA_SCRIPTS.lib;
-      libScript.async = true;
+      libScript.async = false; // Load synchronously to ensure order
       
       libScript.onload = () => {
         console.log('✅ Loaded loader-phone-lib.js');
         
-        // Load fn script after lib is loaded
-        const fnScript = document.createElement('script');
-        fnScript.src = ZADARMA_SCRIPTS.fn;
-        fnScript.async = true;
-        
-        fnScript.onload = () => {
-          console.log('✅ Loaded loader-phone-fn.js');
-          console.log('✅ Zadarma scripts loaded successfully');
-          resolve();
+        // Wait for lib to fully initialize before loading fn
+        const waitForLib = () => {
+          if ((window as any).zdrmWebrtcPhoneInterface) {
+            console.log('✅ zdrmWebrtcPhoneInterface is ready');
+            loadFnScript();
+          } else {
+            console.log('⏳ Waiting for zdrmWebrtcPhoneInterface...');
+            setTimeout(waitForLib, 100);
+          }
         };
         
-        fnScript.onerror = () => {
-          reject(new Error('Failed to load Zadarma fn script'));
+        const loadFnScript = () => {
+          // Load fn script after lib is fully initialized
+          const fnScript = document.createElement('script');
+          fnScript.src = ZADARMA_SCRIPTS.fn;
+          fnScript.async = false;
+          
+          fnScript.onload = () => {
+            console.log('✅ Loaded loader-phone-fn.js');
+            
+            // Wait for zadarmaWidgetFn to be available
+            const waitForWidget = () => {
+              if ((window as any).zadarmaWidgetFn) {
+                console.log('✅ zadarmaWidgetFn is ready');
+                resolve();
+              } else {
+                console.log('⏳ Waiting for zadarmaWidgetFn...');
+                setTimeout(waitForWidget, 100);
+              }
+            };
+            waitForWidget();
+          };
+          
+          fnScript.onerror = () => {
+            reject(new Error('Failed to load Zadarma fn script'));
+          };
+          
+          document.head.appendChild(fnScript);
         };
         
-        document.head.appendChild(fnScript);
+        waitForLib();
       };
       
       libScript.onerror = () => {
