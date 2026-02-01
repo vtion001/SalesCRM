@@ -1,5 +1,6 @@
 // Consolidated Zadarma API router - handles all operations
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { zadarmaRequest, ZADARMA_CONFIG } from './config';
 
 // Force Node.js runtime (crypto module needs Node.js)
 export const config = {
@@ -12,20 +13,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.log('🚀 Zadarma handler invoked');
     console.log('   Method:', req.method);
     console.log('   Query:', req.query);
-    
-    // Dynamically import config (needed for Node.js crypto)
-    let zadarmaRequest: any;
-    let ZADARMA_CONFIG: any;
-    
-    try {
-      const configModule = await import('./config');
-      zadarmaRequest = configModule.zadarmaRequest;
-      ZADARMA_CONFIG = configModule.ZADARMA_CONFIG;
-      console.log('✅ Config imported');
-    } catch (importErr: any) {
-      console.error('❌ Failed to import config:', importErr.message);
-      throw importErr;
-    }
     
     // CORS headers
     res.setHeader('Access-Control-Allow-Credentials', 'true');
