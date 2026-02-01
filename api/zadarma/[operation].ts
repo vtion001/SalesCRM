@@ -1,11 +1,82 @@
 // Consolidated Zadarma API router - handles all operations
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { zadarmaRequest, ZADARMA_CONFIG } from './config';
+import crypto from 'crypto';
 
 // Force Node.js runtime (crypto module needs Node.js)
 export const config = {
   runtime: 'nodejs',
 };
+
+// Inline config - read from env at runtime
+const getConfig = () => ({
+  API_KEY: process.env.ZADARMA_API_KEY || '',
+  SECRET_KEY: process.env.ZADARMA_SECRET_KEY || '',
+  SIP_NUMBER: process.env.ZADARMA_SIP_NUMBER || '',
+  BASE_URL: 'https://api.zadarma.com/v1'
+});
+
+// Inline signature generation
+function generateSignature(method: string, params: Record<string, string>, secretKey: string): string {
+  const sortedKeys = Object.keys(params).sort();
+  const sortedParams: Record<string, string> = {};
+  sortedKeys.forEach(key => { sortedParams[key] = params[key]; });
+  
+  const paramsStr = new URLSearchParams(sortedParams).toString();
+  const paramsMd5 = crypto.createHash('md5').update(paramsStr).digest('hex');
+  const signatureString = method + paramsStr + paramsMd5;
+  const hash = crypto.createHmac('sha1', secretKey).update(signatureString).digest();
+  
+  return hash.toString('base64');
+}
+
+// Inline config object for compatibility with existing code
+const ZADARMA_CONFIG = {
+  get API_KEY() { return process.env.ZADARMA_API_KEY || ''; },
+  get SECRET_KEY() { return process.env.ZADARMA_SECRET_KEY || ''; },
+  get SIP_NUMBER() { return process.env.ZADARMA_SIP_NUMBER || ''; },
+  BASE_URL: 'https://api.zadarma.com'
+};
+
+// Inline API request function
+async function zadarmaRequest(
+  method: string,
+  params: Record<string, string> = {},
+  httpMethod: 'GET' | 'POST' = 'GET'
+): Promise<any> {
+  const config = ZADARMA_CONFIG;
+  
+  if (!config.API_KEY || !config.SECRET_KEY) {
+    throw new Error('Zadarma credentials not configured');
+  }
+  
+  const signature = generateSignature(method, params, config.SECRET_KEY);
+  const paramsStr = new URLSearchParams(params).toString();
+  const url = httpMethod === 'GET' 
+    ? `${config.BASE_URL}${method}${paramsStr ? '?' + paramsStr : ''}`
+    : `${config.BASE_URL}${method}`;
+  
+  console.log(`📡 Zadarma ${httpMethod} ${method}`);
+  
+  const options: RequestInit = {
+    method: httpMethod,
+    headers: {
+      'Authorization': `${config.API_KEY}:${signature}`,
+      'Accept': 'application/json',
+      ...(httpMethod === 'POST' && { 'Content-Type': 'application/x-www-form-urlencoded' })
+    },
+    ...(httpMethod === 'POST' && paramsStr && { body: paramsStr })
+  };
+  
+  const response = await fetch(url, options);
+  const text = await response.text();
+  
+  try {
+    return JSON.parse(text);
+  } catch {
+    console.error('Failed to parse response:', text.substring(0, 200));
+    throw new Error(`Invalid JSON response: ${text.substring(0, 100)}`);
+  }
+}
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Top-level error boundary
@@ -35,7 +106,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       case 'test-auth':
         console.log('🧪 Routing to test-auth handler');
         return await handleTestAuth(req, res);
-      // webrtc-key is now a separate file: /api/zadarma/webrtc-key.ts
+      case 'webrtc-key':
+        console.log('🔑 Routing to webrtc-key handler');
+        return await handleWebRTCKey(req, res);
       case 'make-call':
         console.log('📞 Routing to make-call handler');
         return await handleMakeCall(req, res);
@@ -62,28 +135,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(404).json({ error: `Unknown operation: ${op}` });
     }
   } catch (switchError: any) {
-    console.error('❌ Error in switch statement:', switchError);
+    console.error('❌ Error in switch/handler:', switchError);
     console.error('   Error:', switchError?.message);
     
     if (!res.headersSent) {
       res.status(500).json({ 
-        error: switchError?.message || 'Switch error',
-        errorType: 'SWITCH_ERROR',
-        operationId: Date.now()
-      });
-    }
-  }
-  } catch (outerError: any) {
-    console.error('❌ OUTER CATCH - Top-level handler error:', outerError);
-    console.error('   Error name:', outerError?.name);
-    console.error('   Error message:', outerError?.message);
-    console.error('   Error stack:', outerError?.stack?.substring(0, 1000));
-    
-    // Ensure we always send a response
-    if (!res.headersSent) {
-      res.status(500).json({ 
-        error: outerError?.message || 'Internal server error',
-        errorType: outerError?.name,
+        error: switchError?.message || 'Internal server error',
+        errorType: 'HANDLER_ERROR',
         operationId: Date.now()
       });
     }
@@ -462,24 +520,68 @@ async function handleWebRTCKey(req: VercelRequest, res: VercelResponse) {
     console.log('📞 SIP login:', sipLogin);
     console.log('📡 Calling Zadarma API to get WebRTC key...');
     
-    // For now, just return a mock key to test the flow
-    // The real API call would fail if credentials are wrong
-    return res.json({
-      success: true,
-      message: 'Credentials validated successfully',
-      debug: {
-        hasApiKey: !!API_KEY,
-        hasSecretKey: !!SECRET_KEY,
-        hasSipNumber: !!SIP_NUMBER,
-        sipLogin: sipLogin
-      },
-      key: 'MOCK_KEY_FOR_TESTING',
-      expiresIn: '72 hours',
-      widget: {
-        scriptUrl: 'https://my.zadarma.com/webphoneWebRTCWidget/v8/js/loader-phone-lib.js?v=23',
-        fnUrl: 'https://my.zadarma.com/webphoneWebRTCWidget/v8/js/loader-phone-fn.js?v=23'
+    // Make actual API call to get WebRTC key
+    const method = '/v1/webrtc/get_key/';
+    const params: Record<string, string> = { sip_login: sipLogin };
+    
+    // Generate signature using inline function
+    const sortedKeys = Object.keys(params).sort();
+    const sortedParams: Record<string, string> = {};
+    sortedKeys.forEach(key => { sortedParams[key] = params[key]; });
+    
+    const paramsStr = new URLSearchParams(sortedParams).toString();
+    const paramsMd5 = crypto.createHash('md5').update(paramsStr).digest('hex');
+    const signatureString = method + paramsStr + paramsMd5;
+    const signature = crypto.createHmac('sha1', SECRET_KEY).update(signatureString).digest('base64');
+    
+    console.log('🔐 Generated signature for WebRTC key request');
+    
+    const url = `https://api.zadarma.com${method}?${paramsStr}`;
+    console.log('🌐 Request URL:', url);
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Authorization': `${API_KEY}:${signature}`,
+        'Accept': 'application/json'
       }
     });
+    
+    const responseText = await response.text();
+    console.log('📥 Raw response:', responseText.substring(0, 200));
+    
+    let data: any;
+    try {
+      data = JSON.parse(responseText);
+    } catch {
+      console.error('❌ Failed to parse response as JSON');
+      return res.status(500).json({
+        success: false,
+        error: 'Invalid response from Zadarma API',
+        rawResponse: responseText.substring(0, 500)
+      });
+    }
+    
+    if (data.status === 'success' && data.key) {
+      console.log('✅ WebRTC key obtained successfully');
+      return res.json({
+        success: true,
+        key: data.key,
+        expiresIn: '72 hours',
+        widget: {
+          scriptUrl: 'https://my.zadarma.com/webphoneWebRTCWidget/v8/js/loader-phone-lib.js?v=23',
+          fnUrl: 'https://my.zadarma.com/webphoneWebRTCWidget/v8/js/loader-phone-fn.js?v=23'
+        }
+      });
+    } else {
+      console.error('❌ Zadarma API error:', data);
+      return res.status(400).json({
+        success: false,
+        error: data.message || 'Failed to get WebRTC key',
+        zadarmaStatus: data.status,
+        details: data
+      });
+    }
   } catch (error: any) {
     console.error('❌ WebRTC key handler error:', error.message);
     
