@@ -26,7 +26,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   // 1. Get the phone number the user dialed (sent by Twilio as 'To')
   // Twilio sends parameters in the body for POST requests
-  const toNumber = req.body?.To || req.body?.to || req.query?.To || req.query?.to;
+  const rawToNumber = req.body?.To || req.body?.to || req.query?.To || req.query?.to;
+  // Clean and format the number - ensure E.164 format
+  const toNumber = rawToNumber ? rawToNumber.toString().trim().replace(/\s+/g, '') : null;
   const fromNumber = req.body?.From || req.body?.from || twilioPhoneNumber;
   const callSid = req.body?.CallSid || req.body?.callSid;
   const direction = req.body?.Direction || 'outbound-api';
@@ -97,10 +99,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         console.warn('   ⚠️ SIP trunk domain not configured. Premium numbers may fail.');
       }
       
+      // Ensure the number has proper E.164 format
+      const formattedTo = toNumber.trim().startsWith('+') ? toNumber.trim() : `+${toNumber.trim()}`;
+      
       twiml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Dial ${callerIdAttr} timeout="30" answerOnBridge="true" statusCallbackEvent="initiated ringing answered completed" statusCallback="https://sales-crm-sigma-eosin.vercel.app/api/webhooks/call-status">
-    <Number>${toNumber}</Number>
+    <Number>${formattedTo}</Number>
   </Dial>
 </Response>`;
     }
