@@ -174,6 +174,35 @@ export default function App() {
     return () => subscription?.unsubscribe();
   }, []);
 
+  // Sync leads to contacts - ensure every lead has a corresponding contact
+  useEffect(() => {
+    const syncLeadsToContacts = async () => {
+      if (leads.length === 0 || !isAuthenticated) return;
+      
+      // Find leads that don't have a corresponding contact (by phone number)
+      const contactPhones = new Set(contacts.map(c => c.phone));
+      const leadsWithoutContact = leads.filter(lead => !contactPhones.has(lead.phone));
+      
+      // Create contacts for leads that don't have them
+      for (const lead of leadsWithoutContact) {
+        await addContact({
+          name: lead.name,
+          company: lead.company,
+          email: lead.email,
+          phone: lead.phone,
+          role: lead.role,
+          lastContacted: lead.lastActivityTime || 'Just now'
+        });
+      }
+      
+      if (leadsWithoutContact.length > 0) {
+        console.log(`✅ Synced ${leadsWithoutContact.length} leads to contacts`);
+      }
+    };
+    
+    syncLeadsToContacts();
+  }, [leads, contacts, isAuthenticated]);
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     setIsAuthenticated(false);

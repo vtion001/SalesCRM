@@ -100,6 +100,7 @@ export const CallLogs: React.FC<CallLogsProps> = ({ onDial }) => {
     e.preventDefault();
     
     if (showSaveForm === 'lead') {
+      // Create lead
       await addLead({
         name: formData.name,
         role: 'Contact',
@@ -113,6 +114,16 @@ export const CallLogs: React.FC<CallLogsProps> = ({ onDial }) => {
         lastContactDate: new Date().toISOString(),
         isOnline: false,
         avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(formData.name)}&background=4f46e5&color=fff`
+      });
+      
+      // Automatically create contact for this lead
+      await addContact({
+        name: formData.name,
+        company: formData.company || 'Unknown Company',
+        email: formData.email,
+        phone: formData.phone,
+        role: 'Contact',
+        lastContacted: 'Just now'
       });
     } else if (showSaveForm === 'contact') {
       await addContact({
