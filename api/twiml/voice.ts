@@ -95,12 +95,37 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     } else {
       // Standard routing for mobile/landline numbers
       console.log(`   📞 Using standard routing (mobile/landline)`);
-      if (!sipTrunkConfigured && isPremiumNumber) {
-        console.warn('   ⚠️ SIP trunk domain not configured. Premium numbers may fail.');
-      }
       
-      // Ensure the number has proper E.164 format
-      const formattedTo = toNumber.trim().startsWith('+') ? toNumber.trim() : `+${toNumber.trim()}`;
+      // Format the number to proper E.164 format
+      let formattedTo = toNumber.trim();
+      
+      // Handle Australian numbers specifically
+      // 1300/1800 numbers need +61 prefix: 1300130928 -> +611300130928
+      // Mobile numbers starting with 04: 0412345678 -> +61412345678
+      // Numbers already with +61: keep as is
+      
+      if (formattedTo.startsWith('+')) {
+        // Already has + prefix, keep as is
+        console.log(`   ✓ Number already in E.164 format: ${formattedTo}`);
+      } else if (/^1[38]00/.test(formattedTo) || /^13\d{4}$/.test(formattedTo)) {
+        // Australian premium numbers: 1300xxx, 1800xxx, 13xxxx
+        // These need +61 prefix: 1300130928 -> +611300130928
+        formattedTo = `+61${formattedTo}`;
+        console.log(`   ✓ Australian premium number formatted: ${toNumber} -> ${formattedTo}`);
+      } else if (formattedTo.startsWith('0')) {
+        // Australian local format: 04xxxxxxxx, 02xxxxxxxx, etc.
+        // Remove leading 0 and add +61: 0412345678 -> +61412345678
+        formattedTo = `+61${formattedTo.substring(1)}`;
+        console.log(`   ✓ Australian local number formatted: ${toNumber} -> ${formattedTo}`);
+      } else if (/^61/.test(formattedTo)) {
+        // Already has 61 prefix but no +
+        formattedTo = `+${formattedTo}`;
+        console.log(`   ✓ Added + prefix: ${toNumber} -> ${formattedTo}`);
+      } else {
+        // Unknown format - add + and hope for the best
+        formattedTo = `+${formattedTo}`;
+        console.log(`   ⚠️ Unknown number format, adding +: ${toNumber} -> ${formattedTo}`);
+      }
       
       twiml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
