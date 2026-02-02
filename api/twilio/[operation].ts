@@ -52,14 +52,13 @@ async function handleToken(req: VercelRequest, res: VercelResponse) {
     // Log all environment variables for debugging
     console.log('🔧 Twilio Env Vars Check:');
     console.log('   TWILIO_ACCOUNT_SID:', process.env.TWILIO_ACCOUNT_SID ? `${process.env.TWILIO_ACCOUNT_SID.substring(0, 5)}...` : 'NOT SET');
-    console.log('   TWILIO_API_KEY:', process.env.TWILIO_API_KEY ? `${process.env.TWILIO_API_KEY.substring(0, 5)}...` : 'NOT SET');
-    console.log('   TWILIO_API_SECRET:', process.env.TWILIO_API_SECRET ? `${process.env.TWILIO_API_SECRET.substring(0, 5)}...` : 'NOT SET');
+    console.log('   TWILIO_API_KEY_SID:', process.env.TWILIO_API_KEY_SID ? `${process.env.TWILIO_API_KEY_SID.substring(0, 5)}...` : 'NOT SET');
+    console.log('   TWILIO_API_KEY_SECRET:', process.env.TWILIO_API_KEY_SECRET ? `${process.env.TWILIO_API_KEY_SECRET.substring(0, 5)}...` : 'NOT SET');
     console.log('   TWILIO_TWIML_APP_SID:', process.env.TWILIO_TWIML_APP_SID ? `${process.env.TWILIO_TWIML_APP_SID.substring(0, 5)}...` : 'NOT SET');
-    console.log('   TWILIO_AUTH_TOKEN:', process.env.TWILIO_AUTH_TOKEN ? `${process.env.TWILIO_AUTH_TOKEN.substring(0, 5)}...` : 'NOT SET');
 
     const accountSid = process.env.TWILIO_ACCOUNT_SID?.trim();
-    const apiKey = process.env.TWILIO_API_KEY?.trim();
-    const apiSecret = process.env.TWILIO_API_SECRET?.trim();
+    const apiKey = process.env.TWILIO_API_KEY_SID?.trim();
+    const apiSecret = process.env.TWILIO_API_KEY_SECRET?.trim();
     const twimlAppSid = process.env.TWILIO_TWIML_APP_SID?.trim();
 
     // Validate required credentials
@@ -81,19 +80,18 @@ async function handleToken(req: VercelRequest, res: VercelResponse) {
 
     // API Key/Secret are REQUIRED for valid JWT signing
     if (!apiKey || !apiSecret) {
-      console.error('❌ TWILIO_API_KEY and TWILIO_API_SECRET are REQUIRED for token generation');
-      console.error('   API Key set:', !!apiKey);
-      console.error('   API Secret set:', !!apiSecret);
+      console.error('❌ TWILIO_API_KEY_SID and TWILIO_API_KEY_SECRET are REQUIRED for token generation');
+      console.error('   API Key SID set:', !!apiKey);
+      console.error('   API Key Secret set:', !!apiSecret);
       console.error('   NOTE: Auth Token cannot be used to sign JWT tokens');
       
       return res.status(500).json({ 
-        error: 'TWILIO_API_KEY and TWILIO_API_SECRET are required. Please configure them in Vercel environment variables. Auth Token cannot be used to sign JWT tokens.',
+        error: 'TWILIO_API_KEY_SID and TWILIO_API_KEY_SECRET are required. Please configure them in Vercel environment variables. Auth Token cannot be used to sign JWT tokens.',
         debug: {
           accountSid: !!accountSid,
-          apiKey: !!apiKey,
-          apiSecret: !!apiSecret,
+          apiKeySid: !!apiKey,
+          apiKeySecret: !!apiSecret,
           twimlAppSid: !!twimlAppSid,
-          authToken: !!process.env.TWILIO_AUTH_TOKEN,
           message: 'Get API Key from: https://www.twilio.com/console/keys-credentials'
         }
       });
