@@ -116,24 +116,31 @@ export const CallLogs: React.FC<CallLogsProps> = ({ onDial }) => {
         avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(formData.name)}&background=4f46e5&color=fff`
       });
       
-      // Automatically create contact for this lead
-      await addContact({
-        name: formData.name,
-        company: formData.company || 'Unknown Company',
-        email: formData.email,
-        phone: formData.phone,
-        role: 'Contact',
-        lastContacted: 'Just now'
-      });
+      // Check if contact already exists (by phone number) to avoid duplicates
+      const existingContact = contacts.find(c => c.phone === formData.phone);
+      if (!existingContact) {
+        await addContact({
+          name: formData.name,
+          company: formData.company || 'Unknown Company',
+          email: formData.email,
+          phone: formData.phone,
+          role: 'Contact',
+          lastContacted: 'Just now'
+        });
+      }
     } else if (showSaveForm === 'contact') {
-      await addContact({
-        name: formData.name,
-        company: formData.company || 'Unknown Company',
-        email: formData.email,
-        phone: formData.phone,
-        role: 'Contact',
-        lastContacted: 'Just now'
-      });
+      // Check if contact already exists (by phone number) to avoid duplicates
+      const existingContact = contacts.find(c => c.phone === formData.phone);
+      if (!existingContact) {
+        await addContact({
+          name: formData.name,
+          company: formData.company || 'Unknown Company',
+          email: formData.email,
+          phone: formData.phone,
+          role: 'Contact',
+          lastContacted: 'Just now'
+        });
+      }
     }
     
     setShowSaveForm(null);

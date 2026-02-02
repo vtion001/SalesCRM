@@ -129,11 +129,15 @@ export default function App() {
 
   const handleDeleteItem = async (id: string) => {
     const isContact = contacts.some(c => c.id === id);
-    const deletePromise = isContact ? deleteContact(id) : deleteLead(id);
+    const isLead = leads.some(l => l.id === id);
+    
+    // If it's a lead, only delete from leads table (preserve contact)
+    // If it's only a contact, delete from contacts table
+    const deletePromise = isLead ? deleteLead(id) : deleteContact(id);
     
     toast.promise(deletePromise, {
-      loading: 'Deleting...',
-      success: 'Deleted successfully',
+      loading: isLead ? 'Removing from pipeline...' : 'Deleting...',
+      success: isLead ? 'Removed from pipeline (contact preserved)' : 'Deleted successfully',
       error: 'Delete failed',
     });
     
@@ -181,18 +185,22 @@ export default function App() {
       
       // Find leads that don't have a corresponding contact (by phone number)
       const contactPhones = new Set(contacts.map(c => c.phone));
-      const leadsWithoutContact = leads.filter(lead => !contactPhones.has(lead.phone));
+      const leadsWithoutContact = leads.filter(lead => lead.phone && !contactPhones.has(lead.phone));
       
-      // Create contacts for leads that don't have them
+      // Create contacts for leads that don't have them (avoid duplicates)
       for (const lead of leadsWithoutContact) {
-        await addContact({
-          name: lead.name,
-          company: lead.company,
-          email: lead.email,
-          phone: lead.phone,
-          role: lead.role,
-          lastContacted: lead.lastActivityTime || 'Just now'
-        });
+        // Double-check contact doesn't exist before creating
+        const existingContact = contacts.find(c => c.phone === lead.phone);
+        if (!existingContact) {
+          await addContact({
+            name: lead.name,
+            company: lead.company,
+            email: lead.email,
+            phone: lead.phone,
+            role: lead.role,
+            lastContacted: lead.lastActivityTime || 'Just now'
+          });
+        }
       }
       
       if (leadsWithoutContact.length > 0) {
@@ -242,16 +250,21 @@ export default function App() {
     const leadPromise = (async () => {
       const addedLead = await addLead(leadData);
       if (addedLead) {
-        // Automatically create a contact for this lead
-        await addContact({
-          name: leadData.name, 
-          role: leadData.role, 
-          company: leadData.company,
-          email: leadData.email, 
-          phone: leadData.phone, 
-          lastContacted: 'Just now', 
-          status: 'Active'
-        });
+        // Check if contact already exists (by phone number)
+        const existingContact = contacts.find(c => c.phone === leadData.phone);
+        
+        // Only create contact if it doesn't exist (avoid duplicates)
+        if (!existingContact) {
+          await addContact({
+            name: leadData.name, 
+            role: leadData.role, 
+            company: leadData.company,
+            email: leadData.email, 
+            phone: leadData.phone, 
+            lastContacted: 'Just now', 
+            status: 'Active'
+          });
+        }
         setSelectedLeadId(addedLead.id);
         setIsLeadModalOpen(false);
         return addedLead;
@@ -261,7 +274,10 @@ export default function App() {
 
     toast.promise(leadPromise, {
       loading: 'Creating lead opportunity...',
-      success: '✅ Lead created & added to Contacts',
+      success: (data) => {
+        const existingContact = contacts.find(c => c.phone === leadData.phone);
+        return existingContact ? '✅ Lead created' : '✅ Lead created & added to Contacts';
+      },
       error: 'Failed to create lead',
     });
   };
