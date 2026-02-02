@@ -100,30 +100,35 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       let formattedTo = toNumber.trim();
       
       // Handle Australian numbers specifically
-      // 1300/1800 numbers need +61 prefix: 1300130928 -> +611300130928
-      // Mobile numbers starting with 04: 0412345678 -> +61412345678
-      // Numbers already with +61: keep as is
+      // Strip any existing + to normalize, then reformat
+      const bareNumber = formattedTo.replace(/^\+/, '');
       
-      if (formattedTo.startsWith('+')) {
-        // Already has + prefix, keep as is
-        console.log(`   ✓ Number already in E.164 format: ${formattedTo}`);
-      } else if (/^1[38]00/.test(formattedTo) || /^13\d{4}$/.test(formattedTo)) {
+      // Check for Australian premium numbers that were incorrectly prefixed with just +
+      // +1300xxx or +1800xxx should become +611300xxx or +611800xxx
+      if (/^1[38]00\d+$/.test(bareNumber) || /^13\d{4}$/.test(bareNumber)) {
         // Australian premium numbers: 1300xxx, 1800xxx, 13xxxx
         // These need +61 prefix: 1300130928 -> +611300130928
-        formattedTo = `+61${formattedTo}`;
+        formattedTo = `+61${bareNumber}`;
         console.log(`   ✓ Australian premium number formatted: ${toNumber} -> ${formattedTo}`);
-      } else if (formattedTo.startsWith('0')) {
+      } else if (/^0[2-9]\d+$/.test(bareNumber)) {
         // Australian local format: 04xxxxxxxx, 02xxxxxxxx, etc.
         // Remove leading 0 and add +61: 0412345678 -> +61412345678
-        formattedTo = `+61${formattedTo.substring(1)}`;
+        formattedTo = `+61${bareNumber.substring(1)}`;
         console.log(`   ✓ Australian local number formatted: ${toNumber} -> ${formattedTo}`);
-      } else if (/^61/.test(formattedTo)) {
-        // Already has 61 prefix but no +
-        formattedTo = `+${formattedTo}`;
-        console.log(`   ✓ Added + prefix: ${toNumber} -> ${formattedTo}`);
+      } else if (/^61[2-9]\d+$/.test(bareNumber)) {
+        // Already has 61 prefix (without +): 61412345678 -> +61412345678
+        formattedTo = `+${bareNumber}`;
+        console.log(`   ✓ Added + prefix to AU number: ${toNumber} -> ${formattedTo}`);
+      } else if (/^611[38]00\d+$/.test(bareNumber) || /^6113\d{4}$/.test(bareNumber)) {
+        // Australian premium with 61 prefix: 611300130928 -> +611300130928
+        formattedTo = `+${bareNumber}`;
+        console.log(`   ✓ Added + prefix to AU premium: ${toNumber} -> ${formattedTo}`);
+      } else if (formattedTo.startsWith('+')) {
+        // Already has + and not an AU premium number pattern, keep as is
+        console.log(`   ✓ Number already in E.164 format: ${formattedTo}`);
       } else {
         // Unknown format - add + and hope for the best
-        formattedTo = `+${formattedTo}`;
+        formattedTo = `+${bareNumber}`;
         console.log(`   ⚠️ Unknown number format, adding +: ${toNumber} -> ${formattedTo}`);
       }
       
