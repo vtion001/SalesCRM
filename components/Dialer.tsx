@@ -302,7 +302,20 @@ export const Dialer: React.FC<DialerProps> = ({ targetLead, onLogActivity, activ
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const handleKeyPress = (num: string) => setPhoneNumber(prev => prev + num);
+  const handleKeyPress = (num: string) => {
+    // If call is in progress, send DTMF tone through the active connection
+    if (isCallInProgress && currentCall && provider === 'twilio') {
+      try {
+        // Twilio Voice SDK: sendDigits sends DTMF tones through the active call
+        currentCall.sendDigits(num);
+        console.log(`📞 Sent DTMF digit: ${num}`);
+      } catch (err) {
+        console.error('Failed to send DTMF:', err);
+      }
+    }
+    // Always update the display
+    setPhoneNumber(prev => prev + num);
+  };
 
   const handleMakeCall = async () => {
     if (!phoneNumber || isCallInProgress || !isDeviceReady) return;
