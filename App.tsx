@@ -31,17 +31,17 @@ export default function App() {
   const [authLoading, setAuthLoading] = useState(true);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [dialerActiveTab, setDialerActiveTab] = useState('Dialer');
-  
+
   // Supabase Hooks
   const { leads, addLead, deleteLead, updateLead } = useLeads();
   const { contacts, addContact, deleteContact, updateContact } = useContacts();
   const { deals, deleteDeal } = useDeals();
-  
+
   // Selection States
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
   const { activities, addActivity } = useActivities(selectedLeadId);
   const { notes, addNote } = useNotes(selectedLeadId);
-  
+
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
   const [isLeadModalOpen, setIsLeadModalOpen] = useState(false);
 
@@ -60,7 +60,7 @@ export default function App() {
       role: c.role,
       company: c.company,
       avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(c.name)}&background=random`,
-      status: 'New Lead', 
+      status: 'New Lead',
       lastActivityTime: c.lastContacted || 'Just now',
       email: c.email,
       phone: c.phone,
@@ -74,12 +74,12 @@ export default function App() {
     return [...leads, ...filteredContacts];
   }, [leads, contacts]);
 
-  const selectedItem = useMemo(() => 
+  const selectedItem = useMemo(() =>
     allPipelineItems.find(item => item.id === selectedLeadId),
     [allPipelineItems, selectedLeadId]
   );
 
-  const isSelectedContact = useMemo(() => 
+  const isSelectedContact = useMemo(() =>
     contacts.some(c => c.id === selectedLeadId),
     [contacts, selectedLeadId]
   );
@@ -97,7 +97,7 @@ export default function App() {
   }, []);
 
   const handleCommandAction = useCallback((actionId: string) => {
-    switch(actionId) {
+    switch (actionId) {
       case 'add-lead': setIsLeadModalOpen(true); break;
       case 'add-contact': setIsContactModalOpen(true); break;
       case 'view-analytics': setCurrentView('analytics'); break;
@@ -119,7 +119,7 @@ export default function App() {
         await updateLead(id, updates);
       }
     };
-    
+
     await toast.promise(updatePromise(), {
       loading: 'Updating record...',
       success: 'Record updated successfully',
@@ -130,17 +130,17 @@ export default function App() {
   const handleDeleteItem = async (id: string) => {
     const isContact = contacts.some(c => c.id === id);
     const isLead = leads.some(l => l.id === id);
-    
+
     // If it's a lead, only delete from leads table (preserve contact)
     // If it's only a contact, delete from contacts table
     const deletePromise = isLead ? deleteLead(id) : deleteContact(id);
-    
+
     toast.promise(deletePromise, {
       loading: isLead ? 'Removing from pipeline...' : 'Deleting...',
       success: isLead ? 'Removed from pipeline (contact preserved)' : 'Deleted successfully',
       error: 'Delete failed',
     });
-    
+
     await deletePromise;
     if (selectedLeadId === id) setSelectedLeadId(null);
   };
@@ -182,11 +182,11 @@ export default function App() {
   useEffect(() => {
     const syncLeadsToContacts = async () => {
       if (leads.length === 0 || !isAuthenticated) return;
-      
+
       // Find leads that don't have a corresponding contact (by phone number)
       const contactPhones = new Set(contacts.map(c => c.phone));
       const leadsWithoutContact = leads.filter(lead => lead.phone && !contactPhones.has(lead.phone));
-      
+
       // Create contacts for leads that don't have them (avoid duplicates)
       for (const lead of leadsWithoutContact) {
         // Double-check contact doesn't exist before creating
@@ -202,12 +202,12 @@ export default function App() {
           });
         }
       }
-      
+
       if (leadsWithoutContact.length > 0) {
         console.log(`✅ Synced ${leadsWithoutContact.length} leads to contacts`);
       }
     };
-    
+
     syncLeadsToContacts();
   }, [leads, contacts, isAuthenticated]);
 
@@ -229,7 +229,7 @@ export default function App() {
         avatar_url: updates.avatar,
         updated_at: new Date().toISOString()
       }).eq('id', userId);
-      
+
       if (error) throw error;
       return true;
     };
@@ -252,16 +252,16 @@ export default function App() {
       if (addedLead) {
         // Check if contact already exists (by phone number)
         const existingContact = contacts.find(c => c.phone === leadData.phone);
-        
+
         // Only create contact if it doesn't exist (avoid duplicates)
         if (!existingContact) {
           await addContact({
-            name: leadData.name, 
-            role: leadData.role, 
+            name: leadData.name,
+            role: leadData.role,
             company: leadData.company,
-            email: leadData.email, 
-            phone: leadData.phone, 
-            lastContacted: 'Just now', 
+            email: leadData.email,
+            phone: leadData.phone,
+            lastContacted: 'Just now',
             status: 'Active'
           });
         }
@@ -307,117 +307,117 @@ export default function App() {
 
   return (
     <TelephonyProviderWrapper>
-    <div className="flex h-screen w-full bg-white text-slate-900 font-sans selection:bg-indigo-100 selection:text-indigo-900">
-      <Toaster position="top-right" toastOptions={{
-        className: 'font-bold text-sm rounded-2xl border border-slate-100 shadow-2xl',
-        duration: 3000,
-      }} />
-      
-      <CommandPalette 
-        isOpen={isCommandPaletteOpen} 
-        onClose={() => setIsCommandPaletteOpen(false)} 
-        items={allPipelineItems}
-        onSelectItem={handleSelectItem}
-        onAction={handleCommandAction}
-      />
+      <div className="flex h-screen w-full bg-white text-slate-900 font-sans selection:bg-indigo-100 selection:text-indigo-900">
+        <Toaster position="top-right" toastOptions={{
+          className: 'font-bold text-sm rounded-2xl border border-slate-100 shadow-2xl',
+          duration: 3000,
+        }} />
 
-      <Sidebar currentView={currentView} onNavigate={setCurrentView} />
-      
-      <main className="flex-1 flex flex-col min-w-0 overflow-hidden bg-white">
-        <Header user={currentUser} onLogout={handleLogout} onUpdateProfile={handleUpdateProfile} />
-        
-        <div className="flex-1 overflow-hidden relative">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={currentView}
-              initial={{ opacity: 0, x: 10 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -10 }}
-              transition={{ duration: 0.2 }}
-              className="h-full w-full"
-            >
-              {currentView === 'dashboard' && (
-                <Dashboard 
-                  leads={leads} 
-                  deals={allPipelineItems} 
-                  onNavigate={setCurrentView} 
-                  onSelectLead={handleSelectItem} 
-                />
-              )}
+        <CommandPalette
+          isOpen={isCommandPaletteOpen}
+          onClose={() => setIsCommandPaletteOpen(false)}
+          items={allPipelineItems}
+          onSelectItem={handleSelectItem}
+          onAction={handleCommandAction}
+        />
 
-              {currentView === 'leads' && (
-                <div className="grid grid-cols-12 h-full">
-                  <div className="col-span-12 md:col-span-4 lg:col-span-3 border-r border-slate-50 h-full overflow-hidden">
-                    <LeadList leads={allPipelineItems} selectedId={selectedLeadId} onSelect={setSelectedLeadId} onAddLead={() => setIsLeadModalOpen(true)} />
+        <Sidebar currentView={currentView} onNavigate={setCurrentView} />
+
+        <main className="flex-1 flex flex-col min-w-0 overflow-hidden bg-white">
+          <Header user={currentUser} onLogout={handleLogout} onUpdateProfile={handleUpdateProfile} />
+
+          <div className="flex-1 overflow-hidden relative">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={currentView}
+                initial={{ opacity: 0, x: 10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -10 }}
+                transition={{ duration: 0.2 }}
+                className="h-full w-full"
+              >
+                {currentView === 'dashboard' && (
+                  <Dashboard
+                    leads={leads}
+                    deals={allPipelineItems}
+                    onNavigate={setCurrentView}
+                    onSelectLead={handleSelectItem}
+                  />
+                )}
+
+                {currentView === 'leads' && (
+                  <div className="grid grid-cols-12 h-full">
+                    <div className="col-span-12 md:col-span-4 lg:col-span-3 border-r border-slate-50 h-full overflow-hidden">
+                      <LeadList leads={allPipelineItems} selectedId={selectedLeadId} onSelect={setSelectedLeadId} onAddLead={() => setIsLeadModalOpen(true)} />
+                    </div>
+                    <div className="col-span-12 md:col-span-8 lg:col-span-5 border-r border-slate-50 h-full overflow-hidden bg-white">
+                      <LeadDetail
+                        lead={selectedItem}
+                        activities={activities}
+                        note={notes.length > 0 ? notes[0] : undefined}
+                        onDelete={handleDeleteItem}
+                        onUpdate={handleUpdateItem}
+                        onAddNote={async (n) => {
+                          const p = addNote(n);
+                          toast.promise(p, { loading: 'Saving note...', success: 'Note saved', error: 'Failed' });
+                          await p;
+                        }}
+                        onAddActivity={async (a) => {
+                          const p = addActivity(a);
+                          toast.promise(p, { loading: 'Logging activity...', success: 'Activity logged', error: 'Failed' });
+                          await p;
+                        }}
+                        onDial={() => setDialerActiveTab('Dialer')}
+                        onMessage={() => setDialerActiveTab('SMS')}
+                      />
+                    </div>
+                    <div className="hidden lg:block lg:col-span-4 h-full overflow-hidden bg-white">
+                      <Dialer
+                        targetLead={selectedItem}
+                        onLogActivity={addActivity}
+                        activeTab={dialerActiveTab}
+                        onTabChange={setDialerActiveTab}
+                      />
+                      <DialerSound />
+                    </div>
                   </div>
-                  <div className="col-span-12 md:col-span-8 lg:col-span-5 border-r border-slate-50 h-full overflow-hidden bg-white">
-                    <LeadDetail 
-                      lead={selectedItem} 
-                      activities={activities} 
-                      note={notes.length > 0 ? notes[0] : undefined} 
-                      onDelete={handleDeleteItem} 
-                      onUpdate={handleUpdateItem} 
-                      onAddNote={async (n) => {
-                        const p = addNote(n);
-                        toast.promise(p, { loading: 'Saving note...', success: 'Note saved', error: 'Failed' });
-                        await p;
-                      }} 
-                      onAddActivity={async (a) => {
-                        const p = addActivity(a);
-                        toast.promise(p, { loading: 'Logging activity...', success: 'Activity logged', error: 'Failed' });
-                        await p;
-                      }}
-                      onDial={() => setDialerActiveTab('Dialer')}
-                      onMessage={() => setDialerActiveTab('SMS')}
-                    />
-                  </div>
-                  <div className="hidden lg:block lg:col-span-4 h-full overflow-hidden bg-white">
-                     <Dialer 
-                       targetLead={selectedItem} 
-                       onLogActivity={addActivity} 
-                       activeTab={dialerActiveTab}
-                       onTabChange={setDialerActiveTab}
-                     />
-                     <DialerSound />
-                  </div>
-                </div>
-              )}
+                )}
 
-              {currentView === 'contacts' && (
-                <Contacts 
-                  contacts={contacts} 
-                  onAddContact={() => setIsContactModalOpen(true)} 
-                  onDeleteContact={handleDeleteItem} 
-                  onViewProfile={handleSelectItem}
-                />
-              )}
+                {currentView === 'contacts' && (
+                  <Contacts
+                    contacts={contacts}
+                    onAddContact={() => setIsContactModalOpen(true)}
+                    onDeleteContact={handleDeleteItem}
+                    onViewProfile={handleSelectItem}
+                  />
+                )}
 
-              {currentView === 'deals' && (
-                <Deals items={allPipelineItems} onUpdateItem={handleUpdateItem} onDeleteItem={handleDeleteItem} onAddNew={() => setIsLeadModalOpen(true)} />
-              )}
+                {currentView === 'deals' && (
+                  <Deals items={allPipelineItems} onUpdateItem={handleUpdateItem} onDeleteItem={handleDeleteItem} onAddNew={() => setIsLeadModalOpen(true)} />
+                )}
 
-              {currentView === 'analytics' && <Analytics items={allPipelineItems} onNavigate={setCurrentView} />}
-            </motion.div>
+                {currentView === 'analytics' && <Analytics items={allPipelineItems} onNavigate={setCurrentView} />}
+              </motion.div>
+            </AnimatePresence>
+          </div>
+
+          <AnimatePresence>
+            {isContactModalOpen && (
+              <ModalWrapper onClose={() => setIsContactModalOpen(false)}>
+                <ContactForm onSave={handleSaveContactAction} onCancel={() => setIsContactModalOpen(false)} />
+              </ModalWrapper>
+            )}
+            {isLeadModalOpen && (
+              <ModalWrapper onClose={() => setIsLeadModalOpen(false)}>
+                <LeadForm onSave={handleAddLeadAction} onCancel={() => setIsLeadModalOpen(false)} />
+              </ModalWrapper>
+            )}
           </AnimatePresence>
-        </div>
-        
-        <AnimatePresence>
-          {isContactModalOpen && (
-            <ModalWrapper onClose={() => setIsContactModalOpen(false)}>
-              <ContactForm onSave={handleSaveContactAction} onCancel={() => setIsContactModalOpen(false)} />
-            </ModalWrapper>
-          )}
-          {isLeadModalOpen && (
-            <ModalWrapper onClose={() => setIsLeadModalOpen(false)}>
-              <LeadForm onSave={handleAddLeadAction} onCancel={() => setIsLeadModalOpen(false)} />
-            </ModalWrapper>
-          )}
-        </AnimatePresence>
-      </main>
-      
-      <SupabaseHealthIndicator />
-      <Toaster position="top-right" />
-    </div>
+        </main>
+
+        <SupabaseHealthIndicator />
+        <Toaster position="top-right" />
+      </div>
     </TelephonyProviderWrapper>
   );
 }
