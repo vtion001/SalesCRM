@@ -38,7 +38,7 @@ export const ProfileDropdown: React.FC<ProfileDropdownProps> = ({
                 </button>
                 <button
                     onClick={onLogout}
-                    className="w-full text-left px-4 py-3 text-sm font-bold text-rose-600 hover:bg-rose-50 rounded-2xl flex items-center gap-3 mt-1 transition-colors"
+                    className="w-full text-left px-4 py-3 text-sm font-bold text-accent-600 hover:bg-accent-50 rounded-2xl flex items-center gap-3 mt-1 transition-colors"
                 >
                     <LogOut size={18} /> Sign Out
                 </button>

@@ -11,21 +11,21 @@ interface StatusMessageProps {
 
 const statusConfig = {
   error: {
-    bgColor: 'bg-red-50',
-    borderColor: 'border-red-200',
-    textColor: 'text-red-600',
+    bgColor: 'bg-accent-50',
+    borderColor: 'border-accent-100',
+    textColor: 'text-accent-700',
     icon: AlertCircle,
   },
   success: {
-    bgColor: 'bg-green-50',
-    borderColor: 'border-green-200',
-    textColor: 'text-green-600',
+    bgColor: 'bg-brand-50',
+    borderColor: 'border-brand-100',
+    textColor: 'text-brand-700',
     icon: CheckCircle,
   },
   info: {
-    bgColor: 'bg-blue-50',
-    borderColor: 'border-blue-200',
-    textColor: 'text-blue-600',
+    bgColor: 'bg-slate-50',
+    borderColor: 'border-slate-200',
+    textColor: 'text-slate-600',
     icon: AlertCircle,
   },
 };

@@ -25,7 +25,7 @@ export const PhoneInputDisplay: React.FC<PhoneInputDisplayProps> = ({
                 className="text-4xl font-black text-slate-900 text-center w-full bg-transparent outline-none mb-2 tracking-tight"
                 placeholder="000-000-0000"
             />
-            <p className="text-[10px] font-black text-indigo-500 uppercase tracking-widest bg-indigo-50 inline-block px-3 py-1 rounded-lg">
+            <p className="text-[10px] font-black text-brand-500 uppercase tracking-widest bg-brand-50 inline-block px-3 py-1 rounded-lg">
                 {targetLead ? `${targetLead.name} • ${targetLead.company}` : 'Awaiting Selection'}
             </p>
         </motion.div>

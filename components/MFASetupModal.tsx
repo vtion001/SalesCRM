@@ -133,19 +133,19 @@ export const MFASetupModal: React.FC<MFASetupModalProps> = ({ isOpen, onClose, o
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-100">
+        <div className="flex items-center justify-between p-6 border-b border-slate-100">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-              <Shield className="text-blue-600" size={20} />
+            <div className="w-10 h-10 bg-brand-100 rounded-lg flex items-center justify-center">
+              <Shield className="text-brand-600" size={20} />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-gray-900">Set Up MFA</h2>
-              <p className="text-xs text-gray-500">Protect your account with 2FA</p>
+              <h2 className="text-lg font-semibold text-slate-900">Set Up MFA</h2>
+              <p className="text-xs text-slate-500">Protect your account with 2FA</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-slate-400 hover:text-slate-600 transition-colors"
           >
             <X size={20} />
           </button>
@@ -154,7 +154,7 @@ export const MFASetupModal: React.FC<MFASetupModalProps> = ({ isOpen, onClose, o
         {/* Content */}
         <div className="p-6">
           {error && (
-            <div className="mb-4 flex items-start gap-2 text-red-600 text-sm bg-red-50 p-3 rounded-lg border border-red-100">
+            <div className="mb-4 flex items-start gap-2 text-accent-700 text-sm bg-accent-50 p-3 rounded-lg border border-accent-100">
               <AlertCircle size={16} className="shrink-0 mt-0.5" />
               <span>{error}</span>
             </div>
@@ -164,32 +164,32 @@ export const MFASetupModal: React.FC<MFASetupModalProps> = ({ isOpen, onClose, o
           {step === 'intro' && (
             <div className="space-y-4">
               <div className="text-center py-4">
-                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <div className="w-16 h-16 bg-gradient-to-br from-brand-500 to-brand-600 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Shield className="text-white" size={28} />
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                <h3 className="text-lg font-semibold text-slate-900 mb-2">
                   Enable Multi-Factor Authentication
                 </h3>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-slate-600">
                   Add an extra layer of security by requiring a code from your authenticator app when signing in.
                 </p>
               </div>
 
-              <div className="bg-blue-50 rounded-lg p-4 space-y-3">
+              <div className="bg-brand-50 rounded-lg p-4 space-y-3">
                 <div className="flex items-start gap-3">
-                  <Smartphone className="text-blue-600 shrink-0 mt-0.5" size={18} />
+                  <Smartphone className="text-brand-600 shrink-0 mt-0.5" size={18} />
                   <div>
-                    <p className="text-sm font-medium text-gray-900">Authenticator App</p>
-                    <p className="text-xs text-gray-600 mt-1">
+                    <p className="text-sm font-medium text-slate-900">Authenticator App</p>
+                    <p className="text-xs text-slate-600 mt-1">
                       Use Google Authenticator, Microsoft Authenticator, Authy, or any TOTP-compatible app
                     </p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <Key className="text-blue-600 shrink-0 mt-0.5" size={18} />
+                  <Key className="text-brand-600 shrink-0 mt-0.5" size={18} />
                   <div>
-                    <p className="text-sm font-medium text-gray-900">Recovery Codes</p>
-                    <p className="text-xs text-gray-600 mt-1">
+                    <p className="text-sm font-medium text-slate-900">Recovery Codes</p>
+                    <p className="text-xs text-slate-600 mt-1">
                       Save backup codes to access your account if you lose your device
                     </p>
                   </div>
@@ -199,7 +199,7 @@ export const MFASetupModal: React.FC<MFASetupModalProps> = ({ isOpen, onClose, o
               <button
                 onClick={enrollTOTP}
                 disabled={isLoading}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition-colors disabled:opacity-50"
+                className="w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold py-3 rounded-lg transition-colors disabled:opacity-50"
               >
                 {isLoading ? 'Setting up...' : 'Continue'}
               </button>
@@ -210,39 +210,39 @@ export const MFASetupModal: React.FC<MFASetupModalProps> = ({ isOpen, onClose, o
           {step === 'scan' && (
             <div className="space-y-4">
               <div className="text-center">
-                <h3 className="text-base font-semibold text-gray-900 mb-2">
+                <h3 className="text-base font-semibold text-slate-900 mb-2">
                   Scan QR Code
                 </h3>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-slate-600">
                   Open your authenticator app and scan this QR code
                 </p>
               </div>
 
               {qrCode && (
                 <div className="flex justify-center py-4">
-                  <img src={qrCode} alt="MFA QR Code" className="w-48 h-48 border-4 border-gray-100 rounded-lg" />
+                  <img src={qrCode} alt="MFA QR Code" className="w-48 h-48 border-4 border-slate-100 rounded-lg" />
                 </div>
               )}
 
-              <div className="bg-gray-50 rounded-lg p-4">
-                <p className="text-xs font-medium text-gray-700 mb-2">Or enter this key manually:</p>
+              <div className="bg-slate-50 rounded-lg p-4">
+                <p className="text-xs font-medium text-slate-700 mb-2">Or enter this key manually:</p>
                 <div className="flex items-center gap-2">
-                  <code className="flex-1 text-xs font-mono bg-white px-3 py-2 rounded border border-gray-200 break-all">
+                  <code className="flex-1 text-xs font-mono bg-white px-3 py-2 rounded border border-slate-200 break-all">
                     {secret}
                   </code>
                   <button
                     onClick={copySecret}
-                    className="shrink-0 p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors"
+                    className="shrink-0 p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded transition-colors"
                     title="Copy secret key"
                   >
-                    {copied ? <Check size={16} className="text-green-600" /> : <Copy size={16} />}
+                    {copied ? <Check size={16} className="text-brand-600" /> : <Copy size={16} />}
                   </button>
                 </div>
               </div>
 
               <button
                 onClick={() => setStep('verify')}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition-colors"
+                className="w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold py-3 rounded-lg transition-colors"
               >
                 I've Scanned the Code
               </button>
@@ -253,10 +253,10 @@ export const MFASetupModal: React.FC<MFASetupModalProps> = ({ isOpen, onClose, o
           {step === 'verify' && (
             <div className="space-y-4">
               <div className="text-center">
-                <h3 className="text-base font-semibold text-gray-900 mb-2">
+                <h3 className="text-base font-semibold text-slate-900 mb-2">
                   Verify Setup
                 </h3>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-slate-600">
                   Enter the 6-digit code from your authenticator app
                 </p>
               </div>
@@ -269,7 +269,7 @@ export const MFASetupModal: React.FC<MFASetupModalProps> = ({ isOpen, onClose, o
                   value={verificationCode}
                   onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, ''))}
                   placeholder="000000"
-                  className="w-full text-center text-2xl font-mono tracking-widest px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none"
+                  className="w-full text-center text-2xl font-mono tracking-widest px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all outline-none"
                   autoFocus
                 />
               </div>
@@ -277,14 +277,14 @@ export const MFASetupModal: React.FC<MFASetupModalProps> = ({ isOpen, onClose, o
               <div className="flex gap-3">
                 <button
                   onClick={() => setStep('scan')}
-                  className="flex-1 border border-gray-200 text-gray-700 font-semibold py-3 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="flex-1 border border-slate-200 text-slate-700 font-semibold py-3 rounded-lg hover:bg-slate-50 transition-colors"
                 >
                   Back
                 </button>
                 <button
                   onClick={verifyTOTP}
                   disabled={isLoading || verificationCode.length !== 6}
-                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition-colors disabled:opacity-50"
+                  className="flex-1 bg-brand-600 hover:bg-brand-700 text-white font-semibold py-3 rounded-lg transition-colors disabled:opacity-50"
                 >
                   {isLoading ? 'Verifying...' : 'Verify & Enable'}
                 </button>
@@ -296,38 +296,38 @@ export const MFASetupModal: React.FC<MFASetupModalProps> = ({ isOpen, onClose, o
           {step === 'recovery' && (
             <div className="space-y-4">
               <div className="text-center">
-                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <Check className="text-green-600" size={24} />
+                <div className="w-12 h-12 bg-brand-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <Check className="text-brand-600" size={24} />
                 </div>
-                <h3 className="text-base font-semibold text-gray-900 mb-2">
+                <h3 className="text-base font-semibold text-slate-900 mb-2">
                   MFA Enabled Successfully!
                 </h3>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-slate-600">
                   Save these recovery codes in a safe place
                 </p>
               </div>
 
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                <p className="text-xs font-medium text-yellow-900 mb-2">
+              <div className="bg-accent-50 border border-accent-200 rounded-lg p-4">
+                <p className="text-xs font-medium text-accent-900 mb-2">
                   ⚠️ Save these codes now - they won't be shown again
                 </p>
-                <p className="text-xs text-yellow-800">
+                <p className="text-xs text-accent-800">
                   Use these codes to access your account if you lose your authenticator device.
                   Each code can only be used once.
                 </p>
               </div>
 
-              <div className="bg-gray-50 rounded-lg p-4">
+              <div className="bg-slate-50 rounded-lg p-4">
                 <div className="flex items-center justify-between mb-2">
-                  <p className="text-xs font-medium text-gray-700">Recovery Codes:</p>
+                  <p className="text-xs font-medium text-slate-700">Recovery Codes:</p>
                   <button
                     onClick={copyRecoveryCodes}
-                    className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 font-medium"
+                    className="flex items-center gap-1 text-xs text-brand-600 hover:text-brand-700 font-medium"
                   >
                     {copied ? (
                       <>
-                        <Check size={14} className="text-green-600" />
-                        <span className="text-green-600">Copied!</span>
+                        <Check size={14} className="text-brand-600" />
+                        <span className="text-brand-600">Copied!</span>
                       </>
                     ) : (
                       <>
@@ -339,7 +339,7 @@ export const MFASetupModal: React.FC<MFASetupModalProps> = ({ isOpen, onClose, o
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   {recoveryCodes.map((code, index) => (
-                    <code key={index} className="text-xs font-mono bg-white px-3 py-2 rounded border border-gray-200 text-center">
+                    <code key={index} className="text-xs font-mono bg-white px-3 py-2 rounded border border-slate-200 text-center">
                       {code}
                     </code>
                   ))}
@@ -348,7 +348,7 @@ export const MFASetupModal: React.FC<MFASetupModalProps> = ({ isOpen, onClose, o
 
               <button
                 onClick={complete}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition-colors"
+                className="w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold py-3 rounded-lg transition-colors"
               >
                 Done - I've Saved My Codes
               </button>

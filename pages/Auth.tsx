@@ -45,7 +45,7 @@ export const Auth: React.FC = () => {
           className="w-full max-w-md"
         >
           <div className="mb-12">
-            <div className="w-14 h-14 bg-indigo-600 rounded-[20px] flex items-center justify-center mb-6 shadow-2xl shadow-indigo-200 rotate-3">
+            <div className="w-14 h-14 bg-brand-600 rounded-[20px] flex items-center justify-center mb-6 shadow-2xl shadow-brand-200 rotate-3">
               <Zap className="text-white" size={28} fill="currentColor" />
             </div>
             <h1 className="text-4xl font-black text-slate-900 tracking-tight mb-2">Welcome Back</h1>
@@ -58,7 +58,7 @@ export const Auth: React.FC = () => {
                 <motion.div 
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: 'auto' }}
-                  className="flex items-start gap-3 text-rose-600 text-xs font-bold bg-rose-50 p-4 rounded-2xl border border-rose-100"
+                  className="flex items-start gap-3 text-accent-700 text-xs font-bold bg-accent-50 p-4 rounded-2xl border border-accent-100"
                 >
                   <AlertCircle size={16} className="shrink-0" />
                   <span>{error}</span>
@@ -73,7 +73,7 @@ export const Auth: React.FC = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={isLoading}
-                className="w-full px-6 py-4 bg-slate-50 border-2 border-transparent focus:bg-white focus:border-indigo-100 rounded-2xl text-sm font-bold outline-none transition-all text-slate-900 placeholder:text-slate-300 disabled:opacity-50"
+                className="w-full px-6 py-4 bg-slate-50 border-2 border-transparent focus:bg-white focus:border-brand-100 rounded-2xl text-sm font-bold outline-none transition-all text-slate-900 placeholder:text-slate-300 disabled:opacity-50"
                 placeholder="admin@salescrm.com"
                 required
               />
@@ -86,7 +86,7 @@ export const Auth: React.FC = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={isLoading}
-                className="w-full px-6 py-4 bg-slate-50 border-2 border-transparent focus:bg-white focus:border-indigo-100 rounded-2xl text-sm font-bold outline-none transition-all text-slate-900 placeholder:text-slate-300 disabled:opacity-50"
+                className="w-full px-6 py-4 bg-slate-50 border-2 border-transparent focus:bg-white focus:border-brand-100 rounded-2xl text-sm font-bold outline-none transition-all text-slate-900 placeholder:text-slate-300 disabled:opacity-50"
                 placeholder="••••••••"
                 required
               />
@@ -95,7 +95,7 @@ export const Auth: React.FC = () => {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-slate-900 hover:bg-indigo-600 text-white font-black py-4 rounded-2xl transition-all flex items-center justify-center gap-3 disabled:opacity-70 disabled:cursor-not-allowed shadow-xl shadow-slate-200 active:scale-[0.98] uppercase tracking-widest text-xs"
+              className="w-full bg-slate-900 hover:bg-brand-600 text-white font-black py-4 rounded-2xl transition-all flex items-center justify-center gap-3 disabled:opacity-70 disabled:cursor-not-allowed shadow-xl shadow-slate-200 active:scale-[0.98] uppercase tracking-widest text-xs"
             >
               {isLoading ? (
                 <>
@@ -110,7 +110,7 @@ export const Auth: React.FC = () => {
 
           <div className="mt-12 pt-8 border-t border-slate-50">
             <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">
-              <ShieldCheck size={14} className="text-emerald-500" />
+              <ShieldCheck size={14} className="text-brand-500" />
               Secure Enterprise Environment
             </div>
           </div>
@@ -127,7 +127,7 @@ export const Auth: React.FC = () => {
             className="w-full h-full object-cover"
           />
           {/* Subtle gradient overlay only at edges */}
-          <div className="absolute inset-0 bg-gradient-to-br from-slate-900/20 via-transparent to-indigo-900/30"></div>
+          <div className="absolute inset-0 bg-gradient-to-br from-slate-900/20 via-transparent to-brand-700/30"></div>
         </div>
         
         {/* Minimal content overlay - bottom left */}
@@ -140,14 +140,14 @@ export const Auth: React.FC = () => {
           >
             {/* Floating badge */}
             <div className="inline-flex items-center gap-2 bg-white/95 backdrop-blur-sm px-4 py-2 rounded-full shadow-2xl mb-6">
-              <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+              <div className="w-2 h-2 bg-brand-500 rounded-full animate-pulse"></div>
               <span className="text-xs font-bold text-slate-900 tracking-wide">LIVE DASHBOARD</span>
             </div>
             
             {/* Main card */}
             <div className="bg-white/95 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border border-white/50">
               <div className="flex items-start gap-4">
-                <div className="w-14 h-14 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center shrink-0 shadow-lg">
+                <div className="w-14 h-14 bg-gradient-to-br from-brand-500 to-brand-700 rounded-2xl flex items-center justify-center shrink-0 shadow-lg">
                   <TrendingUp className="text-white" size={28} strokeWidth={2.5} />
                 </div>
                 <div className="flex-1 min-w-0">
@@ -181,7 +181,7 @@ export const Auth: React.FC = () => {
         <div className="absolute top-8 right-8">
           <div className="bg-white/90 backdrop-blur-sm px-5 py-3 rounded-2xl shadow-xl">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
+              <div className="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center">
                 <Zap className="text-white" size={18} fill="currentColor" />
               </div>
               <span className="text-sm font-black text-slate-900 tracking-tight">SalesCRM</span>

@@ -56,14 +56,14 @@ export const SecurityModal: React.FC<SecurityModalProps> = ({
                             placeholder="Current Password"
                             value={passwordChange.currentPassword}
                             onChange={(e) => passwordChange.setCurrentPassword(e.target.value)}
-                            className="w-full px-5 py-3.5 bg-slate-50 border-2 border-transparent focus:bg-white focus:border-indigo-500/20 rounded-2xl text-sm font-bold outline-none transition-all"
+                            className="w-full px-5 py-3.5 bg-slate-50 border-2 border-transparent focus:bg-white focus:border-brand-500/20 rounded-2xl text-sm font-bold outline-none transition-all"
                         />
                         <input
                             type="password"
                             placeholder="New Password (min 12 chars)"
                             value={passwordChange.newPassword}
                             onChange={(e) => passwordChange.setNewPassword(e.target.value)}
-                            className="w-full px-5 py-3.5 bg-slate-50 border-2 border-transparent focus:bg-white focus:border-indigo-500/20 rounded-2xl text-sm font-bold outline-none transition-all"
+                            className="w-full px-5 py-3.5 bg-slate-50 border-2 border-transparent focus:bg-white focus:border-brand-500/20 rounded-2xl text-sm font-bold outline-none transition-all"
                         />
                         <p className="text-[10px] text-slate-400 font-medium px-1">
                             Must include uppercase, lowercase, number, and special character
@@ -78,22 +78,22 @@ export const SecurityModal: React.FC<SecurityModalProps> = ({
                     </h3>
                     <button
                         onClick={handleMFAClick}
-                        className="w-full flex items-center justify-between p-5 bg-indigo-50 border-2 border-indigo-100 rounded-2xl group hover:bg-indigo-100 transition-all"
+                        className="w-full flex items-center justify-between p-5 bg-brand-50 border-2 border-brand-100 rounded-2xl group hover:bg-brand-100 transition-all"
                     >
                         <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-indigo-600 shadow-sm">
+                            <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-brand-600 shadow-sm">
                                 <Shield size={20} />
                             </div>
                             <div className="text-left">
-                                <p className="text-sm font-black text-indigo-900">Authenticator App</p>
-                                <p className="text-[10px] font-bold text-indigo-500 uppercase tracking-tight">
+                                <p className="text-sm font-black text-slate-900">Authenticator App</p>
+                                <p className="text-[10px] font-bold text-brand-500 uppercase tracking-tight">
                                     Highly Recommended
                                 </p>
                             </div>
                         </div>
                         <ChevronRight
                             size={20}
-                            className="text-indigo-300 group-hover:translate-x-1 transition-transform"
+                            className="text-brand-300 group-hover:translate-x-1 transition-transform"
                         />
                     </button>
                 </div>
@@ -114,7 +114,7 @@ export const SecurityModal: React.FC<SecurityModalProps> = ({
                         !passwordChange.currentPassword ||
                         !passwordChange.newPassword
                     }
-                    className="px-8 py-3 bg-indigo-600 text-white font-black rounded-2xl hover:bg-indigo-700 shadow-xl shadow-indigo-600/20 transition-all active:scale-95 text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    className="px-8 py-3 bg-brand-600 text-white font-black rounded-2xl hover:bg-brand-700 shadow-xl shadow-brand-600/20 transition-all active:scale-95 text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 >
                     {passwordChange.isChanging ? (
                         <>

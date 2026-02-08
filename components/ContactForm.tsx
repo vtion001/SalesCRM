@@ -25,11 +25,11 @@ export const ContactForm: React.FC<ContactFormProps> = ({ onSave, onCancel }) =>
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50">
-          <h2 className="text-lg font-bold text-gray-900">Add New Contact</h2>
+        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+          <h2 className="text-lg font-bold text-slate-900">Add New Contact</h2>
           <button 
             onClick={onCancel}
-            className="text-gray-400 hover:text-gray-600 transition-colors p-1 hover:bg-gray-200 rounded-full"
+            className="text-slate-400 hover:text-slate-600 transition-colors p-1 hover:bg-slate-200 rounded-full"
           >
             <X size={20} />
           </button>
@@ -42,13 +42,13 @@ export const ContactForm: React.FC<ContactFormProps> = ({ onSave, onCancel }) =>
               Full Name
             </label>
             <div className="relative">
-              <User className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+              <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
               <input
                 type="text"
                 required
                 value={formData.name}
                 onChange={e => setFormData({...formData, name: e.target.value})}
-                className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all"
                 placeholder="e.g. Sarah Jenkins"
               />
             </div>
@@ -59,13 +59,13 @@ export const ContactForm: React.FC<ContactFormProps> = ({ onSave, onCancel }) =>
               Role / Title
             </label>
             <div className="relative">
-              <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+              <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
               <input
                 type="text"
                 required
                 value={formData.role}
                 onChange={e => setFormData({...formData, role: e.target.value})}
-                className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all"
                 placeholder="e.g. VP of Engineering"
               />
             </div>
@@ -76,13 +76,13 @@ export const ContactForm: React.FC<ContactFormProps> = ({ onSave, onCancel }) =>
               Company
             </label>
             <div className="relative">
-              <Building className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+              <Building className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
               <input
                 type="text"
                 required
                 value={formData.company}
                 onChange={e => setFormData({...formData, company: e.target.value})}
-                className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all"
                 placeholder="e.g. Tech Solutions Inc"
               />
             </div>
@@ -94,13 +94,13 @@ export const ContactForm: React.FC<ContactFormProps> = ({ onSave, onCancel }) =>
                 Email
               </label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                 <input
                   type="email"
                   required
                   value={formData.email}
                   onChange={e => setFormData({...formData, email: e.target.value})}
-                  className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                  className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all"
                   placeholder="name@company.com"
                 />
               </div>
@@ -111,13 +111,13 @@ export const ContactForm: React.FC<ContactFormProps> = ({ onSave, onCancel }) =>
                 Phone
               </label>
               <div className="relative">
-                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                 <input
                   type="tel"
                   required
                   value={formData.phone}
                   onChange={e => setFormData({...formData, phone: e.target.value})}
-                  className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                  className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all"
                   placeholder="+1 (555) 000-0000"
                 />
               </div>
@@ -128,13 +128,13 @@ export const ContactForm: React.FC<ContactFormProps> = ({ onSave, onCancel }) =>
             <button
               type="button"
               onClick={onCancel}
-              className="flex-1 px-4 py-2.5 bg-white border border-gray-200 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition-colors"
+              className="flex-1 px-4 py-2.5 bg-white border border-slate-200 text-slate-700 font-semibold rounded-xl hover:bg-slate-50 transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="flex-1 px-4 py-2.5 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 shadow-sm shadow-blue-200 transition-all transform active:scale-95"
+              className="flex-1 px-4 py-2.5 bg-brand-600 text-white font-semibold rounded-xl hover:bg-brand-700 shadow-sm shadow-brand-200 transition-all transform active:scale-95"
             >
               Create Contact
             </button>

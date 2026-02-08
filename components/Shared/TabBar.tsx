@@ -19,12 +19,12 @@ export const TabBar: React.FC<TabBarProps> = ({
         key={tab}
         onClick={() => onTabChange(tab)}
         className={`flex-1 py-4 text-xs font-bold uppercase tracking-wider text-center transition-colors relative ${
-          activeTab === tab ? 'text-blue-600' : 'text-gray-400 hover:text-gray-600'
+          activeTab === tab ? 'text-brand-600' : 'text-slate-400 hover:text-slate-600'
         }`}
       >
         {tab}
         {activeTab === tab && (
-          <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600"></div>
+          <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-brand-600"></div>
         )}
       </button>
     ))}

@@ -35,17 +35,17 @@ export const CallHistoryList: React.FC<CallHistoryListProps> = ({ targetLead }) 
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
-      case 'completed': return 'text-green-600 bg-green-50';
-      case 'busy': return 'text-orange-600 bg-orange-50';
-      case 'no-answer': return 'text-red-500 bg-red-50';
-      case 'failed': return 'text-red-600 bg-red-100';
-      default: return 'text-gray-500 bg-gray-50';
+      case 'completed': return 'text-brand-700 bg-brand-50';
+      case 'busy': return 'text-accent-600 bg-accent-50';
+      case 'no-answer': return 'text-accent-700 bg-accent-50';
+      case 'failed': return 'text-accent-700 bg-accent-100';
+      default: return 'text-slate-600 bg-slate-50';
     }
   };
 
   const getDirectionIcon = (direction: string) => {
-    if (direction.includes('inbound')) return <PhoneIncoming size={14} className="text-blue-500" />;
-    return <PhoneOutgoing size={14} className="text-green-500" />;
+    if (direction.includes('inbound')) return <PhoneIncoming size={14} className="text-brand-500" />;
+    return <PhoneOutgoing size={14} className="text-accent-500" />;
   };
 
   const formatDate = (dateStr: string) => {
@@ -70,13 +70,13 @@ export const CallHistoryList: React.FC<CallHistoryListProps> = ({ targetLead }) 
   }
 
   return (
-    <div className="flex-1 flex flex-col min-h-0 bg-gray-50/30">
-      <div className="flex items-center justify-between px-4 py-3 bg-white border-b border-gray-100">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-gray-500">Recent Calls</h3>
+    <div className="flex-1 flex flex-col min-h-0 bg-slate-50/30">
+      <div className="flex items-center justify-between px-4 py-3 bg-white border-b border-slate-100">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">Recent Calls</h3>
         <button 
           onClick={fetchLogs}
           disabled={isLoading}
-          className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-50"
+          className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-colors disabled:opacity-50"
         >
           <RefreshCw size={14} className={isLoading ? 'animate-spin' : ''} />
         </button>
@@ -85,29 +85,29 @@ export const CallHistoryList: React.FC<CallHistoryListProps> = ({ targetLead }) 
       <div className="flex-1 overflow-y-auto">
         {isLoading && logs.length === 0 ? (
           <div className="flex items-center justify-center h-32">
-            <RefreshCw size={20} className="text-blue-500 animate-spin" />
+            <RefreshCw size={20} className="text-brand-500 animate-spin" />
           </div>
         ) : error ? (
-          <div className="m-4 p-4 bg-red-50 border border-red-100 rounded-xl flex items-start gap-3">
-            <AlertCircle size={18} className="text-red-500 flex-shrink-0" />
-            <div className="text-xs text-red-600">{error}</div>
+          <div className="m-4 p-4 bg-accent-50 border border-accent-100 rounded-xl flex items-start gap-3">
+            <AlertCircle size={18} className="text-accent-600 flex-shrink-0" />
+            <div className="text-xs text-accent-700">{error}</div>
           </div>
         ) : logs.length === 0 ? (
-          <div className="h-64 flex flex-col items-center justify-center text-center p-8 text-gray-400">
-            <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mb-3">
+          <div className="h-64 flex flex-col items-center justify-center text-center p-8 text-slate-400">
+            <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center mb-3">
               <Phone size={24} />
             </div>
             <p className="text-sm font-medium">No calls found for this lead</p>
             <p className="text-[10px] mt-1">Logs from Twilio will appear here</p>
           </div>
         ) : (
-          <div className="divide-y divide-gray-100">
+          <div className="divide-y divide-slate-100">
             {logs.map((call) => (
-              <div key={call.sid} className="px-4 py-3 bg-white hover:bg-gray-50 transition-colors">
+              <div key={call.sid} className="px-4 py-3 bg-white hover:bg-slate-50 transition-colors">
                 <div className="flex items-start justify-between mb-1">
                   <div className="flex items-center gap-2">
                     {getDirectionIcon(call.direction)}
-                    <span className="text-sm font-semibold text-gray-900">
+                    <span className="text-sm font-semibold text-slate-900">
                       {call.direction.includes('inbound') ? 'Inbound' : 'Outbound'}
                     </span>
                   </div>
@@ -116,7 +116,7 @@ export const CallHistoryList: React.FC<CallHistoryListProps> = ({ targetLead }) 
                   </div>
                 </div>
                 
-                <div className="flex items-center justify-between text-[11px] text-gray-500">
+                <div className="flex items-center justify-between text-[11px] text-slate-500">
                   <span className="flex items-center gap-1.5 font-medium">
                     <Clock size={10} />
                     {formatDate(call.startTime)}

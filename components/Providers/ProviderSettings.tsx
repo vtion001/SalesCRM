@@ -33,23 +33,23 @@ export const ProviderSettings: React.FC<ProviderSettingsProps> = ({
           <h3 className="text-sm font-black text-slate-900">{displayName}</h3>
           <div className="flex items-center gap-2 mt-1">
             {isReady ? (
-              <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-600">
+              <span className="flex items-center gap-1 text-[10px] font-bold text-brand-600">
                 <CheckCircle size={12} /> Ready
               </span>
             ) : error ? (
-              <span className="flex items-center gap-1 text-[10px] font-bold text-rose-600">
+              <span className="flex items-center gap-1 text-[10px] font-bold text-accent-600">
                 <XCircle size={12} /> Error
               </span>
             ) : (
-              <span className="text-[10px] font-bold text-amber-600">Connecting...</span>
+              <span className="text-[10px] font-bold text-slate-500">Connecting...</span>
             )}
           </div>
         </div>
       </div>
 
       {error && (
-        <div className="mb-4 p-3 bg-rose-50 border border-rose-100 rounded-xl">
-          <p className="text-xs font-bold text-rose-600">{error}</p>
+        <div className="mb-4 p-3 bg-accent-50 border border-accent-100 rounded-xl">
+          <p className="text-xs font-bold text-accent-600">{error}</p>
         </div>
       )}
 
@@ -59,7 +59,7 @@ export const ProviderSettings: React.FC<ProviderSettingsProps> = ({
         </p>
         {capabilities.map((capability, index) => (
           <div key={index} className="flex items-center gap-2">
-            <CheckCircle size={14} className="text-emerald-500" />
+            <CheckCircle size={14} className="text-brand-500" />
             <span className="text-xs text-slate-600">{capability}</span>
           </div>
         ))}

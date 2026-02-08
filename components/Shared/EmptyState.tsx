@@ -17,17 +17,17 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
   action,
 }) => (
   <div className="flex flex-col items-center justify-center h-64 text-center px-6">
-    <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mb-3">
+    <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center mb-3">
       {icon}
     </div>
-    {title && <h3 className="text-sm font-semibold text-gray-900">{title}</h3>}
+    {title && <h3 className="text-sm font-semibold text-slate-900">{title}</h3>}
     {description && (
-      <p className="text-xs text-gray-500 mt-1 mb-4">{description}</p>
+      <p className="text-xs text-slate-500 mt-1 mb-4">{description}</p>
     )}
     {action && (
       <button
         onClick={action.onClick}
-        className="text-xs font-semibold text-blue-600 border border-blue-200 px-3 py-1.5 rounded-lg hover:bg-blue-50 transition-colors"
+        className="text-xs font-semibold text-brand-600 border border-brand-200 px-3 py-1.5 rounded-lg hover:bg-brand-50 transition-colors"
       >
         {action.label}
       </button>

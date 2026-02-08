@@ -38,6 +38,9 @@ export const useLeads = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const normalizePhone = (phone?: string) => (phone || '').replace(/\D/g, '');
+  const normalizeEmail = (email?: string) => (email || '').trim().toLowerCase();
+
   useEffect(() => {
     fetchLeads();
   }, []);
@@ -63,6 +66,40 @@ export const useLeads = () => {
 
   const addLead = async (lead: Omit<Lead, 'id'>) => {
     try {
+      const leadPhone = normalizePhone(lead.phone);
+      const leadEmail = normalizeEmail(lead.email);
+
+      const existingInState = leads.find(l => {
+        const existingPhone = normalizePhone(l.phone);
+        const existingEmail = normalizeEmail(l.email);
+        return (leadPhone && existingPhone && leadPhone === existingPhone)
+          || (leadEmail && existingEmail && leadEmail === existingEmail);
+      });
+
+      if (existingInState) {
+        return existingInState;
+      }
+
+      const orFilters = [
+        lead.phone ? `phone.eq.${lead.phone}` : null,
+        leadEmail ? `email.eq.${leadEmail}` : null
+      ].filter(Boolean);
+
+      if (orFilters.length > 0) {
+        const existingQuery = await supabase
+          .from('leads')
+          .select('*')
+          .or(orFilters.join(','))
+          .limit(1)
+          .maybeSingle();
+
+        if (existingQuery.data) {
+          const existingLead = mapLeadFromDB(existingQuery.data);
+          setLeads(prev => [existingLead, ...prev.filter(l => l.id !== existingLead.id)]);
+          return existingLead;
+        }
+      }
+
       const dbData = mapLeadToDB(lead);
       const { data, error: insertError } = await supabase
         .from('leads')

@@ -25,7 +25,7 @@ interface AnalyticsProps {
   onNavigate?: (view: string) => void;
 }
 
-const COLORS = ['#6366f1', '#a855f7', '#ec4899', '#f43f5e'];
+const COLORS = ['#2563eb', '#f97316'];
 
 export const Analytics: React.FC<AnalyticsProps> = ({ items, onNavigate }) => {
   // Fetch real call history and SMS data
@@ -49,8 +49,8 @@ export const Analytics: React.FC<AnalyticsProps> = ({ items, onNavigate }) => {
     const totalSMS = smsMessages.length;
 
     return [
-      { name: 'Voice Calls', value: totalCalls, color: '#6366f1' },
-      { name: 'SMS Messages', value: totalSMS, color: '#a855f7' }
+      { name: 'Voice Calls', value: totalCalls, color: '#2563eb' },
+      { name: 'SMS Messages', value: totalSMS, color: '#f97316' }
     ];
   }, [callHistory, smsMessages]);
 
@@ -116,11 +116,11 @@ export const Analytics: React.FC<AnalyticsProps> = ({ items, onNavigate }) => {
               </div>
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.4)]"></div>
+                  <div className="w-3 h-3 rounded-full bg-brand-500 shadow-[0_0_10px_rgba(37,99,235,0.35)]"></div>
                   <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Calls</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-fuchsia-500 shadow-[0_0_10px_rgba(168,85,247,0.4)]"></div>
+                  <div className="w-3 h-3 rounded-full bg-accent-500 shadow-[0_0_10px_rgba(249,115,22,0.35)]"></div>
                   <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">SMS</span>
                 </div>
               </div>
@@ -131,12 +131,12 @@ export const Analytics: React.FC<AnalyticsProps> = ({ items, onNavigate }) => {
                 <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                   <defs>
                     <linearGradient id="colorCalls" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                      <stop offset="5%" stopColor="#2563eb" stopOpacity={0.25} />
+                      <stop offset="95%" stopColor="#2563eb" stopOpacity={0} />
                     </linearGradient>
                     <linearGradient id="colorSms" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#a855f7" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#a855f7" stopOpacity={0} />
+                      <stop offset="5%" stopColor="#f97316" stopOpacity={0.25} />
+                      <stop offset="95%" stopColor="#f97316" stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
@@ -162,15 +162,15 @@ export const Analytics: React.FC<AnalyticsProps> = ({ items, onNavigate }) => {
                       padding: '15px'
                     }}
                   />
-                  <Area type="monotone" dataKey="calls" stroke="#6366f1" strokeWidth={4} fillOpacity={1} fill="url(#colorCalls)" />
-                  <Area type="monotone" dataKey="sms" stroke="#a855f7" strokeWidth={4} fillOpacity={1} fill="url(#colorSms)" />
+                  <Area type="monotone" dataKey="calls" stroke="#2563eb" strokeWidth={4} fillOpacity={1} fill="url(#colorCalls)" />
+                  <Area type="monotone" dataKey="sms" stroke="#f97316" strokeWidth={4} fillOpacity={1} fill="url(#colorSms)" />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
           </div>
 
           {/* Channel Split */}
-          <div className="bg-slate-900 rounded-[40px] p-10 shadow-2xl shadow-indigo-900/20 text-white">
+          <div className="bg-slate-900 rounded-[40px] p-10 shadow-2xl shadow-slate-900/20 text-white">
             <h3 className="text-xl font-black tracking-tight mb-2">Channel Split</h3>
             <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-8">Preferred communication</p>
 
@@ -232,10 +232,10 @@ const KPIBox = ({ label, value, icon, trend, onClick }: any) => (
     className={`bg-white rounded-[32px] p-8 border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.02)] ${onClick ? 'cursor-pointer' : ''}`}
   >
     <div className="flex items-center justify-between mb-6">
-      <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-indigo-600 shadow-inner">
+      <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-brand-600 shadow-inner">
         {icon}
       </div>
-      <span className="text-[10px] font-black text-emerald-500 bg-emerald-50 px-2 py-1 rounded-lg">
+      <span className="text-[10px] font-black text-brand-600 bg-brand-50 px-2 py-1 rounded-lg">
         {trend}
       </span>
     </div>

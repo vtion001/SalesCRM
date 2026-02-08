@@ -28,6 +28,9 @@ export const useContacts = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const normalizePhone = (phone?: string) => (phone || '').replace(/\D/g, '');
+  const normalizeEmail = (email?: string) => (email || '').trim().toLowerCase();
+
   useEffect(() => {
     fetchContacts();
   }, []);
@@ -57,8 +60,42 @@ export const useContacts = () => {
 
   const addContact = async (contact: Omit<Contact, 'id'>) => {
     try {
+      const contactPhone = normalizePhone(contact.phone);
+      const contactEmail = normalizeEmail(contact.email);
+
+      const existingInState = contacts.find(c => {
+        const existingPhone = normalizePhone(c.phone);
+        const existingEmail = normalizeEmail(c.email);
+        return (contactPhone && existingPhone && contactPhone === existingPhone)
+          || (contactEmail && existingEmail && contactEmail === existingEmail);
+      });
+
+      if (existingInState) {
+        return existingInState;
+      }
+
       console.log('💾 Adding contact to Supabase:', contact);
       const dbData = mapContactToDB(contact);
+
+      const orFilters = [
+        contact.phone ? `phone.eq.${contact.phone}` : null,
+        contactEmail ? `email.eq.${contactEmail}` : null
+      ].filter(Boolean);
+
+      if (orFilters.length > 0) {
+        const existingQuery = await supabase
+          .from('contacts')
+          .select('*')
+          .or(orFilters.join(','))
+          .limit(1)
+          .maybeSingle();
+
+        if (existingQuery.data) {
+          const existingContact = mapContactFromDB(existingQuery.data);
+          setContacts(prev => [existingContact, ...prev.filter(c => c.id !== existingContact.id)]);
+          return existingContact;
+        }
+      }
       
       const { data, error: insertError } = await supabase
         .from('contacts')

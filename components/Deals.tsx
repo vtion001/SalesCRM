@@ -106,7 +106,7 @@ export const Deals: React.FC<DealsProps> = ({ items, onUpdateItem, onDeleteItem,
         </div>
         <button 
           onClick={onAddNew}
-          className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-[20px] text-sm font-black uppercase tracking-widest flex items-center gap-3 shadow-2xl shadow-indigo-600/20 transition-all active:scale-95"
+          className="bg-brand-600 hover:bg-brand-700 text-white px-6 py-3 rounded-[20px] text-sm font-black uppercase tracking-widest flex items-center gap-3 shadow-2xl shadow-brand-600/20 transition-all active:scale-95"
         >
           <Plus size={18} strokeWidth={3} />
           New Opportunity
@@ -188,11 +188,11 @@ const DealColumn: React.FC<ColumnProps> = ({
       <div className="flex items-center justify-between mb-6 px-2">
         <div className="flex items-center gap-3">
           <h3 className="font-black text-slate-900 text-sm uppercase tracking-[0.2em]">{stage}</h3>
-          <span className="bg-white border-2 border-slate-100 text-slate-400 text-[10px] px-2.5 py-1 rounded-xl font-black shadow-sm group-hover/column:border-indigo-200 transition-colors">
+          <span className="bg-white border-2 border-slate-100 text-slate-400 text-[10px] px-2.5 py-1 rounded-xl font-black shadow-sm group-hover/column:border-brand-200 transition-colors">
             {items.length}
           </span>
         </div>
-        <span className="text-xs font-black text-indigo-600 bg-indigo-50/50 px-3 py-1.5 rounded-xl border border-indigo-100/50">
+        <span className="text-xs font-black text-brand-600 bg-brand-50/50 px-3 py-1.5 rounded-xl border border-brand-100/50">
           ${totalValue.toLocaleString()}
         </span>
       </div>
@@ -257,7 +257,7 @@ const DealCard = ({ item, isEditing, editValue, editProb, setEditValue, setEditP
   const [showOptions, setShowOptions] = useState(false);
   
   return (
-    <div className={`bg-white p-6 rounded-[32px] shadow-[0_4px_20px_rgba(0,0,0,0.03)] border-2 border-transparent hover:border-indigo-100 hover:shadow-[0_20px_40px_rgba(0,0,0,0.06)] transition-all group relative ${isOverlay ? 'shadow-2xl border-indigo-200' : ''}`}>
+    <div className={`bg-white p-6 rounded-[32px] shadow-[0_4px_20px_rgba(0,0,0,0.03)] border-2 border-transparent hover:border-brand-100 hover:shadow-[0_20px_40px_rgba(0,0,0,0.06)] transition-all group relative ${isOverlay ? 'shadow-2xl border-brand-200' : ''}`}>
       <div className="flex justify-between items-start mb-4">
         <div className="flex items-center gap-3">
           <img src={item.avatar} className="w-8 h-8 rounded-2xl border-2 border-white shadow-md object-cover" alt="" />
@@ -269,7 +269,7 @@ const DealCard = ({ item, isEditing, editValue, editProb, setEditValue, setEditP
           <button 
             onPointerDown={(e) => e.stopPropagation()} // Prevent drag when clicking delete
             onClick={() => onDeleteItem(item.id)}
-            className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-xl opacity-0 group-hover:opacity-100 transition-all"
+            className="p-2 text-slate-300 hover:text-accent-600 hover:bg-accent-50 rounded-xl opacity-0 group-hover:opacity-100 transition-all"
           >
             <Trash2 size={14} />
           </button>
@@ -279,12 +279,12 @@ const DealCard = ({ item, isEditing, editValue, editProb, setEditValue, setEditP
       <h4 className="font-black text-slate-900 text-base mb-6 leading-tight tracking-tight">{item.name}</h4>
       
       {isEditing ? (
-        <div className="space-y-4 mb-6 bg-slate-50 p-4 rounded-[24px] border-2 border-indigo-100 animate-fade-in" onPointerDown={e => e.stopPropagation()}>
+        <div className="space-y-4 mb-6 bg-slate-50 p-4 rounded-[24px] border-2 border-brand-100 animate-fade-in" onPointerDown={e => e.stopPropagation()}>
           <div>
             <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Value ($)</label>
             <input 
               type="number" 
-              className="w-full bg-white border-2 border-slate-100 rounded-xl px-3 py-2 text-sm font-black focus:border-indigo-500 outline-none"
+              className="w-full bg-white border-2 border-slate-100 rounded-xl px-3 py-2 text-sm font-black focus:border-brand-500 outline-none"
               value={editValue}
               onChange={e => setEditValue(Number(e.target.value))}
             />
@@ -293,14 +293,14 @@ const DealCard = ({ item, isEditing, editValue, editProb, setEditValue, setEditP
             <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Probability (%)</label>
             <input 
               type="number" 
-              className="w-full bg-white border-2 border-slate-100 rounded-xl px-3 py-2 text-sm font-black focus:border-indigo-500 outline-none"
+              className="w-full bg-white border-2 border-slate-100 rounded-xl px-3 py-2 text-sm font-black focus:border-brand-500 outline-none"
               value={editProb}
               onChange={e => setEditProb(Number(e.target.value))}
             />
           </div>
           <button 
             onClick={() => saveEdits(item.id)}
-            className="w-full bg-slate-900 text-white py-3 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-indigo-600 transition-all shadow-lg"
+            className="w-full bg-slate-900 text-white py-3 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-brand-600 transition-all shadow-lg"
           >
             <Check size={14} /> Commit Changes
           </button>
@@ -312,7 +312,7 @@ const DealCard = ({ item, isEditing, editValue, editProb, setEditValue, setEditP
             onPointerDown={e => e.stopPropagation()} 
             onClick={() => startEditing(item)}
           >
-            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 group-hover/stat:text-indigo-500 transition-colors">Value</p>
+            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 group-hover/stat:text-brand-500 transition-colors">Value</p>
             <p className="text-base font-black text-slate-900 tracking-tighter">${(item.dealValue || 0).toLocaleString()}</p>
           </div>
           <div 
@@ -320,10 +320,10 @@ const DealCard = ({ item, isEditing, editValue, editProb, setEditValue, setEditP
             onPointerDown={e => e.stopPropagation()} 
             onClick={() => startEditing(item)}
           >
-            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 group-hover/stat:text-indigo-500 transition-colors">Prob.</p>
+            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 group-hover/stat:text-brand-500 transition-colors">Prob.</p>
             <div className="flex items-center gap-2">
               <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
-                <div className="h-full bg-indigo-500 rounded-full transition-all duration-500" style={{ width: `${item.probability}%` }}></div>
+                <div className="h-full bg-brand-500 rounded-full transition-all duration-500" style={{ width: `${item.probability}%` }}></div>
               </div>
               <span className="text-[11px] font-black text-slate-900">{item.probability}%</span>
             </div>
@@ -365,9 +365,9 @@ const DealCard = ({ item, isEditing, editValue, editProb, setEditValue, setEditP
                       setShowOptions(false); 
                     }} 
                     onPointerDown={(e) => e.stopPropagation()}
-                    className="w-full text-left px-4 py-2.5 text-xs font-bold text-rose-600 hover:bg-rose-50 flex items-center gap-2 transition-colors"
+                    className="w-full text-left px-4 py-2.5 text-xs font-bold text-accent-600 hover:bg-accent-50 flex items-center gap-2 transition-colors"
                   >
-                    <Trash2 size={14} className="text-rose-500" /> Delete Deal
+                    <Trash2 size={14} className="text-accent-500" /> Delete Deal
                   </button>
                 </div>
               </>

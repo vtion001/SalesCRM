@@ -23,7 +23,7 @@ export const SettingsItem: React.FC<SettingsItemProps> = ({
             className="w-full flex items-center justify-between px-4 py-3.5 text-sm font-bold text-slate-700 hover:bg-slate-50 rounded-2xl group transition-all text-left"
         >
             <div className="flex items-center gap-3">
-                <span className="text-slate-400 group-hover:text-indigo-600 transition-colors">
+                <span className="text-slate-400 group-hover:text-brand-600 transition-colors">
                     {icon}
                 </span>
                 <span>{label}</span>

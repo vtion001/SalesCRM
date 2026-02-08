@@ -22,14 +22,14 @@ export const DialPad: React.FC<DialPadProps> = ({ onKeyPress, disabled = false }
                     disabled={disabled}
                     className={`w-16 h-16 rounded-[24px] transition-all flex flex-col items-center justify-center group ${disabled
                             ? 'bg-slate-100 cursor-not-allowed opacity-50'
-                            : 'bg-slate-50 hover:bg-slate-100 hover:shadow-lg hover:shadow-slate-200 active:bg-indigo-50'
+                            : 'bg-slate-50 hover:bg-slate-100 hover:shadow-lg hover:shadow-slate-200 active:bg-brand-50'
                         }`}
                 >
-                    <span className={`text-2xl font-black leading-none mb-1 ${disabled ? 'text-slate-400' : 'text-slate-900 group-active:text-indigo-600'
+                    <span className={`text-2xl font-black leading-none mb-1 ${disabled ? 'text-slate-400' : 'text-slate-900 group-active:text-brand-600'
                         }`}>
                         {num}
                     </span>
-                    <span className={`text-[8px] font-black uppercase tracking-widest ${disabled ? 'text-slate-300' : 'text-slate-400 group-active:text-indigo-400'
+                    <span className={`text-[8px] font-black uppercase tracking-widest ${disabled ? 'text-slate-300' : 'text-slate-400 group-active:text-brand-400'
                         }`}>
                         {sub}
                     </span>

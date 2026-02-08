@@ -51,8 +51,8 @@ export const AccountModal: React.FC<AccountModalProps> = ({
                             alt="Profile"
                             className="w-24 h-24 rounded-3xl border-4 border-slate-50 shadow-xl mb-4 object-cover group-hover:scale-105 transition-transform"
                         />
-                        <div className="absolute inset-0 bg-indigo-600/20 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                            <span className="text-white text-[10px] font-black uppercase tracking-widest bg-indigo-600 px-2 py-1 rounded-lg">
+                        <div className="absolute inset-0 bg-brand-600/20 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                            <span className="text-white text-[10px] font-black uppercase tracking-widest bg-brand-600 px-2 py-1 rounded-lg">
                                 Change
                             </span>
                         </div>
@@ -92,7 +92,7 @@ export const AccountModal: React.FC<AccountModalProps> = ({
                 <button
                     onClick={handleSave}
                     disabled={!profileEditor.isDirty || profileEditor.isLoading}
-                    className="px-8 py-3 bg-indigo-600 text-white font-black rounded-2xl hover:bg-indigo-700 shadow-xl shadow-indigo-600/20 transition-all active:scale-95 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-8 py-3 bg-brand-600 text-white font-black rounded-2xl hover:bg-brand-700 shadow-xl shadow-brand-600/20 transition-all active:scale-95 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     {profileEditor.isLoading ? 'Saving...' : 'Save Changes'}
                 </button>

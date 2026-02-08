@@ -65,7 +65,7 @@ export const LeadForm: React.FC<LeadFormProps> = ({ onSave, onCancel }) => {
           <motion.div 
             initial={{ width: 0 }}
             animate={{ width: `${progress}%` }}
-            className="h-full bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.5)]"
+            className="h-full bg-brand-500 shadow-[0_0_10px_rgba(37,99,235,0.45)]"
           />
         </div>
       </div>
@@ -127,24 +127,24 @@ export const LeadForm: React.FC<LeadFormProps> = ({ onSave, onCancel }) => {
             <div className="space-y-2">
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Valuation ($)</label>
               <div className="relative group">
-                <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors" size={16} />
+                <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-brand-500 transition-colors" size={16} />
                 <input
                   type="number" 
                   value={formData.dealValue}
                   onChange={e => setFormData({...formData, dealValue: Number(e.target.value)})}
-                  className="w-full pl-10 pr-4 py-3 bg-slate-50 border-2 border-transparent focus:bg-white focus:border-indigo-100 rounded-2xl text-sm font-black outline-none transition-all"
+                  className="w-full pl-10 pr-4 py-3 bg-slate-50 border-2 border-transparent focus:bg-white focus:border-brand-100 rounded-2xl text-sm font-black outline-none transition-all"
                 />
               </div>
             </div>
             <div className="space-y-2">
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Confidence (%)</label>
               <div className="relative group">
-                <Target className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors" size={16} />
+                <Target className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-brand-500 transition-colors" size={16} />
                 <input
                   type="number" max="100" min="0"
                   value={formData.probability}
                   onChange={e => setFormData({...formData, probability: Number(e.target.value)})}
-                  className="w-full pl-10 pr-4 py-3 bg-slate-50 border-2 border-transparent focus:bg-white focus:border-indigo-100 rounded-2xl text-sm font-black outline-none transition-all"
+                  className="w-full pl-10 pr-4 py-3 bg-slate-50 border-2 border-transparent focus:bg-white focus:border-brand-100 rounded-2xl text-sm font-black outline-none transition-all"
                 />
               </div>
             </div>
@@ -162,7 +162,7 @@ export const LeadForm: React.FC<LeadFormProps> = ({ onSave, onCancel }) => {
           <button 
             type="submit" 
             disabled={Object.values(errors).some(v => v)}
-            className="flex-1 px-6 py-4 bg-indigo-600 text-white text-xs font-black uppercase tracking-widest rounded-2xl hover:bg-indigo-700 shadow-xl shadow-indigo-600/20 transition-all active:scale-95 disabled:opacity-30 disabled:grayscale"
+            className="flex-1 px-6 py-4 bg-brand-600 text-white text-xs font-black uppercase tracking-widest rounded-2xl hover:bg-brand-700 shadow-xl shadow-brand-600/20 transition-all active:scale-95 disabled:opacity-30 disabled:grayscale"
           >
             Deploy Lead
           </button>
@@ -178,12 +178,12 @@ const SmartInput = ({ label, icon, value, onChange, error, onBlur, ...props }: a
       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{label}</label>
       <AnimatePresence>
         {error && (
-          <motion.span initial={{ opacity: 0, x: 5 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }} className="text-[9px] font-black text-rose-500 uppercase">Invalid Entry</motion.span>
+          <motion.span initial={{ opacity: 0, x: 5 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }} className="text-[9px] font-black text-accent-600 uppercase">Invalid Entry</motion.span>
         )}
       </AnimatePresence>
     </div>
     <div className="relative group">
-      <div className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${error ? 'text-rose-400' : 'text-slate-300 group-focus-within:text-indigo-500'}`}>
+      <div className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${error ? 'text-accent-500' : 'text-slate-300 group-focus-within:text-brand-500'}`}>
         {icon}
       </div>
       <input
@@ -193,18 +193,18 @@ const SmartInput = ({ label, icon, value, onChange, error, onBlur, ...props }: a
         onChange={e => onChange(e.target.value)}
         className={`w-full pl-12 pr-10 py-3.5 rounded-2xl text-sm font-bold outline-none transition-all border-2 ${
           error 
-            ? 'bg-rose-50 border-rose-100 text-rose-900 focus:bg-white' 
-            : 'bg-slate-50 border-transparent focus:bg-white focus:border-indigo-100 text-slate-900'
+            ? 'bg-accent-50 border-accent-100 text-accent-900 focus:bg-white' 
+            : 'bg-slate-50 border-transparent focus:bg-white focus:border-brand-100 text-slate-900'
         }`}
       />
       <div className="absolute right-4 top-1/2 -translate-y-1/2">
         {value.length > 2 && !error && (
           <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}>
-            <CheckCircle2 size={16} className="text-emerald-500" />
+            <CheckCircle2 size={16} className="text-brand-500" />
           </motion.div>
         )}
         {error && (
-          <AlertCircle size={16} className="text-rose-500" />
+          <AlertCircle size={16} className="text-accent-600" />
         )}
       </div>
     </div>

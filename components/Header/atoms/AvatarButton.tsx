@@ -20,11 +20,11 @@ export const AvatarButton: React.FC<AvatarButtonProps> = ({ user, isActive, onCl
             <img
                 src={user.avatar}
                 alt="User"
-                className={`w-10 h-10 rounded-xl border-2 transition-all object-cover shadow-sm ${isActive ? 'border-indigo-500' : 'border-white'
+                className={`w-10 h-10 rounded-xl border-2 transition-all object-cover shadow-sm ${isActive ? 'border-brand-500' : 'border-white'
                     }`}
             />
             <div className="text-left hidden lg:block">
-                <p className="text-sm font-black text-slate-900 leading-tight group-hover:text-indigo-600 transition-colors">
+                <p className="text-sm font-black text-slate-900 leading-tight group-hover:text-brand-600 transition-colors">
                     {user.name}
                 </p>
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">

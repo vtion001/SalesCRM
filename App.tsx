@@ -178,39 +178,6 @@ export default function App() {
     return () => subscription?.unsubscribe();
   }, []);
 
-  // Sync leads to contacts - ensure every lead has a corresponding contact
-  useEffect(() => {
-    const syncLeadsToContacts = async () => {
-      if (leads.length === 0 || !isAuthenticated) return;
-
-      // Find leads that don't have a corresponding contact (by phone number)
-      const contactPhones = new Set(contacts.map(c => c.phone));
-      const leadsWithoutContact = leads.filter(lead => lead.phone && !contactPhones.has(lead.phone));
-
-      // Create contacts for leads that don't have them (avoid duplicates)
-      for (const lead of leadsWithoutContact) {
-        // Double-check contact doesn't exist before creating
-        const existingContact = contacts.find(c => c.phone === lead.phone);
-        if (!existingContact) {
-          await addContact({
-            name: lead.name,
-            company: lead.company,
-            email: lead.email,
-            phone: lead.phone,
-            role: lead.role,
-            lastContacted: lead.lastActivityTime || 'Just now'
-          });
-        }
-      }
-
-      if (leadsWithoutContact.length > 0) {
-        console.log(`✅ Synced ${leadsWithoutContact.length} leads to contacts`);
-      }
-    };
-
-    syncLeadsToContacts();
-  }, [leads, contacts, isAuthenticated]);
-
   const handleLogout = async () => {
     await supabase.auth.signOut();
     setIsAuthenticated(false);
@@ -297,7 +264,7 @@ export default function App() {
   if (authLoading) return (
     <div className="min-h-screen bg-slate-900 flex items-center justify-center">
       <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center">
-        <div className="w-16 h-16 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin mx-auto mb-6 shadow-lg shadow-indigo-500/20"></div>
+        <div className="w-16 h-16 border-4 border-brand-500/20 border-t-brand-500 rounded-full animate-spin mx-auto mb-6 shadow-lg shadow-brand-500/20"></div>
         <p className="text-slate-400 font-bold tracking-widest text-xs uppercase animate-pulse">Initializing SalesCRM</p>
       </motion.div>
     </div>
@@ -307,7 +274,7 @@ export default function App() {
 
   return (
     <TelephonyProviderWrapper>
-      <div className="flex h-screen w-full bg-white text-slate-900 font-sans selection:bg-indigo-100 selection:text-indigo-900">
+      <div className="flex h-screen w-full bg-white text-slate-900 font-sans selection:bg-brand-100 selection:text-brand-700">
         <Toaster position="top-right" toastOptions={{
           className: 'font-bold text-sm rounded-2xl border border-slate-100 shadow-2xl',
           duration: 3000,

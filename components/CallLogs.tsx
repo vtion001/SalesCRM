@@ -160,13 +160,13 @@ export const CallLogs: React.FC<CallLogsProps> = ({ onDial }) => {
         </div>
         
         <div className="relative group">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 group-focus-within:text-indigo-500 transition-colors" />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 group-focus-within:text-brand-500 transition-colors" />
           <input 
             type="text"
             placeholder="Search by number, date..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-10 py-2.5 bg-slate-50 border-2 border-transparent focus:bg-white focus:border-indigo-100 rounded-xl text-xs font-bold outline-none transition-all"
+            className="w-full pl-10 pr-10 py-2.5 bg-slate-50 border-2 border-transparent focus:bg-white focus:border-brand-100 rounded-xl text-xs font-bold outline-none transition-all"
           />
           {searchQuery && (
             <button 
@@ -183,11 +183,11 @@ export const CallLogs: React.FC<CallLogsProps> = ({ onDial }) => {
       <div className="flex-1 overflow-y-auto custom-scrollbar">
         {loading ? (
           <div className="flex items-center justify-center h-64">
-            <div className="w-10 h-10 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
+            <div className="w-10 h-10 border-4 border-brand-200 border-t-brand-600 rounded-full animate-spin"></div>
           </div>
         ) : error ? (
-          <div className="m-6 p-4 bg-rose-50 border border-rose-100 rounded-xl">
-            <p className="text-xs font-bold text-rose-600">{error}</p>
+          <div className="m-6 p-4 bg-accent-50 border border-accent-100 rounded-xl">
+            <p className="text-xs font-bold text-accent-700">{error}</p>
           </div>
         ) : filteredCalls.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center px-8">
@@ -214,13 +214,13 @@ export const CallLogs: React.FC<CallLogsProps> = ({ onDial }) => {
                   <div className="flex items-start gap-4">
                     {/* Call Icon */}
                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
-                      call.call_type === 'incoming' ? 'bg-blue-50' : 
-                      call.call_type === 'outgoing' ? 'bg-emerald-50' : 'bg-slate-50'
+                      call.call_type === 'incoming' ? 'bg-brand-50' : 
+                      call.call_type === 'outgoing' ? 'bg-accent-50' : 'bg-slate-50'
                     }`}>
                       {call.call_type === 'incoming' ? (
-                        <PhoneIncoming size={18} className="text-blue-600" />
+                        <PhoneIncoming size={18} className="text-brand-600" />
                       ) : call.call_type === 'outgoing' ? (
-                        <PhoneOutgoing size={18} className="text-emerald-600" />
+                        <PhoneOutgoing size={18} className="text-accent-600" />
                       ) : (
                         <Phone size={18} className="text-slate-400" />
                       )}
@@ -275,8 +275,8 @@ export const CallLogs: React.FC<CallLogsProps> = ({ onDial }) => {
                       {/* Call Type Badge */}
                       <div className="flex items-center gap-2 mb-3">
                         <span className={`px-2 py-0.5 text-[9px] font-black uppercase tracking-widest rounded border ${
-                          call.call_type === 'incoming' ? 'bg-blue-50 text-blue-600 border-blue-100' :
-                          call.call_type === 'outgoing' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+                          call.call_type === 'incoming' ? 'bg-brand-50 text-brand-600 border-brand-100' :
+                          call.call_type === 'outgoing' ? 'bg-accent-50 text-accent-600 border-accent-100' :
                           'bg-slate-50 text-slate-600 border-slate-100'
                         }`}>
                           {call.call_type}
@@ -291,7 +291,7 @@ export const CallLogs: React.FC<CallLogsProps> = ({ onDial }) => {
                         {onDial && (
                           <button
                             onClick={() => onDial(call.phone_number)}
-                            className="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 text-[10px] font-black uppercase tracking-widest rounded-lg transition-colors flex items-center gap-1.5"
+                            className="px-3 py-1.5 bg-brand-50 hover:bg-brand-100 text-brand-600 text-[10px] font-black uppercase tracking-widest rounded-lg transition-colors flex items-center gap-1.5"
                           >
                             <Phone size={12} />
                             Call Again
@@ -302,7 +302,7 @@ export const CallLogs: React.FC<CallLogsProps> = ({ onDial }) => {
                           <>
                             <button
                               onClick={() => handleSaveAsLead(call)}
-                              className="px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-600 text-[10px] font-black uppercase tracking-widest rounded-lg transition-colors flex items-center gap-1.5"
+                              className="px-3 py-1.5 bg-accent-50 hover:bg-accent-100 text-accent-600 text-[10px] font-black uppercase tracking-widest rounded-lg transition-colors flex items-center gap-1.5"
                             >
                               <UserPlus size={12} />
                               Save as Lead
@@ -346,7 +346,7 @@ export const CallLogs: React.FC<CallLogsProps> = ({ onDial }) => {
               <h3 className="text-lg font-black text-slate-900 mb-4 flex items-center gap-2">
                 {showSaveForm === 'lead' ? (
                   <>
-                    <UserPlus size={20} className="text-indigo-600" />
+                    <UserPlus size={20} className="text-brand-600" />
                     Save as New Lead
                   </>
                 ) : (
@@ -367,7 +367,7 @@ export const CallLogs: React.FC<CallLogsProps> = ({ onDial }) => {
                     required
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-slate-50 border-2 border-transparent focus:bg-white focus:border-indigo-100 rounded-xl text-sm font-bold outline-none transition-all"
+                    className="w-full px-4 py-2.5 bg-slate-50 border-2 border-transparent focus:bg-white focus:border-brand-100 rounded-xl text-sm font-bold outline-none transition-all"
                     placeholder="John Doe"
                   />
                 </div>
@@ -381,7 +381,7 @@ export const CallLogs: React.FC<CallLogsProps> = ({ onDial }) => {
                     required={showSaveForm === 'lead'}
                     value={formData.company}
                     onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-slate-50 border-2 border-transparent focus:bg-white focus:border-indigo-100 rounded-xl text-sm font-bold outline-none transition-all"
+                    className="w-full px-4 py-2.5 bg-slate-50 border-2 border-transparent focus:bg-white focus:border-brand-100 rounded-xl text-sm font-bold outline-none transition-all"
                     placeholder="Acme Corp"
                   />
                 </div>
@@ -394,7 +394,7 @@ export const CallLogs: React.FC<CallLogsProps> = ({ onDial }) => {
                     type="email"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-slate-50 border-2 border-transparent focus:bg-white focus:border-indigo-100 rounded-xl text-sm font-bold outline-none transition-all"
+                    className="w-full px-4 py-2.5 bg-slate-50 border-2 border-transparent focus:bg-white focus:border-brand-100 rounded-xl text-sm font-bold outline-none transition-all"
                     placeholder="john@example.com"
                   />
                 </div>
@@ -423,7 +423,7 @@ export const CallLogs: React.FC<CallLogsProps> = ({ onDial }) => {
                     type="submit"
                     className={`flex-1 px-4 py-3 text-white text-xs font-black uppercase tracking-widest rounded-xl transition-colors ${
                       showSaveForm === 'lead' 
-                        ? 'bg-indigo-600 hover:bg-indigo-700' 
+                        ? 'bg-brand-600 hover:bg-brand-700' 
                         : 'bg-slate-700 hover:bg-slate-800'
                     }`}
                   >

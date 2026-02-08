@@ -32,7 +32,7 @@ export const Contacts: React.FC<ContactsProps> = ({ contacts, onAddContact, onDe
         </div>
         <button 
           onClick={onAddContact}
-          className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-[20px] text-sm font-black uppercase tracking-widest flex items-center gap-3 shadow-2xl shadow-indigo-600/20 transition-all active:scale-95"
+          className="bg-brand-600 hover:bg-brand-700 text-white px-6 py-3 rounded-[20px] text-sm font-black uppercase tracking-widest flex items-center gap-3 shadow-2xl shadow-brand-600/20 transition-all active:scale-95"
         >
           <Plus size={18} strokeWidth={3} />
           Add Contact
@@ -42,13 +42,13 @@ export const Contacts: React.FC<ContactsProps> = ({ contacts, onAddContact, onDe
       {/* Toolbar */}
       <div className="px-10 py-6 bg-white/50 border-b border-slate-50 flex items-center gap-4">
         <div className="relative flex-1 max-w-md group">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5 group-focus-within:text-indigo-500 transition-colors" />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5 group-focus-within:text-brand-500 transition-colors" />
           <input 
             type="text" 
             placeholder="Search by name, email, or company..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-12 pr-10 py-3 bg-white border-2 border-slate-100 rounded-2xl focus:outline-none focus:border-indigo-500/20 focus:ring-4 focus:ring-indigo-500/5 text-sm font-bold transition-all placeholder:text-slate-300"
+            className="w-full pl-12 pr-10 py-3 bg-white border-2 border-slate-100 rounded-2xl focus:outline-none focus:border-brand-500/20 focus:ring-4 focus:ring-brand-500/5 text-sm font-bold transition-all placeholder:text-slate-300"
           />
           {searchQuery && (
             <button 
@@ -77,7 +77,7 @@ export const Contacts: React.FC<ContactsProps> = ({ contacts, onAddContact, onDe
               <p className="text-slate-400 mt-2 mb-8 max-w-sm font-medium">Build your network by adding your first contact. Contacts help you track interactions and close deals.</p>
               <button 
                 onClick={onAddContact}
-                className="text-indigo-600 font-black uppercase tracking-widest text-xs px-6 py-3 bg-indigo-50 rounded-xl hover:bg-indigo-100 transition-all"
+                className="text-brand-600 font-black uppercase tracking-widest text-xs px-6 py-3 bg-brand-50 rounded-xl hover:bg-brand-100 transition-all"
               >
                 + Create New Entry
               </button>
@@ -91,21 +91,21 @@ export const Contacts: React.FC<ContactsProps> = ({ contacts, onAddContact, onDe
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: idx * 0.05 }}
                   key={contact.id} 
-                  className="bg-white border-2 border-transparent hover:border-indigo-100 rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.02)] hover:shadow-[0_32px_64px_-12px_rgba(0,0,0,0.06)] transition-all group flex flex-col justify-between h-full relative overflow-hidden"
+                  className="bg-white border-2 border-transparent hover:border-brand-100 rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.02)] hover:shadow-[0_32px_64px_-12px_rgba(0,0,0,0.06)] transition-all group flex flex-col justify-between h-full relative overflow-hidden"
                 >
                   <div>
                     <div className="flex items-start justify-between mb-8">
                       <div className="flex items-center gap-4">
-                        <div className="w-14 h-14 bg-gradient-to-br from-indigo-500 to-fuchsia-600 rounded-2xl flex items-center justify-center text-white font-black text-xl shadow-lg shadow-indigo-200 group-hover:rotate-3 transition-transform">
+                        <div className="w-14 h-14 bg-gradient-to-br from-brand-500 to-brand-700 rounded-2xl flex items-center justify-center text-white font-black text-xl shadow-lg shadow-brand-200 group-hover:rotate-3 transition-transform">
                           {contact.name.charAt(0)}
                         </div>
                         <div>
-                          <h3 className="font-black text-slate-900 group-hover:text-indigo-600 transition-colors leading-tight">{contact.name}</h3>
+                          <h3 className="font-black text-slate-900 group-hover:text-brand-600 transition-colors leading-tight">{contact.name}</h3>
                           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">{contact.role}</p>
                         </div>
                       </div>
                       <span className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border ${
-                        contact.status === 'Active' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-slate-50 text-slate-500 border-slate-100'
+                        contact.status === 'Active' ? 'bg-brand-50 text-brand-600 border-brand-100' : 'bg-slate-50 text-slate-500 border-slate-100'
                       }`}>
                         {contact.status}
                       </span>
@@ -118,7 +118,7 @@ export const Contacts: React.FC<ContactsProps> = ({ contacts, onAddContact, onDe
                       </div>
                       <div className="flex items-center gap-3 text-sm font-bold text-slate-600 bg-slate-50/50 p-3 rounded-2xl border border-slate-100/50">
                         <Mail size={16} className="text-slate-400" />
-                        <a href={`mailto:${contact.email}`} className="truncate hover:text-indigo-600 transition-colors">{contact.email}</a>
+                        <a href={`mailto:${contact.email}`} className="truncate hover:text-brand-600 transition-colors">{contact.email}</a>
                       </div>
                       <div className="flex items-center gap-3 text-sm font-bold text-slate-600 bg-slate-50/50 p-3 rounded-2xl border border-slate-100/50">
                         <Phone size={16} className="text-slate-400" />
@@ -135,14 +135,14 @@ export const Contacts: React.FC<ContactsProps> = ({ contacts, onAddContact, onDe
                     <div className="flex items-center gap-3">
                       <button 
                         onClick={() => onDeleteContact(contact.id)}
-                        className="p-2.5 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all active:scale-90"
+                        className="p-2.5 text-slate-300 hover:text-accent-600 hover:bg-accent-50 rounded-xl transition-all active:scale-90"
                         title="Delete Contact"
                       >
                         <Trash2 size={18} />
                       </button>
                       <button 
                         onClick={() => onViewProfile(contact.id)}
-                        className="px-4 py-2.5 bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-indigo-600 shadow-lg shadow-slate-200 transition-all active:scale-95 flex items-center gap-2"
+                        className="px-4 py-2.5 bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-brand-600 shadow-lg shadow-slate-200 transition-all active:scale-95 flex items-center gap-2"
                       >
                         Profile <ChevronRight size={12} strokeWidth={3} />
                       </button>

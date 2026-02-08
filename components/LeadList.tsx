@@ -35,7 +35,7 @@ export const LeadList: React.FC<LeadListProps> = ({ leads, selectedId, onSelect,
           <h2 className="text-xl font-black text-slate-900 tracking-tight">Pipeline</h2>
           <button 
             onClick={onAddLead}
-            className="w-10 h-10 flex items-center justify-center bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition-all shadow-lg shadow-indigo-600/20 active:scale-95"
+            className="w-10 h-10 flex items-center justify-center bg-brand-600 hover:bg-brand-700 text-white rounded-xl transition-all shadow-lg shadow-brand-600/20 active:scale-95"
             title="Add Lead"
           >
             <Plus size={20} />
@@ -44,13 +44,13 @@ export const LeadList: React.FC<LeadListProps> = ({ leads, selectedId, onSelect,
 
         {/* Search Bar */}
         <div className="relative group">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 group-focus-within:text-indigo-500 transition-colors" />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 group-focus-within:text-brand-500 transition-colors" />
           <input 
             type="text"
             placeholder="Quick search..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-10 py-2.5 bg-slate-50 border-2 border-transparent focus:bg-white focus:border-indigo-100 rounded-xl text-xs font-bold outline-none transition-all"
+            className="w-full pl-10 pr-10 py-2.5 bg-slate-50 border-2 border-transparent focus:bg-white focus:border-brand-100 rounded-xl text-xs font-bold outline-none transition-all"
           />
           {searchQuery && (
             <button 
@@ -99,23 +99,23 @@ export const LeadList: React.FC<LeadListProps> = ({ leads, selectedId, onSelect,
                   key={lead.id}
                   onClick={() => onSelect(lead.id)}
                   className={`p-6 cursor-pointer transition-all relative group ${
-                    selectedId === lead.id ? 'bg-indigo-50/30' : 'hover:bg-slate-50/50'
+                    selectedId === lead.id ? 'bg-brand-50/40' : 'hover:bg-slate-50/50'
                   }`}
                 >
                   {selectedId === lead.id && (
-                    <div className="absolute left-0 top-4 bottom-4 w-1 bg-indigo-600 rounded-r-full shadow-[2px_0_10px_rgba(79,70,229,0.4)]"></div>
+                    <div className="absolute left-0 top-4 bottom-4 w-1 bg-brand-600 rounded-r-full shadow-[2px_0_10px_rgba(37,99,235,0.35)]"></div>
                   )}
 
                   <div className="flex items-start gap-4">
                     <div className="relative flex-shrink-0">
-                      <img src={lead.avatar} alt={lead.name} className={`w-12 h-12 rounded-2xl object-cover bg-slate-100 ring-2 ring-offset-2 transition-all ${selectedId === lead.id ? 'ring-indigo-500 shadow-lg' : 'ring-transparent'}`} />
+                      <img src={lead.avatar} alt={lead.name} className={`w-12 h-12 rounded-2xl object-cover bg-slate-100 ring-2 ring-offset-2 transition-all ${selectedId === lead.id ? 'ring-brand-500 shadow-lg' : 'ring-transparent'}`} />
                       {lead.isOnline && (
-                        <span className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 border-2 border-white rounded-full"></span>
+                        <span className="absolute -bottom-1 -right-1 w-4 h-4 bg-brand-500 border-2 border-white rounded-full"></span>
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex justify-between items-start mb-1">
-                        <h3 className={`text-sm font-black truncate leading-tight ${selectedId === lead.id ? 'text-indigo-900' : 'text-slate-900'}`}>
+                        <h3 className={`text-sm font-black truncate leading-tight ${selectedId === lead.id ? 'text-slate-900' : 'text-slate-900'}`}>
                           {lead.name}
                         </h3>
                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter whitespace-nowrap ml-2">
@@ -127,7 +127,7 @@ export const LeadList: React.FC<LeadListProps> = ({ leads, selectedId, onSelect,
                       <div className="flex items-center justify-between">
                         <StatusBadge status={lead.status} />
                         <div className="flex -space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                           <div className="w-5 h-5 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600 border border-indigo-100">
+                          <div className="w-5 h-5 rounded-lg bg-brand-50 flex items-center justify-center text-brand-600 border border-brand-100">
                              <ChevronRight size={10} strokeWidth={3} />
                            </div>
                         </div>
@@ -149,7 +149,7 @@ const FilterPill = ({ label, active, onClick }: { label: string; active: boolean
     onClick={onClick}
     className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${
       active
-        ? 'bg-white text-indigo-600 shadow-sm'
+        ? 'bg-white text-brand-600 shadow-sm'
         : 'text-slate-400 hover:text-slate-600'
     }`}
   >
@@ -159,9 +159,9 @@ const FilterPill = ({ label, active, onClick }: { label: string; active: boolean
 
 const StatusBadge = ({ status }: { status: Lead['status'] }) => {
   const styles = {
-    'Follow-up': 'bg-amber-50 text-amber-600 border-amber-100',
-    'New Lead': 'bg-indigo-50 text-indigo-600 border-indigo-100',
-    'Closed': 'bg-emerald-50 text-emerald-600 border-emerald-100',
+    'Follow-up': 'bg-accent-50 text-accent-600 border-accent-100',
+    'New Lead': 'bg-brand-50 text-brand-600 border-brand-100',
+    'Closed': 'bg-slate-50 text-slate-600 border-slate-100',
   };
 
   return (

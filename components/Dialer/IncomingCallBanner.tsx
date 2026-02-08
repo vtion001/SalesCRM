@@ -28,7 +28,7 @@ export const IncomingCallBanner: React.FC<IncomingCallBannerProps> = ({
                 initial={{ y: -50, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 exit={{ y: -50, opacity: 0 }}
-                className="px-6 py-6 bg-gradient-to-r from-indigo-600 to-purple-600 shadow-2xl relative z-20"
+                className="px-6 py-6 bg-gradient-to-r from-brand-600 to-brand-800 shadow-2xl relative z-20"
             >
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
@@ -50,7 +50,7 @@ export const IncomingCallBanner: React.FC<IncomingCallBannerProps> = ({
                             </div>
                         )}
                         <div className="flex-1">
-                            <p className="text-[10px] font-black text-indigo-100 uppercase tracking-widest mb-1">
+                            <p className="text-[10px] font-black text-white/80 uppercase tracking-widest mb-1">
                                 📞 Incoming Call
                             </p>
                             <p className="text-xl font-black text-white leading-tight">
@@ -69,13 +69,13 @@ export const IncomingCallBanner: React.FC<IncomingCallBannerProps> = ({
                     <div className="flex gap-2">
                         <button
                             onClick={onAnswer}
-                            className="w-14 h-14 bg-emerald-500 text-white rounded-2xl flex items-center justify-center shadow-lg active:scale-95 transition-transform hover:bg-emerald-600"
+                            className="w-14 h-14 bg-brand-500 text-white rounded-2xl flex items-center justify-center shadow-lg active:scale-95 transition-transform hover:bg-brand-600"
                         >
                             <Phone size={22} />
                         </button>
                         <button
                             onClick={onReject}
-                            className="w-14 h-14 bg-rose-500 text-white rounded-2xl flex items-center justify-center shadow-lg active:scale-95 transition-transform hover:bg-rose-600"
+                            className="w-14 h-14 bg-accent-500 text-white rounded-2xl flex items-center justify-center shadow-lg active:scale-95 transition-transform hover:bg-accent-600"
                         >
                             <PhoneOff size={22} />
                         </button>

@@ -28,7 +28,7 @@ export const TelephonyProviderBadge: React.FC<TelephonyProviderBadgeProps> = ({
         </span>
       </div>
       <div className={`w-2 h-2 rounded-full ${
-        isReady ? 'bg-emerald-500' : isOnline ? 'bg-amber-500' : 'bg-slate-300'
+        isReady ? 'bg-brand-500' : isOnline ? 'bg-accent-500' : 'bg-slate-300'
       }`} />
     </div>
   );

@@ -28,15 +28,15 @@ export const PrivateNotes: React.FC<PrivateNotesProps> = ({ leadId = null }) => 
   };
 
   return (
-    <motion.div layout className="bg-slate-900 rounded-[40px] p-10 text-white shadow-2xl shadow-indigo-900/20">
+    <motion.div layout className="bg-slate-900 rounded-[40px] p-10 text-white shadow-2xl shadow-slate-900/20">
       <div className="flex items-center justify-between mb-8">
         <h3 className="text-lg font-black uppercase tracking-widest flex items-center gap-3">
-          <div className="w-2 h-2 bg-indigo-400 rounded-full animate-pulse"></div>
+          <div className="w-2 h-2 bg-brand-400 rounded-full animate-pulse"></div>
           Private Notes
         </h3>
         <button 
           onClick={() => setIsAddingNote(!isAddingNote)} 
-          className="text-xs font-black text-indigo-400 hover:text-indigo-300 uppercase tracking-widest flex items-center gap-2 transition-colors font-bold"
+          className="text-xs font-black text-brand-400 hover:text-brand-300 uppercase tracking-widest flex items-center gap-2 transition-colors font-bold"
         >
           {isAddingNote ? 'Discard' : <><Plus size={16} /> Add Note</>}
         </button>
@@ -51,7 +51,7 @@ export const PrivateNotes: React.FC<PrivateNotesProps> = ({ leadId = null }) => 
             className="mb-8 overflow-hidden"
           >
             <textarea 
-              className="w-full bg-slate-800/50 border-2 border-slate-700 rounded-3xl p-6 text-sm font-medium focus:border-indigo-500 outline-none min-h-[120px] transition-all" 
+              className="w-full bg-slate-800/50 border-2 border-slate-700 rounded-3xl p-6 text-sm font-medium focus:border-brand-500 outline-none min-h-[120px] transition-all" 
               placeholder="Capture your thoughts..." 
               autoFocus 
               value={newNoteContent} 
@@ -61,7 +61,7 @@ export const PrivateNotes: React.FC<PrivateNotesProps> = ({ leadId = null }) => 
               <button 
                 onClick={handleSaveNote} 
                 disabled={!newNoteContent.trim()} 
-                className="bg-indigo-500 text-white px-8 py-3 rounded-2xl text-xs font-black uppercase tracking-widest disabled:opacity-30 hover:bg-indigo-400 transition-all active:scale-95 shadow-xl shadow-indigo-500/20 flex items-center gap-3 font-bold"
+                className="bg-brand-500 text-white px-8 py-3 rounded-2xl text-xs font-black uppercase tracking-widest disabled:opacity-30 hover:bg-brand-400 transition-all active:scale-95 shadow-xl shadow-brand-500/20 flex items-center gap-3 font-bold"
               >
                 <Send size={14} /> Commit Note
               </button>
@@ -80,14 +80,14 @@ export const PrivateNotes: React.FC<PrivateNotesProps> = ({ leadId = null }) => 
           <p className="text-slate-300 leading-relaxed font-medium whitespace-pre-wrap mb-8 text-lg italic font-medium">"{latestNote.content}"</p>
           <div className="flex items-center justify-between opacity-60">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-indigo-500/20 flex items-center justify-center text-[10px] font-black text-indigo-400 uppercase tracking-widest border border-indigo-500/20">
+              <div className="w-8 h-8 rounded-full bg-brand-500/20 flex items-center justify-center text-[10px] font-black text-brand-400 uppercase tracking-widest border border-brand-500/20">
                 {latestNote.author.charAt(0)}
               </div>
               <span className="text-[10px] font-black uppercase tracking-widest tracking-tighter">
                 {latestNote.author} • {latestNote.createdAt ? new Date(latestNote.createdAt).toLocaleDateString() : 'Just now'}
               </span>
             </div>
-            <Pin size={16} className="text-indigo-400" fill="currentColor" />
+            <Pin size={16} className="text-brand-400" fill="currentColor" />
           </div>
         </motion.div>
       ) : (

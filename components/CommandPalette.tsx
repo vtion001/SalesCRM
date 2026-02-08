@@ -39,9 +39,9 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   }, [query, items]);
 
   const actions = [
-    { id: 'add-lead', label: 'Create New Lead', icon: <Plus size={16} />, color: 'text-indigo-500' },
-    { id: 'add-contact', label: 'Add New Contact', icon: <User size={16} />, color: 'text-fuchsia-500' },
-    { id: 'view-analytics', label: 'Open Analytics', icon: <Zap size={16} />, color: 'text-amber-500' },
+    { id: 'add-lead', label: 'Create New Lead', icon: <Plus size={16} />, color: 'text-brand-500' },
+    { id: 'add-contact', label: 'Add New Contact', icon: <User size={16} />, color: 'text-accent-500' },
+    { id: 'view-analytics', label: 'Open Analytics', icon: <Zap size={16} />, color: 'text-slate-500' },
   ].filter(a => !query || a.label.toLowerCase().includes(query.toLowerCase()));
 
   if (!isOpen) return null;
@@ -65,7 +65,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         >
           {/* Search Header */}
           <div className="p-6 border-b border-slate-100 flex items-center gap-4">
-            <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600">
+            <div className="w-10 h-10 rounded-xl bg-brand-50 flex items-center justify-center text-brand-600">
               <Command size={20} strokeWidth={3} />
             </div>
             <input 
@@ -111,7 +111,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                     <button 
                       key={item.id}
                       onClick={() => { onSelectItem(item.id); onClose(); }}
-                      className="w-full flex items-center justify-between px-4 py-3 hover:bg-indigo-50/50 rounded-2xl transition-all group text-left"
+                      className="w-full flex items-center justify-between px-4 py-3 hover:bg-brand-50/50 rounded-2xl transition-all group text-left"
                     >
                       <div className="flex items-center gap-4">
                         <img src={item.avatar} className="w-10 h-10 rounded-xl object-cover shadow-sm group-hover:rotate-3 transition-transform" />
@@ -121,7 +121,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                         </div>
                       </div>
                       <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <span className="text-[10px] font-black text-indigo-600 bg-white px-2 py-1 rounded-lg border border-indigo-100">JUMP TO</span>
+                        <span className="text-[10px] font-black text-brand-600 bg-white px-2 py-1 rounded-lg border border-brand-100">JUMP TO</span>
                       </div>
                     </button>
                   ))}

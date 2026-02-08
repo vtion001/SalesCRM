@@ -16,7 +16,7 @@ export const NotificationsDropdown: React.FC = () => {
         >
             <div className="p-6 border-b border-slate-50 flex justify-between items-center">
                 <h3 className="font-bold text-slate-900">Notifications</h3>
-                <button className="text-xs text-indigo-600 hover:text-indigo-700 font-bold uppercase tracking-wider">
+                <button className="text-xs text-brand-600 hover:text-brand-700 font-bold uppercase tracking-wider">
                     Mark all read
                 </button>
             </div>

@@ -20,9 +20,9 @@ export const SupabaseHealthIndicator: React.FC = () => {
       <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 p-4 max-w-sm">
         <div className="flex items-start gap-3">
           {health.error ? (
-            <AlertCircle className="text-rose-500 shrink-0" size={20} />
+            <AlertCircle className="text-accent-600 shrink-0" size={20} />
           ) : (
-            <Loader2 className="text-indigo-500 shrink-0 animate-spin" size={20} />
+            <Loader2 className="text-brand-500 shrink-0 animate-spin" size={20} />
           )}
           <div className="flex-1">
             <h3 className="text-sm font-black text-slate-900 mb-1">
@@ -34,7 +34,7 @@ export const SupabaseHealthIndicator: React.FC = () => {
             
             <button
               onClick={() => setShowDetails(!showDetails)}
-              className="text-xs font-bold text-indigo-600 hover:text-indigo-700"
+              className="text-xs font-bold text-brand-600 hover:text-brand-700"
             >
               {showDetails ? 'Hide' : 'Show'} Details
             </button>
@@ -62,7 +62,7 @@ export const SupabaseHealthIndicator: React.FC = () => {
               
               <button
                 onClick={refetch}
-                className="w-full mt-3 bg-indigo-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-indigo-700 transition-colors"
+                className="w-full mt-3 bg-brand-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-brand-700 transition-colors"
               >
                 Retry Connection
               </button>
@@ -80,9 +80,9 @@ const StatusRow: React.FC<{ label: string; status: boolean; count?: number }> = 
     <div className="flex items-center gap-2">
       {count !== undefined && <span className="text-slate-400">({count})</span>}
       {status ? (
-        <CheckCircle2 className="text-emerald-500" size={14} />
+        <CheckCircle2 className="text-brand-500" size={14} />
       ) : (
-        <AlertCircle className="text-rose-500" size={14} />
+        <AlertCircle className="text-accent-600" size={14} />
       )}
     </div>
   </div>

@@ -98,15 +98,15 @@ export const Dialer: React.FC<DialerProps> = ({
                         initial={{ height: 0 }}
                         animate={{ height: 'auto' }}
                         exit={{ height: 0 }}
-                        className="bg-rose-50 overflow-hidden border-b border-rose-100"
+                        className="bg-accent-50 overflow-hidden border-b border-accent-100"
                     >
                         <div className="px-6 py-3 flex items-start gap-3">
-                            <AlertCircle size={16} className="text-rose-500 mt-0.5 flex-shrink-0" />
+                            <AlertCircle size={16} className="text-accent-600 mt-0.5 flex-shrink-0" />
                             <div>
-                                <p className="text-[10px] font-black text-rose-700 uppercase tracking-widest">
+                                <p className="text-[10px] font-black text-accent-700 uppercase tracking-widest">
                                     Device Offline
                                 </p>
-                                <p className="text-[11px] text-rose-600 font-bold leading-tight">
+                                <p className="text-[11px] text-accent-600 font-bold leading-tight">
                                     {deviceError}
                                 </p>
                             </div>
@@ -159,13 +159,13 @@ export const Dialer: React.FC<DialerProps> = ({
                             if (tab === 'History') setMissedCallCount(0);
                         }}
                         className={`flex-1 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-center transition-all relative rounded-xl ${activeTab === tab
-                                ? 'text-indigo-600 bg-white shadow-sm'
+                                ? 'text-brand-600 bg-white shadow-sm'
                                 : 'text-slate-400 hover:text-slate-600'
                             }`}
                     >
                         {tab}
                         {tab === 'History' && missedCallCount > 0 && (
-                            <span className="absolute -top-1 -right-1 w-5 h-5 bg-rose-500 text-white text-[9px] font-black rounded-full flex items-center justify-center shadow-lg">
+                            <span className="absolute -top-1 -right-1 w-5 h-5 bg-accent-500 text-white text-[9px] font-black rounded-full flex items-center justify-center shadow-lg">
                                 {missedCallCount > 9 ? '9+' : missedCallCount}
                             </span>
                         )}
@@ -186,11 +186,11 @@ export const Dialer: React.FC<DialerProps> = ({
                         >
                             {/* Zadarma Info Banner */}
                             {provider === 'zadarma' && (
-                                <div className="w-full max-w-md mb-4 px-4 py-3 bg-green-50 border border-green-200 rounded-lg text-center">
-                                    <p className="text-sm font-medium text-green-900">
+                                <div className="w-full max-w-md mb-4 px-4 py-3 bg-brand-50 border border-brand-200 rounded-lg text-center">
+                                    <p className="text-sm font-medium text-slate-900">
                                         📞 Zadarma Callback Mode
                                     </p>
-                                    <p className="text-xs text-green-700">
+                                    <p className="text-xs text-brand-700">
                                         When you dial, Zadarma will call your SIP device first, then connect to the destination.
                                     </p>
                                 </div>
@@ -228,7 +228,7 @@ export const Dialer: React.FC<DialerProps> = ({
                                 <motion.div
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
-                                    className="mt-4 px-4 py-2 bg-rose-50 text-rose-600 text-[10px] font-black uppercase tracking-widest rounded-lg border border-rose-100"
+                                    className="mt-4 px-4 py-2 bg-accent-50 text-accent-600 text-[10px] font-black uppercase tracking-widest rounded-lg border border-accent-100"
                                 >
                                     {error}
                                 </motion.div>
@@ -285,13 +285,13 @@ export const Dialer: React.FC<DialerProps> = ({
                                             >
                                                 <div
                                                     className={`max-w-[85%] rounded-3xl px-5 py-4 text-sm font-medium shadow-sm ${msg.sender === 'me'
-                                                            ? 'bg-indigo-600 text-white rounded-br-none'
+                                                            ? 'bg-brand-600 text-white rounded-br-none'
                                                             : 'bg-white border border-slate-100 text-slate-800 rounded-bl-none'
                                                         }`}
                                                 >
                                                     <p className="leading-relaxed">{msg.text}</p>
                                                     <p
-                                                        className={`text-[9px] font-black uppercase tracking-widest mt-2 ${msg.sender === 'me' ? 'text-indigo-200' : 'text-slate-400'
+                                                        className={`text-[9px] font-black uppercase tracking-widest mt-2 ${msg.sender === 'me' ? 'text-brand-200' : 'text-slate-400'
                                                             }`}
                                                     >
                                                         {msg.time}
@@ -308,12 +308,12 @@ export const Dialer: React.FC<DialerProps> = ({
                                                 value={smsMessage}
                                                 onChange={(e) => setSmsMessage(e.target.value)}
                                                 placeholder="Type a message..."
-                                                className="flex-1 px-6 py-4 bg-slate-50 border-2 border-transparent focus:bg-white focus:border-indigo-500/20 rounded-[20px] outline-none text-sm font-medium transition-all"
+                                                className="flex-1 px-6 py-4 bg-slate-50 border-2 border-transparent focus:bg-white focus:border-brand-500/20 rounded-[20px] outline-none text-sm font-medium transition-all"
                                             />
                                             <button
                                                 type="submit"
                                                 disabled={!smsMessage.trim()}
-                                                className="w-14 h-14 bg-indigo-600 text-white rounded-[20px] flex items-center justify-center shadow-lg shadow-indigo-600/20 disabled:opacity-30 transition-all active:scale-90"
+                                                className="w-14 h-14 bg-brand-600 text-white rounded-[20px] flex items-center justify-center shadow-lg shadow-brand-600/20 disabled:opacity-30 transition-all active:scale-90"
                                             >
                                                 <Send size={20} />
                                             </button>

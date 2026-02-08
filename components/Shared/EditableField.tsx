@@ -39,7 +39,7 @@ export const EditableField: React.FC<EditableFieldProps> = ({
       layout
       whileHover={{ y: -4 }}
       className={`bg-slate-50/50 rounded-[32px] p-6 border border-transparent transition-all ${
-        !isEditing && onEdit ? 'hover:bg-white hover:border-indigo-100 hover:shadow-2xl hover:shadow-slate-200/50 cursor-pointer' : ''
+        !isEditing && onEdit ? 'hover:bg-white hover:border-brand-100 hover:shadow-2xl hover:shadow-slate-200/50 cursor-pointer' : ''
       }`}
       onClick={!isEditing && onEdit ? onEdit : undefined}
     >
@@ -62,14 +62,14 @@ export const EditableField: React.FC<EditableFieldProps> = ({
             <input
               type={inputType}
               autoFocus
-              className="w-full text-xl font-black border-b-2 border-indigo-500 focus:outline-none bg-transparent"
+              className="w-full text-xl font-black border-b-2 border-brand-500 focus:outline-none bg-transparent"
               value={inputValue}
               onChange={e => onInputChange?.(inputType === 'number' ? Number(e.target.value) : e.target.value)}
             />
             <div className="flex gap-2">
               <button
                 onClick={onSave}
-                className="p-1.5 bg-indigo-600 text-white rounded-lg active:scale-90 transition-all"
+                className="p-1.5 bg-brand-600 text-white rounded-lg active:scale-90 transition-all"
               >
                 <Check size={14} />
               </button>

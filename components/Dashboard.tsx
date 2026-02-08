@@ -48,7 +48,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ leads, deals, onNavigate, 
           </div>
           <div className="flex gap-3">
              <div className="px-4 py-2 bg-white rounded-2xl border border-slate-100 shadow-sm flex items-center gap-3">
-                <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+               <div className="w-2 h-2 bg-brand-400 rounded-full animate-pulse"></div>
                 <span className="text-[10px] font-black text-slate-500 uppercase">System Active</span>
              </div>
           </div>
@@ -56,10 +56,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ leads, deals, onNavigate, 
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-          <StatCard title="Total Revenue" value={`$${totalRevenue.toLocaleString()}`} trend="+12.5%" isPositive icon={<DollarSign size={20} />} color="bg-indigo-600" shadow="shadow-indigo-200" onClick={() => onNavigate('analytics')} />
-          <StatCard title="Active Leads" value={leads.length.toString()} trend="+5.2%" isPositive icon={<Users size={20} />} color="bg-fuchsia-600" shadow="shadow-fuchsia-200" onClick={() => onNavigate('leads')} />
-          <StatCard title="Pipeline Value" value={`$${pipelineValue.toLocaleString()}`} trend="-2.4%" isPositive={false} icon={<TrendingUp size={20} />} color="bg-emerald-500" shadow="shadow-emerald-200" onClick={() => onNavigate('deals')} />
-          <StatCard title="Win Rate" value={deals.length > 0 ? `${Math.round((wonDeals / deals.length) * 100)}%` : '0%'} trend="+1.2%" isPositive icon={<Briefcase size={20} />} color="bg-orange-500" shadow="shadow-orange-200" onClick={() => onNavigate('analytics')} />
+          <StatCard title="Total Revenue" value={`$${totalRevenue.toLocaleString()}`} trend="+12.5%" isPositive icon={<DollarSign size={20} />} color="bg-brand-600" shadow="shadow-brand-200" onClick={() => onNavigate('analytics')} />
+          <StatCard title="Active Leads" value={leads.length.toString()} trend="+5.2%" isPositive icon={<Users size={20} />} color="bg-slate-900" shadow="shadow-slate-200" onClick={() => onNavigate('leads')} />
+          <StatCard title="Pipeline Value" value={`$${pipelineValue.toLocaleString()}`} trend="-2.4%" isPositive={false} icon={<TrendingUp size={20} />} color="bg-brand-500" shadow="shadow-brand-200" onClick={() => onNavigate('deals')} />
+          <StatCard title="Win Rate" value={deals.length > 0 ? `${Math.round((wonDeals / deals.length) * 100)}%` : '0%'} trend="+1.2%" isPositive icon={<Briefcase size={20} />} color="bg-accent-500" shadow="shadow-accent-200" onClick={() => onNavigate('analytics')} />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
@@ -69,7 +69,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ leads, deals, onNavigate, 
               <h2 className="text-2xl font-black text-slate-900 tracking-tight">Prime Opportunities</h2>
               <button 
                 onClick={() => onNavigate('deals')}
-                className="px-5 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
+                className="px-5 py-2 bg-brand-50 hover:bg-brand-100 text-brand-600 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
               >
                 View Full Pipeline
               </button>
@@ -116,13 +116,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ leads, deals, onNavigate, 
                         <td className="py-6">
                           <div className="flex items-center gap-3">
                             <div className="flex-1 h-1.5 bg-slate-100 rounded-full max-w-[100px] overflow-hidden">
-                              <div className="h-full bg-indigo-500 rounded-full" style={{ width: deal.status === 'Closed' ? '100%' : '65%' }}></div>
+                              <div className="h-full bg-brand-500 rounded-full" style={{ width: deal.status === 'Closed' ? '100%' : '65%' }}></div>
                             </div>
-                            <span className="text-[10px] font-black text-indigo-600 uppercase">{deal.status}</span>
+                            <span className="text-[10px] font-black text-brand-600 uppercase">{deal.status}</span>
                           </div>
                         </td>
                         <td className="py-6 text-right pr-4">
-                          <button className="p-2 text-slate-300 group-hover:text-indigo-600 group-hover:bg-white rounded-xl shadow-none group-hover:shadow-lg transition-all active:scale-90">
+                          <button className="p-2 text-slate-300 group-hover:text-brand-600 group-hover:bg-white rounded-xl shadow-none group-hover:shadow-lg transition-all active:scale-90">
                             <ArrowUpRight size={18} />
                           </button>
                         </td>
@@ -136,14 +136,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ leads, deals, onNavigate, 
 
           {/* Activity Feed / Tasks */}
           <div className="flex flex-col gap-8">
-            <div className="bg-slate-900 rounded-[48px] p-10 shadow-2xl shadow-indigo-900/20 text-white relative overflow-hidden">
+            <div className="bg-slate-900 rounded-[48px] p-10 shadow-2xl shadow-slate-900/20 text-white relative overflow-hidden">
               <h2 className="text-xl font-black tracking-tight mb-2">Network Health</h2>
-              <p className="text-indigo-400 text-[10px] font-black uppercase tracking-widest mb-8">Weekly Growth Velocity</p>
+              <p className="text-brand-300 text-[10px] font-black uppercase tracking-widest mb-8">Weekly Growth Velocity</p>
               
               <div className="h-24 w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={sparklineData}>
-                    <Area type="monotone" dataKey="v" stroke="#818cf8" strokeWidth={4} fill="#818cf8" fillOpacity={0.1} />
+                    <Area type="monotone" dataKey="v" stroke="#3b82f6" strokeWidth={4} fill="#3b82f6" fillOpacity={0.12} />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
@@ -152,8 +152,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ leads, deals, onNavigate, 
                   <p className="text-2xl font-black">+42%</p>
                   <p className="text-[10px] font-bold text-slate-500 uppercase">Conversion Lift</p>
                 </div>
-                <div className="w-12 h-12 rounded-2xl bg-indigo-500/20 flex items-center justify-center">
-                  <TrendingUp className="text-indigo-400" size={24} />
+                <div className="w-12 h-12 rounded-2xl bg-brand-500/20 flex items-center justify-center">
+                  <TrendingUp className="text-brand-300" size={24} />
                 </div>
               </div>
             </div>
@@ -164,9 +164,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ leads, deals, onNavigate, 
               <h2 className="text-xl font-black text-slate-900 tracking-tight mb-8">Priority Queue</h2>
               <div className="space-y-6">
                 {[
-                  { label: 'Follow-up Call', company: 'TechNova', time: '10:30 AM', icon: <Phone size={14} />, color: 'bg-indigo-50 text-indigo-600' },
-                  { label: 'Contract Send', company: 'GlobalLogistics', time: '1:00 PM', icon: <CheckCircle2 size={14} />, color: 'bg-emerald-50 text-emerald-600' },
-                  { label: 'Demo Session', company: 'PulseAI', time: '3:45 PM', icon: <Users size={14} />, color: 'bg-fuchsia-50 text-fuchsia-600' },
+                  { label: 'Follow-up Call', company: 'TechNova', time: '10:30 AM', icon: <Phone size={14} />, color: 'bg-brand-50 text-brand-600' },
+                  { label: 'Contract Send', company: 'GlobalLogistics', time: '1:00 PM', icon: <CheckCircle2 size={14} />, color: 'bg-accent-50 text-accent-600' },
+                  { label: 'Demo Session', company: 'PulseAI', time: '3:45 PM', icon: <Users size={14} />, color: 'bg-slate-100 text-slate-700' },
                 ].map((task, i) => (
                   <div 
                     key={i} 
@@ -182,7 +182,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ leads, deals, onNavigate, 
                     </div>
                     <div className="text-right shrink-0">
                       <p className="text-[10px] font-black text-slate-900">{task.time}</p>
-                      <p className="text-[9px] font-bold text-emerald-500 uppercase tracking-tighter">Ready</p>
+                      <p className="text-[9px] font-bold text-brand-500 uppercase tracking-tighter">Ready</p>
                     </div>
                   </div>
                 ))}
@@ -206,7 +206,7 @@ const StatCard = ({ title, value, trend, isPositive, icon, color, shadow, onClic
         <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-white ${color} shadow-2xl ${shadow} group-hover:rotate-6 transition-all duration-500`}>
           {icon}
         </div>
-        <div className={`flex items-center text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl ${isPositive ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
+        <div className={`flex items-center text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl ${isPositive ? 'bg-brand-50 text-brand-600' : 'bg-accent-50 text-accent-600'}`}>
           {isPositive ? <ArrowUpRight size={12} className="mr-1" /> : <ArrowDownRight size={12} className="mr-1" />}
           {trend}
         </div>
