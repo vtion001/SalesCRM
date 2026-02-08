@@ -20,19 +20,22 @@ export const useSMSMessages = (leadId?: string) => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (leadId) {
-      fetchMessages(leadId);
-    }
+    fetchMessages(leadId);
   }, [leadId]);
 
-  const fetchMessages = async (id: string) => {
+  const fetchMessages = async (id?: string) => {
     try {
       setLoading(true);
-      const { data, error: fetchError } = await supabase
+      let query = supabase
         .from('sms_messages')
-        .select('*')
-        .eq('lead_id', id)
-        .order('created_at', { ascending: false });
+        .select('*');
+      
+      // If leadId provided, filter by it; otherwise get all messages
+      if (id) {
+        query = query.eq('lead_id', id);
+      }
+      
+      const { data, error: fetchError } = await query.order('created_at', { ascending: false });
 
       if (fetchError) throw fetchError;
       setMessages(data || []);
@@ -102,6 +105,6 @@ export const useSMSMessages = (leadId?: string) => {
     addMessage, 
     updateMessage, 
     deleteMessage, 
-    refetch: () => leadId && fetchMessages(leadId)
+    refetch: () => fetchMessages(leadId)
   };
 };

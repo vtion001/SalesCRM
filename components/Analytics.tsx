@@ -1,12 +1,12 @@
 import React, { useMemo } from 'react';
 import { Phone, MessageSquare, TrendingUp, DollarSign, BarChart3, Target, Calendar } from 'lucide-react';
-import { 
-  AreaChart, 
-  Area, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
   ResponsiveContainer,
   PieChart,
   Pie,
@@ -16,7 +16,8 @@ import {
   Legend
 } from 'recharts';
 import { Lead } from '../types';
-import { useAllActivities } from '../hooks/useAllActivities';
+import { useCallHistory } from '../hooks/useCallHistory';
+import { useSMSMessages } from '../hooks/useSMSMessages';
 import { motion } from 'framer-motion';
 
 interface AnalyticsProps {
@@ -27,31 +28,33 @@ interface AnalyticsProps {
 const COLORS = ['#6366f1', '#a855f7', '#ec4899', '#f43f5e'];
 
 export const Analytics: React.FC<AnalyticsProps> = ({ items, onNavigate }) => {
-  const { activities, loading: loadingActivities } = useAllActivities();
+  // Fetch real call history and SMS data
+  const { callHistory, loading: loadingCalls } = useCallHistory();
+  const { messages: smsMessages, loading: loadingSMS } = useSMSMessages();
 
   // 1. Calculate Pipeline Metrics
   const metrics = useMemo(() => {
     const totalPipelineValue = items.reduce((sum, item) => sum + (item.dealValue || 0), 0);
     const weightedValue = items.reduce((sum, item) => sum + ((item.dealValue || 0) * (item.probability || 0) / 100), 0);
-    const avgProbability = items.length > 0 
+    const avgProbability = items.length > 0
       ? Math.round(items.reduce((sum, item) => sum + (item.probability || 0), 0) / items.length)
       : 0;
 
     return { totalPipelineValue, weightedValue, avgProbability };
   }, [items]);
 
-  // 2. Interaction Metrics
+  // 2. Interaction Metrics (from real data)
   const interactionData = useMemo(() => {
-    const calls = activities.filter(a => a.type === 'call').length;
-    const sms = activities.filter(a => a.type === 'email' || a.type === 'message' || (a.title && a.title.includes('SMS'))).length;
-    
-    return [
-      { name: 'Voice Calls', value: calls, color: '#6366f1' },
-      { name: 'SMS Messages', value: sms, color: '#a855f7' }
-    ];
-  }, [activities]);
+    const totalCalls = callHistory.length;
+    const totalSMS = smsMessages.length;
 
-  // 3. Daily Call Tracking (Last 7 Days)
+    return [
+      { name: 'Voice Calls', value: totalCalls, color: '#6366f1' },
+      { name: 'SMS Messages', value: totalSMS, color: '#a855f7' }
+    ];
+  }, [callHistory, smsMessages]);
+
+  // 3. Daily Call Tracking (Last 7 Days) - Using real data
   const chartData = useMemo(() => {
     const last7Days = [...Array(7)].map((_, i) => {
       const d = new Date();
@@ -60,17 +63,17 @@ export const Analytics: React.FC<AnalyticsProps> = ({ items, onNavigate }) => {
     }).reverse();
 
     return last7Days.map(date => {
-      const callCount = activities.filter(a => 
-        a.type === 'call' && 
-        (a as any).created_at && 
-        (a as any).created_at.startsWith(date)
-      ).length;
-      
-      const smsCount = activities.filter(a => 
-        (a.type === 'email' || a.type === 'message' || (a.title && a.title.includes('SMS'))) && 
-        (a as any).created_at && 
-        (a as any).created_at.startsWith(date)
-      ).length;
+      // Count calls for this date
+      const callCount = callHistory.filter(call => {
+        const callDate = new Date(call.created_at).toISOString().split('T')[0];
+        return callDate === date;
+      }).length;
+
+      // Count SMS for this date
+      const smsCount = smsMessages.filter(sms => {
+        const smsDate = new Date(sms.created_at).toISOString().split('T')[0];
+        return smsDate === date;
+      }).length;
 
       return {
         name: new Date(date).toLocaleDateString('en-US', { weekday: 'short' }),
@@ -79,13 +82,13 @@ export const Analytics: React.FC<AnalyticsProps> = ({ items, onNavigate }) => {
         total: callCount + smsCount
       };
     });
-  }, [activities]);
+  }, [callHistory, smsMessages]);
 
   return (
     <div className="h-full overflow-y-auto bg-slate-50/30 p-10 custom-scrollbar">
       <div className="max-w-7xl mx-auto">
         <header className="mb-12">
-          <motion.h1 
+          <motion.h1
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             className="text-4xl font-black text-slate-900 tracking-tight"
@@ -122,42 +125,42 @@ export const Analytics: React.FC<AnalyticsProps> = ({ items, onNavigate }) => {
                 </div>
               </div>
             </div>
-            
+
             <div className="h-[300px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                   <defs>
                     <linearGradient id="colorCalls" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
+                      <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
                     </linearGradient>
                     <linearGradient id="colorSms" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#a855f7" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="#a855f7" stopOpacity={0}/>
+                      <stop offset="5%" stopColor="#a855f7" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#a855f7" stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                  <XAxis 
-                    dataKey="name" 
-                    axisLine={false} 
-                    tickLine={false} 
-                    tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 800 }} 
+                  <XAxis
+                    dataKey="name"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 800 }}
                     dy={15}
                   />
-                  <YAxis 
-                    axisLine={false} 
-                    tickLine={false} 
-                    tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 800 }} 
+                  <YAxis
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 800 }}
                   />
-                  <Tooltip 
-                    contentStyle={{ 
-                      borderRadius: '20px', 
-                      border: 'none', 
+                  <Tooltip
+                    contentStyle={{
+                      borderRadius: '20px',
+                      border: 'none',
                       boxShadow: '0 20px 50px rgba(0,0,0,0.1)',
                       fontSize: '12px',
                       fontWeight: '800',
                       padding: '15px'
-                    }} 
+                    }}
                   />
                   <Area type="monotone" dataKey="calls" stroke="#6366f1" strokeWidth={4} fillOpacity={1} fill="url(#colorCalls)" />
                   <Area type="monotone" dataKey="sms" stroke="#a855f7" strokeWidth={4} fillOpacity={1} fill="url(#colorSms)" />
@@ -170,7 +173,7 @@ export const Analytics: React.FC<AnalyticsProps> = ({ items, onNavigate }) => {
           <div className="bg-slate-900 rounded-[40px] p-10 shadow-2xl shadow-indigo-900/20 text-white">
             <h3 className="text-xl font-black tracking-tight mb-2">Channel Split</h3>
             <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-8">Preferred communication</p>
-            
+
             <div className="h-[240px] w-full relative">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -186,13 +189,13 @@ export const Analytics: React.FC<AnalyticsProps> = ({ items, onNavigate }) => {
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: '#1e293b', 
-                      borderRadius: '12px', 
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: '#1e293b',
+                      borderRadius: '12px',
                       border: 'none',
                       color: '#fff'
-                    }} 
+                    }}
                   />
                 </PieChart>
               </ResponsiveContainer>
@@ -223,7 +226,7 @@ export const Analytics: React.FC<AnalyticsProps> = ({ items, onNavigate }) => {
 };
 
 const KPIBox = ({ label, value, icon, trend, onClick }: any) => (
-  <motion.div 
+  <motion.div
     whileHover={{ y: -5 }}
     onClick={onClick}
     className={`bg-white rounded-[32px] p-8 border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.02)] ${onClick ? 'cursor-pointer' : ''}`}
