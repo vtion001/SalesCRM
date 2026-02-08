@@ -1,15 +1,17 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Send, Pin } from 'lucide-react';
+import { Plus, Send, Pin, Bug } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 import { useNotes } from '../hooks/useNotes';
 import { Note } from '../types';
+import { diagnoseNotesIssue } from '../utils/diagnoseNotes';
 
 interface PrivateNotesProps {
   leadId?: string | null;
 }
 
 export const PrivateNotes: React.FC<PrivateNotesProps> = ({ leadId = null }) => {
-  const { notes, addNote } = useNotes(leadId);
+  const { notes, addNote, error, loading } = useNotes(leadId);
   const [isAddingNote, setIsAddingNote] = useState(false);
   const [newNoteContent, setNewNoteContent] = useState('');
 
@@ -17,14 +19,43 @@ export const PrivateNotes: React.FC<PrivateNotesProps> = ({ leadId = null }) => 
 
   const handleSaveNote = async () => {
     if (newNoteContent.trim()) {
-      await addNote({ 
-        content: newNoteContent, 
-        isPinned: false, 
-        author: 'Me' 
-      });
-      setNewNoteContent('');
-      setIsAddingNote(false);
+      try {
+        const result = await addNote({ 
+          content: newNoteContent, 
+          isPinned: false, 
+          author: 'Me' 
+        });
+        
+        if (result) {
+          setNewNoteContent('');
+          setIsAddingNote(false);
+          toast.success('Note saved successfully', {
+            icon: '📝',
+            style: { borderRadius: '16px', fontWeight: 'bold' }
+          });
+        } else {
+          toast.error('Failed to save note. Please try again.', {
+            style: { borderRadius: '16px', fontWeight: 'bold' }
+          });
+        }
+      } catch (err: any) {
+        console.error('Error saving note:', err);
+        toast.error(err.message || 'Failed to save note', {
+          style: { borderRadius: '16px', fontWeight: 'bold' }
+        });
+      }
     }
+  };
+
+  const runDiagnostic = async () => {
+    const result = await diagnoseNotesIssue();
+    console.log('=== NOTES DIAGNOSTIC REPORT ===');
+    console.log(result);
+    toast.success('Diagnostic complete - check console', {
+      icon: '🔍',
+      duration: 5000,
+      style: { borderRadius: '16px', fontWeight: 'bold' }
+    });
   };
 
   return (
@@ -34,12 +65,21 @@ export const PrivateNotes: React.FC<PrivateNotesProps> = ({ leadId = null }) => 
           <div className="w-2 h-2 bg-brand-400 rounded-full animate-pulse"></div>
           Private Notes
         </h3>
-        <button 
-          onClick={() => setIsAddingNote(!isAddingNote)} 
-          className="text-xs font-black text-brand-400 hover:text-brand-300 uppercase tracking-widest flex items-center gap-2 transition-colors font-bold"
-        >
-          {isAddingNote ? 'Discard' : <><Plus size={16} /> Add Note</>}
-        </button>
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={runDiagnostic}
+            className="text-xs font-black text-accent-400 hover:text-accent-300 uppercase tracking-widest flex items-center gap-2 transition-colors"
+            title="Run diagnostic test"
+          >
+            <Bug size={16} />
+          </button>
+          <button 
+            onClick={() => setIsAddingNote(!isAddingNote)} 
+            className="text-xs font-black text-brand-400 hover:text-brand-300 uppercase tracking-widest flex items-center gap-2 transition-colors font-bold"
+          >
+            {isAddingNote ? 'Discard' : <><Plus size={16} /> Add Note</>}
+          </button>
+        </div>
       </div>
       
       <AnimatePresence>

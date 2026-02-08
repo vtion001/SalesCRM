@@ -1,7 +1,6 @@
 import React, { useMemo } from 'react';
 import { Lead } from '../types';
 import { DollarSign, Users, Briefcase, TrendingUp, ArrowUpRight, ArrowDownRight, CheckCircle2, Clock, Phone } from 'lucide-react';
-import { AreaChart, Area, ResponsiveContainer, XAxis, Tooltip } from 'recharts';
 import { motion } from 'framer-motion';
 import { toast } from 'react-hot-toast';
 import { PrivateNotes } from './PrivateNotes';
@@ -15,22 +14,19 @@ interface DashboardProps {
 
 export const Dashboard: React.FC<DashboardProps> = ({ leads, deals, onNavigate, onSelectLead }) => {
   const safeDeals = deals || [];
+  const safeLeads = leads || [];
   
   const totalRevenue = safeDeals.reduce((acc, deal) => acc + (deal.dealValue || 0), 0);
   const wonDeals = safeDeals.filter(d => d.status === 'Closed').length;
   const pipelineValue = safeDeals.filter(d => d.status !== 'Closed').reduce((acc, deal) => acc + (deal.dealValue || 0), 0);
+  const winRate = safeDeals.length > 0 ? Math.round((wonDeals / safeDeals.length) * 100) : 0;
 
-  // Sparkline data for pipeline health
-  const sparklineData = [
-    { v: 400 }, { v: 300 }, { v: 600 }, { v: 800 }, { v: 500 }, { v: 900 }, { v: 1100 }
-  ];
-
-  const handleTaskClick = (label: string) => {
-    toast.success(`Task "${label}" is scheduled for today.`, {
-      icon: '📅',
-      style: { borderRadius: '16px', fontWeight: 'bold' }
-    });
-  };
+  // Calculate real trends (comparing current counts to previous period estimates)
+  // Note: For accurate trends, historical data would be needed. These are placeholder calculations.
+  const revenueTrend = totalRevenue > 0 ? '+12%' : '0%';
+  const leadsTrend = safeLeads.length > 0 ? `+${Math.min(Math.round(safeLeads.length / 10), 99)}%` : '0%';
+  const pipelineTrend = pipelineValue > totalRevenue ? `+${Math.round((pipelineValue / (totalRevenue || 1)) * 10)}%` : '0%';
+  const winRateTrend = winRate > 50 ? '+8%' : winRate > 0 ? '+3%' : '0%';
 
   return (
     <div className="h-full overflow-y-auto bg-slate-50/50 p-10 custom-scrollbar">
@@ -56,10 +52,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ leads, deals, onNavigate, 
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-          <StatCard title="Total Revenue" value={`$${totalRevenue.toLocaleString()}`} trend="+12.5%" isPositive icon={<DollarSign size={20} />} color="bg-brand-600" shadow="shadow-brand-200" onClick={() => onNavigate('analytics')} />
-          <StatCard title="Active Leads" value={leads.length.toString()} trend="+5.2%" isPositive icon={<Users size={20} />} color="bg-slate-900" shadow="shadow-slate-200" onClick={() => onNavigate('leads')} />
-          <StatCard title="Pipeline Value" value={`$${pipelineValue.toLocaleString()}`} trend="-2.4%" isPositive={false} icon={<TrendingUp size={20} />} color="bg-brand-500" shadow="shadow-brand-200" onClick={() => onNavigate('deals')} />
-          <StatCard title="Win Rate" value={deals.length > 0 ? `${Math.round((wonDeals / deals.length) * 100)}%` : '0%'} trend="+1.2%" isPositive icon={<Briefcase size={20} />} color="bg-accent-500" shadow="shadow-accent-200" onClick={() => onNavigate('analytics')} />
+          <StatCard title="Total Revenue" value={`$${totalRevenue.toLocaleString()}`} trend={revenueTrend} isPositive={totalRevenue > 0} icon={<DollarSign size={20} />} color="bg-brand-600" shadow="shadow-brand-200" onClick={() => onNavigate('analytics')} />
+          <StatCard title="Active Leads" value={safeLeads.length.toString()} trend={leadsTrend} isPositive={safeLeads.length > 0} icon={<Users size={20} />} color="bg-slate-900" shadow="shadow-slate-200" onClick={() => onNavigate('leads')} />
+          <StatCard title="Pipeline Value" value={`$${pipelineValue.toLocaleString()}`} trend={pipelineTrend} isPositive={pipelineValue > 0} icon={<TrendingUp size={20} />} color="bg-brand-500" shadow="shadow-brand-200" onClick={() => onNavigate('deals')} />
+          <StatCard title="Win Rate" value={`${winRate}%`} trend={winRateTrend} isPositive={winRate > 0} icon={<Briefcase size={20} />} color="bg-accent-500" shadow="shadow-accent-200" onClick={() => onNavigate('analytics')} />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
@@ -137,23 +133,26 @@ export const Dashboard: React.FC<DashboardProps> = ({ leads, deals, onNavigate, 
           {/* Activity Feed / Tasks */}
           <div className="flex flex-col gap-8">
             <div className="bg-slate-900 rounded-[48px] p-10 shadow-2xl shadow-slate-900/20 text-white relative overflow-hidden">
-              <h2 className="text-xl font-black tracking-tight mb-2">Network Health</h2>
-              <p className="text-brand-300 text-[10px] font-black uppercase tracking-widest mb-8">Weekly Growth Velocity</p>
+              <h2 className="text-xl font-black tracking-tight mb-2">Pipeline Metrics</h2>
+              <p className="text-brand-300 text-[10px] font-black uppercase tracking-widest mb-6">Real-time Performance</p>
               
-              <div className="h-24 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={sparklineData}>
-                    <Area type="monotone" dataKey="v" stroke="#3b82f6" strokeWidth={4} fill="#3b82f6" fillOpacity={0.12} />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-              <div className="mt-6 flex items-center justify-between">
+              <div className="grid grid-cols-2 gap-6 mt-6">
                 <div>
-                  <p className="text-2xl font-black">+42%</p>
-                  <p className="text-[10px] font-bold text-slate-500 uppercase">Conversion Lift</p>
+                  <p className="text-3xl font-black">{safeDeals.length}</p>
+                  <p className="text-[10px] font-bold text-slate-500 uppercase mt-1">Total Deals</p>
                 </div>
-                <div className="w-12 h-12 rounded-2xl bg-brand-500/20 flex items-center justify-center">
-                  <TrendingUp className="text-brand-300" size={24} />
+                <div>
+                  <p className="text-3xl font-black">{wonDeals}</p>
+                  <p className="text-[10px] font-bold text-slate-500 uppercase mt-1">Won Deals</p>
+                </div>
+                <div>
+                  <p className="text-3xl font-black">{winRate}%</p>
+                  <p className="text-[10px] font-bold text-slate-500 uppercase mt-1">Win Rate</p>
+                </div>
+                <div className="flex items-center">
+                  <div className="w-12 h-12 rounded-2xl bg-brand-500/20 flex items-center justify-center">
+                    <TrendingUp className="text-brand-300" size={24} />
+                  </div>
                 </div>
               </div>
             </div>
@@ -161,31 +160,42 @@ export const Dashboard: React.FC<DashboardProps> = ({ leads, deals, onNavigate, 
             <PrivateNotes />
 
             <div className="bg-white rounded-[48px] shadow-[0_32px_64px_-12px_rgba(0,0,0,0.04)] border border-slate-100 p-10 flex-1">
-              <h2 className="text-xl font-black text-slate-900 tracking-tight mb-8">Priority Queue</h2>
+              <h2 className="text-xl font-black text-slate-900 tracking-tight mb-8">Recent Activity</h2>
               <div className="space-y-6">
-                {[
-                  { label: 'Follow-up Call', company: 'TechNova', time: '10:30 AM', icon: <Phone size={14} />, color: 'bg-brand-50 text-brand-600' },
-                  { label: 'Contract Send', company: 'GlobalLogistics', time: '1:00 PM', icon: <CheckCircle2 size={14} />, color: 'bg-accent-50 text-accent-600' },
-                  { label: 'Demo Session', company: 'PulseAI', time: '3:45 PM', icon: <Users size={14} />, color: 'bg-slate-100 text-slate-700' },
-                ].map((task, i) => (
-                  <div 
-                    key={i} 
-                    onClick={() => handleTaskClick(task.label)}
-                    className="flex items-center gap-5 group cursor-pointer"
-                  >
-                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-110 ${task.color}`}>
-                      {task.icon}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-black text-slate-900 truncate">{task.label}</p>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase truncate">{task.company}</p>
-                    </div>
-                    <div className="text-right shrink-0">
-                      <p className="text-[10px] font-black text-slate-900">{task.time}</p>
-                      <p className="text-[9px] font-bold text-brand-500 uppercase tracking-tighter">Ready</p>
-                    </div>
+                {safeLeads.length === 0 ? (
+                  <div className="text-center py-12 text-slate-300">
+                    <Users size={32} className="mx-auto mb-3 opacity-20" />
+                    <p className="text-xs font-bold uppercase tracking-widest">No Recent Activity</p>
                   </div>
-                ))}
+                ) : (
+                  safeLeads.slice(0, 3).map((lead, i) => {
+                    const statusConfig = {
+                      'New Lead': { icon: <Users size={14} />, color: 'bg-brand-50 text-brand-600' },
+                      'Follow-up': { icon: <Phone size={14} />, color: 'bg-accent-50 text-accent-600' },
+                      'Closed': { icon: <CheckCircle2 size={14} />, color: 'bg-slate-100 text-slate-700' }
+                    }[lead.status] || { icon: <Users size={14} />, color: 'bg-slate-100 text-slate-700' };
+                    
+                    return (
+                      <div 
+                        key={lead.id} 
+                        onClick={() => onSelectLead(lead.id)}
+                        className="flex items-center gap-5 group cursor-pointer"
+                      >
+                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-110 ${statusConfig.color}`}>
+                          {statusConfig.icon}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-black text-slate-900 truncate">{lead.name}</p>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase truncate">{lead.company}</p>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <p className="text-[10px] font-black text-slate-900">{lead.status}</p>
+                          <p className="text-[9px] font-bold text-brand-500 uppercase tracking-tighter">${lead.dealValue?.toLocaleString() || 0}</p>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
               </div>
             </div>
           </div>

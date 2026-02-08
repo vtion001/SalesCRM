@@ -53,7 +53,11 @@ export const useNotes = (leadId: string | null) => {
   const addNote = async (note: Omit<Note, 'id'>) => {
     try {
       const { data: user } = await supabase.auth.getUser();
-      if (!user?.user) throw new Error('User not authenticated');
+      if (!user?.user) {
+        const errorMsg = 'You must be logged in to add notes';
+        setError(errorMsg);
+        throw new Error(errorMsg);
+      }
 
       // Map camelCase to snake_case for database
       const noteData = {
@@ -70,7 +74,10 @@ export const useNotes = (leadId: string | null) => {
         .select()
         .single();
 
-      if (insertError) throw insertError;
+      if (insertError) {
+        setError(insertError.message);
+        throw insertError;
+      }
       
       // Map snake_case back to camelCase for React state
       const mappedData: Note = {
@@ -84,10 +91,12 @@ export const useNotes = (leadId: string | null) => {
       };
       
       setNotes([mappedData, ...notes]);
+      setError(null);
       return mappedData;
     } catch (err: any) {
       setError(err.message);
       console.error('Error adding note:', err);
+      return null;
     }
   };
 
