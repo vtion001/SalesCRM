@@ -12,7 +12,10 @@ import { VercelRequest, VercelResponse } from '@vercel/node';
  * 2. In Twilio Console, set this as your phone number's voice webhook
  */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || 'https://sales-crm-sigma-eosin.vercel.app';
+  
+  // Set CORS headers - restrict to specific origin
+  res.setHeader('Access-Control-Allow-Origin', ALLOWED_ORIGIN);
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 

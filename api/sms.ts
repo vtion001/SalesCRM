@@ -21,8 +21,10 @@ const {
  * Returns: JSON response with message SID and status
  */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // Set CORS headers
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || 'https://sales-crm-sigma-eosin.vercel.app';
+  
+  // Set CORS headers - restrict to specific origin
+  res.setHeader('Access-Control-Allow-Origin', ALLOWED_ORIGIN);
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   res.setHeader('Content-Type', 'application/json');

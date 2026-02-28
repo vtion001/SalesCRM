@@ -82,15 +82,17 @@ async function zadarmaRequest(
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || 'https://sales-crm-sigma-eosin.vercel.app';
+  
   // Top-level error boundary
   try {
     console.log('🚀 Zadarma handler invoked');
     console.log('   Method:', req.method);
     console.log('   Query:', req.query);
     
-    // CORS headers
+    // CORS headers - restrict to specific origin
     res.setHeader('Access-Control-Allow-Credentials', 'true');
-    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Origin', ALLOWED_ORIGIN);
     res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
     res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version');
 

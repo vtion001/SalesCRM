@@ -219,7 +219,6 @@ export const getAccessToken = async (identity: string, retryCount = 0): Promise<
     console.log('   Token length:', token.length);
     console.log('   Token method:', data.method || 'Unknown');
     console.log('   Token format: valid JWT (3 parts)');
-    console.log('   Token preview:', token.substring(0, 50) + '...' + token.substring(token.length - 20));
     
     return token;
   } catch (error: any) {

@@ -16,7 +16,7 @@
       "headers": [
         {
           "key": "Access-Control-Allow-Origin",
-          "value": "*"
+          "value": "https://sales-crm-sigma-eosin.vercel.app"
         },
         {
           "key": "Access-Control-Allow-Methods",

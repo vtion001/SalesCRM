@@ -4,8 +4,8 @@ import { supabase } from '../services/supabaseClient';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export const Auth: React.FC = () => {
-  const [email, setEmail] = useState('admin@salescrm.com');
-  const [password, setPassword] = useState('password123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -74,7 +74,7 @@ export const Auth: React.FC = () => {
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={isLoading}
                 className="w-full px-6 py-4 bg-slate-50 border-2 border-transparent focus:bg-white focus:border-brand-100 rounded-2xl text-sm font-bold outline-none transition-all text-slate-900 placeholder:text-slate-300 disabled:opacity-50"
-                placeholder="admin@salescrm.com"
+                placeholder="Enter your email"
                 required
               />
             </div>

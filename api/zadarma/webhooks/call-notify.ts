@@ -9,14 +9,16 @@ const supabase = createClient(
 );
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || 'https://sales-crm-sigma-eosin.vercel.app';
+  
   console.log('📞 Zadarma webhook handler invoked');
   console.log('   Method:', req.method);
   console.log('   Query:', JSON.stringify(req.query));
   console.log('   Body:', JSON.stringify(req.body).substring(0, 300));
 
-  // Set CORS headers
+  // Set CORS headers - restrict to specific origin
   res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Origin', ALLOWED_ORIGIN);
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
   res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version');
 

@@ -46,7 +46,6 @@ export class ZadarmaWidgetService {
 
     console.log('✅ WebRTC key obtained');
     console.log('⏰ Key valid for:', data.expiresIn);
-    console.log('🔑 Key preview:', data.key.substring(0, 20) + '...');
 
     return {
       key: data.key,
@@ -65,7 +64,6 @@ export class ZadarmaWidgetService {
     }
 
     console.log('🚀 Initializing Zadarma widget...');
-    console.log('   Key:', config.key.substring(0, 20) + '...');
     console.log('   SIP:', config.sipLogin);
     
     // Initialize widget with correct parameters
