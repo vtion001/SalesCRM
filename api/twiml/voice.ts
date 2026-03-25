@@ -73,11 +73,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const callerIdAttr = twilioPhoneNumber ? `callerId="${twilioPhoneNumber}"` : '';
     
     // Check if this is a premium Australian number (1300/1800/13xx)
-    // 1300 numbers: 10 digits starting with 1300 (e.g., 1300130928)
-    // 1800 numbers: 10 digits starting with 1800 (e.g., 1800123456)
-    // 13xx numbers: 6 digits starting with 13 (e.g., 136688)
-    // Pattern: +61 followed by 1300/1800/13 prefix
-    const isPremiumNumber = /^\+?61\s?1?(3[0-9]{2,4}|8[0-9]{2})\d*$/.test(toNumber);
+    // 1300 numbers: 10 digits starting with 1300 (e.g., 1300130928, +611300130928)
+    // 1800 numbers: 10 digits starting with 1800 (e.g., 1800123456, +611800123456)
+    // 13xx numbers: 6 digits starting with 13 (e.g., 136688, +61136688)
+    // Handles: +61 prefix, +61 with space, and national format (no +61)
+    const isPremiumNumber = /^(?:\+61\s?|)(1300[0-9]{6}|1800[0-9]{6}|13[0-9]{4})$/.test(toNumber);
     
     console.log(`   🎯 Number Type Check:`);
     console.log(`      Input: ${toNumber}`);
