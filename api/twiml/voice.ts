@@ -73,8 +73,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const callerIdAttr = twilioPhoneNumber ? `callerId="${twilioPhoneNumber}"` : '';
     
     // Check if this is a premium Australian number (1300/1800/13xx)
-    // Updated regex to handle various formats: +61300xxx, +611300xxx, etc.
-    const isPremiumNumber = /^\+?61\s?1?3(00|800)/.test(toNumber) || /^\+?611[0-9]{1,4}$/.test(toNumber);
+    // 1300 numbers: 10 digits starting with 1300 (e.g., 1300130928)
+    // 1800 numbers: 10 digits starting with 1800 (e.g., 1800123456)
+    // 13xx numbers: 6 digits starting with 13 (e.g., 136688)
+    // Pattern: +61 followed by 1300/1800/13 prefix
+    const isPremiumNumber = /^\+?61\s?1?(3[0-9]{2,4}|8[0-9]{2})\d*$/.test(toNumber);
     
     console.log(`   🎯 Number Type Check:`);
     console.log(`      Input: ${toNumber}`);
@@ -84,9 +87,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (sipTrunkConfigured && isPremiumNumber) {
       // Route through SIP trunk for premium numbers
       // Format: sip:61300130928@altoproperty.pstn.twilio.com
-      const normalizedNumber = toNumber.replace(/^\+/, '').replace(/\s/g, '');
+      let normalizedNumber = toNumber.replace(/^\+/, '').replace(/\s/g, '');
+      
+      // Validate 1300/1800 number format (should be 10 digits for 1300/1800, 6 for 13xx)
+      // Australian 1300/1800: 10 digits (e.g., 1300130928, 1800123456)
+      // Australian 13xx: 6 digits (e.g., 136688)
+      const bareNumber = normalizedNumber.replace(/^61/, ''); // Remove 61 prefix if present
+      const numLength = bareNumber.length;
+      
+      if (numLength !== 10 && numLength !== 6) {
+        console.error(`   ❌ Invalid premium number length: ${numLength} digits (expected 10 for 1300/1800 or 6 for 13xx)`);
+        console.error(`   ⚠️ Number may be malformed: ${normalizedNumber}`);
+        console.error(`   📝 If this is a valid number, the CRM may be storing it incorrectly`);
+      }
+      
       const sipUri = `sip:${normalizedNumber}@${sipDomain}`;
       console.log(`   🚀 SIP Routing: ${sipUri}`);
+      console.log(`   📏 Number length: ${numLength} digits (${numLength === 10 ? 'valid' : 'INVALID'})`);
       
       twiml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
