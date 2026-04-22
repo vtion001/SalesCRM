@@ -97,7 +97,23 @@ export const validatePhoneNumber = (phoneNumber: string): NumberValidation => {
   // Remove spaces and dashes
   const cleaned = phoneNumber.replace(/[\s-]/g, '');
   
-  // Check if it's a valid format
+  // Special case: Australian 13xx short numbers (6 digits: e.g., 131488, 136688)
+  // These are valid Australian government/business numbers. Check BEFORE the 10-digit minimum.
+  // Handles: 131488, +131488, 61131488, +61131488
+  if (cleaned.match(/^(?:\+?61\s?|)13[0-9]{4}$/)) {
+    let formatted = cleaned;
+    if (!formatted.startsWith('+')) {
+      formatted = formatted.startsWith('61') ? '+' + formatted : '+61' + formatted;
+    }
+    return {
+      isValid: true,
+      type: NumberType.PREMIUM_13,
+      canCall: true,
+      formattedNumber: formatted
+    };
+  }
+  
+  // Check if it's a valid format (min 10 digits for standard numbers)
   if (!cleaned.match(/^\+?[0-9]{10,15}$/)) {
     return {
       isValid: false,
