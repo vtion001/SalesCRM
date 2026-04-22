@@ -14,20 +14,20 @@ test.describe('Dialer — Australian 13xx Number Validation', () => {
   
   test.beforeEach(async ({ page }) => {
     // Navigate to the app — assumes dev server running on port 3001
-    await page.goto('http://localhost:3001');
+    await page.goto('http://localhost:3002');
     
     // If auth page shows, bypass with test credentials
     const url = page.url();
     if (!url.includes('/dashboard') && !url.includes('/dialer')) {
       // Try to skip auth or use test mode
-      await page.goto('http://localhost:3001', { waitUntil: 'networkidle' });
+      await page.goto('http://localhost:3002', { waitUntil: 'networkidle' });
     }
   });
 
   // ─── BUG CONFIRMATION TEST ───────────────────────────────────────────────
   test('BUG: 131488 shows as "Invalid phone number" (confirming bug exists)', async ({ page }) => {
     // Navigate directly to the dialer if accessible
-    await page.goto('http://localhost:3001', { waitUntil: 'networkidle' });
+    await page.goto('http://localhost:3002', { waitUntil: 'networkidle' });
     
     // Look for the dialer section — could be on any page
     // Try navigating to CRM main view
@@ -77,7 +77,7 @@ test.describe('Dialer — Australian 13xx Number Validation', () => {
 
   // ─── VALID NUMBER TESTS (sanity checks) ──────────────────────────────────
   test('should allow valid Australian mobile +61412345678', async ({ page }) => {
-    await page.goto('http://localhost:3001', { waitUntil: 'networkidle' });
+    await page.goto('http://localhost:3002', { waitUntil: 'networkidle' });
     
     // This test documents the expected behavior for VALID numbers
     // The call button should NOT show "invalid" error for valid Australian mobiles
@@ -106,7 +106,7 @@ test.describe('Dialer — Australian 13xx Number Validation', () => {
   });
 
   test('should allow valid Australian 1300 number +611300130928', async ({ page }) => {
-    await page.goto('http://localhost:3001', { waitUntil: 'networkidle' });
+    await page.goto('http://localhost:3002', { waitUntil: 'networkidle' });
     
     const phoneInput = page.locator('input[type="tel"], input[placeholder*="phone" i]').first();
     if (await phoneInput.count() === 0) {
@@ -128,7 +128,7 @@ test.describe('Dialer — Australian 13xx Number Validation', () => {
 
   // ─── BROKEN 13xx NUMBER TESTS ────────────────────────────────────────────
   test('BROKEN: 131488 (6-digit 13xx) should NOT show invalid — but it does', async ({ page }) => {
-    await page.goto('http://localhost:3001', { waitUntil: 'networkidle' });
+    await page.goto('http://localhost:3002', { waitUntil: 'networkidle' });
     
     const phoneInput = page.locator('input[type="tel"], input[placeholder*="phone" i]').first();
     if (await phoneInput.count() === 0) {
@@ -154,7 +154,7 @@ test.describe('Dialer — Australian 13xx Number Validation', () => {
   });
 
   test('BROKEN: 136688 (6-digit 13xx) should NOT show invalid — but it does', async ({ page }) => {
-    await page.goto('http://localhost:3001', { waitUntil: 'networkidle' });
+    await page.goto('http://localhost:3002', { waitUntil: 'networkidle' });
     
     const phoneInput = page.locator('input[type="tel"], input[placeholder*="phone" i]').first();
     if (await phoneInput.count() === 0) {
