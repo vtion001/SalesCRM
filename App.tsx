@@ -17,6 +17,7 @@ import { ContactForm } from './components/ContactForm';
 import { SupabaseHealthIndicator } from './components/SupabaseHealthIndicator';
 import { Auth } from './pages/Auth';
 import { Lead, Contact, Deal, CurrentUser } from './types';
+import { Phone } from 'lucide-react';
 import { supabase } from './services/supabaseClient';
 import { useLeads } from './hooks/useLeads';
 import { useContacts } from './hooks/useContacts';
@@ -31,6 +32,7 @@ export default function App() {
   const [authLoading, setAuthLoading] = useState(true);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [dialerActiveTab, setDialerActiveTab] = useState('Dialer');
+  const [isMobileDialerOpen, setIsMobileDialerOpen] = useState(false);
 
   // Supabase Hooks
   const { leads, addLead, deleteLead, updateLead } = useLeads();
@@ -384,6 +386,56 @@ export default function App() {
 
         <SupabaseHealthIndicator />
         <Toaster position="top-right" />
+
+        {/* Mobile Dialer FAB - only visible on screens smaller than lg */}
+        <motion.button
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+          onClick={() => setIsMobileDialerOpen(true)}
+          className="lg:hidden fixed bottom-6 right-6 w-14 h-14 bg-brand-600 hover:bg-brand-700 text-white rounded-full shadow-2xl shadow-brand-600/40 flex items-center justify-center z-50 active:scale-95 transition-transform"
+          style={{ paddingBottom: 'var(--sab, 0px)' }}
+          aria-label="Open dialer"
+        >
+          <Phone size={22} />
+        </motion.button>
+
+        {/* Mobile Dialer Full-Screen Overlay */}
+        <AnimatePresence>
+          {isMobileDialerOpen && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="lg:hidden fixed inset-0 z-[200] flex flex-col bg-white"
+              style={{ paddingTop: 'var(--sat, 0px)', paddingBottom: 'var(--sab, 0px)', paddingLeft: 'var(--sal, 0px)', paddingRight: 'var(--sar, 0px)' }}
+            >
+              {/* Mobile Header */}
+              <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 bg-white flex-shrink-0">
+                <span className="text-sm font-black text-slate-900 uppercase tracking-widest">Dialer</span>
+                <button
+                  onClick={() => setIsMobileDialerOpen(false)}
+                  className="w-10 h-10 flex items-center justify-center rounded-full bg-slate-50 hover:bg-slate-100 text-slate-500 hover:text-slate-700 active:scale-95 transition-all"
+                  aria-label="Close dialer"
+                >
+                  <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                    <path d="M2 2L16 16M16 2L2 16" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
+                  </svg>
+                </button>
+              </div>
+              {/* Dialer Content */}
+              <div className="flex-1 overflow-hidden">
+                <Dialer
+                  targetLead={selectedItem}
+                  onLogActivity={addActivity}
+                  activeTab={dialerActiveTab}
+                  onTabChange={setDialerActiveTab}
+                />
+                <DialerSound />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </TelephonyProviderWrapper>
   );

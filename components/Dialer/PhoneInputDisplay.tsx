@@ -22,11 +22,12 @@ export const PhoneInputDisplay: React.FC<PhoneInputDisplayProps> = ({
                 type="text"
                 value={phoneNumber}
                 onChange={(e) => onChange(e.target.value)}
-                className="text-4xl font-black text-slate-900 text-center w-full bg-transparent outline-none mb-2 tracking-tight"
+                className="text-2xl sm:text-3xl lg:text-4xl font-black text-slate-900 text-center w-full bg-transparent outline-none mb-1 sm:mb-2 tracking-tight px-2"
                 placeholder="000-000-0000"
+                style={{ touchAction: 'manipulation' }}
             />
-            <p className="text-[10px] font-black text-brand-500 uppercase tracking-widest bg-brand-50 inline-block px-3 py-1 rounded-lg">
-                {targetLead ? `${targetLead.name} • ${targetLead.company}` : 'Awaiting Selection'}
+            <p className="text-[9px] sm:text-[10px] font-black text-brand-500 uppercase tracking-widest bg-brand-50 inline-block px-2 sm:px-3 py-0.5 sm:py-1 rounded-lg max-w-full truncate">
+                {targetLead ? `${targetLead.name} \u2022 ${targetLead.company}` : 'Awaiting Selection'}
             </p>
         </motion.div>
     );

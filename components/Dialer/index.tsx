@@ -132,15 +132,15 @@ export const Dialer: React.FC<DialerProps> = ({
             </AnimatePresence>
 
             {/* Provider Status Bar */}
-            <div className="h-16 border-b border-slate-100 flex items-center justify-between px-8 bg-slate-50/30 flex-shrink-0">
-                <div className="flex items-center gap-3">
+            <div className="h-12 sm:h-16 border-b border-slate-100 flex items-center justify-between px-3 sm:px-8 bg-slate-50/30 flex-shrink-0">
+                <div className="flex items-center gap-2 sm:gap-3">
                     <TelephonyProviderBadge
                         provider={provider}
                         isOnline={true}
                         isReady={isDeviceReady && providerReady}
                     />
                 </div>
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2 sm:gap-4">
                     <ProviderSwitcher
                         currentProvider={provider}
                         onSwitch={switchProvider}
@@ -150,7 +150,7 @@ export const Dialer: React.FC<DialerProps> = ({
             </div>
 
             {/* Tab Navigation */}
-            <div className="flex border-b border-slate-100 p-2 bg-slate-50/50">
+            <div className="flex border-b border-slate-100 p-1 sm:p-2 bg-slate-50/50">
                 {['Dialer', 'History', 'SMS'].map((tab) => (
                     <button
                         key={tab}
@@ -158,14 +158,14 @@ export const Dialer: React.FC<DialerProps> = ({
                             setActiveTab(tab);
                             if (tab === 'History') setMissedCallCount(0);
                         }}
-                        className={`flex-1 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-center transition-all relative rounded-xl ${activeTab === tab
+                        className={`flex-1 py-2 sm:py-3 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em] text-center transition-all relative rounded-lg sm:rounded-xl ${activeTab === tab
                                 ? 'text-brand-600 bg-white shadow-sm'
                                 : 'text-slate-400 hover:text-slate-600'
                             }`}
                     >
                         {tab}
                         {tab === 'History' && missedCallCount > 0 && (
-                            <span className="absolute -top-1 -right-1 w-5 h-5 bg-accent-500 text-white text-[9px] font-black rounded-full flex items-center justify-center shadow-lg">
+                            <span className="absolute -top-1 -right-1 w-4 h-4 sm:w-5 sm:h-5 bg-accent-500 text-white text-[8px] sm:text-[9px] font-black rounded-full flex items-center justify-center shadow-lg">
                                 {missedCallCount > 9 ? '9+' : missedCallCount}
                             </span>
                         )}
@@ -182,15 +182,15 @@ export const Dialer: React.FC<DialerProps> = ({
                             initial={{ opacity: 0, x: 20 }}
                             animate={{ opacity: 1, x: 0 }}
                             exit={{ opacity: 0, x: -20 }}
-                            className="flex-1 flex flex-col items-center justify-between p-10"
+                            className="flex-1 flex flex-col items-center justify-between p-4 sm:p-6 md:p-8 lg:p-10"
                         >
                             {/* Zadarma Info Banner */}
                             {provider === 'zadarma' && (
-                                <div className="w-full max-w-md mb-4 px-4 py-3 bg-brand-50 border border-brand-200 rounded-lg text-center">
-                                    <p className="text-sm font-medium text-slate-900">
+                                <div className="w-full max-w-md mb-2 sm:mb-4 px-3 sm:px-4 py-2 sm:py-3 bg-brand-50 border border-brand-200 rounded-lg text-center">
+                                    <p className="text-xs sm:text-sm font-medium text-slate-900">
                                         📞 Zadarma Callback Mode
                                     </p>
-                                    <p className="text-xs text-brand-700">
+                                    <p className="text-[10px] sm:text-xs text-brand-700 hidden sm:block">
                                         When you dial, Zadarma will call your SIP device first, then connect to the destination.
                                     </p>
                                 </div>
@@ -214,7 +214,7 @@ export const Dialer: React.FC<DialerProps> = ({
                                 disabled={false}
                             />
 
-                            <div className="mb-4">
+                            <div className="mb-2 sm:mb-4">
                                 <CallButton
                                     isCallInProgress={isCallInProgress}
                                     isDeviceReady={isDeviceReady}
